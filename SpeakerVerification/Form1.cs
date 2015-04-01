@@ -366,7 +366,7 @@ namespace SpeakerVerification
                 ReadFile(out filesData[i], files[i], out fileFormats[i]);
             }
 
-            for (var windowSize = 0.03; windowSize < 0.16; windowSize += 0.03)
+            for (var windowSize = 0.01; windowSize < 0.10; windowSize += 0.02)
             {
                 for (var codeBookSize = 32; codeBookSize < 257; codeBookSize *= 2)
                 {
@@ -376,7 +376,7 @@ namespace SpeakerVerification
                         {
                             for (var j = 0; j < files.Length; j++)
                             {
-                                for (var vectorLenghtLpc = 8; vectorLenghtLpc < 25; vectorLenghtLpc += 2)
+                                for (var vectorLenghtLpc = 4; vectorLenghtLpc < 25; vectorLenghtLpc += 2)
                                 {
                                     double[][] codeBookLpc;
                                     var trainLpc = new LinearPredictCoefficient
