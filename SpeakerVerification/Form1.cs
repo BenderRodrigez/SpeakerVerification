@@ -356,11 +356,16 @@ namespace SpeakerVerification
             }
         }
 
+        private void SetTimeSpanValue(TimeSpan time)
+        {
+            label1.Text = time.TotalSeconds.ToString(CultureInfo.InvariantCulture);
+        }
+
         private void Experiment(object dir)
         {
             var directory = (string)dir;
             //var content = directory.Split('\\').Last();// lalalalla\\A
-            var result = new List<string>();
+            var result = new List<string>(445500);
 
             var files = Directory.GetFiles(directory, "*.wav");
 
@@ -384,6 +389,7 @@ namespace SpeakerVerification
                                 for (var vectorLenghtLpc = 4; vectorLenghtLpc < 25; vectorLenghtLpc += 2)
                                 {
                                     double[][] codeBookLpc;
+                                    var dtStart = DateTime.Now;
                                     var trainLpc = new LinearPredictCoefficient
                                         {
                                             UsedWindowType = Corellation.WindowType.Hamming,
@@ -437,6 +443,8 @@ namespace SpeakerVerification
                                             vectorLenghtLpc, "|---]:", energyArc));
                                         progressBar1.Invoke(new Action(Inc));
                                     } //ARC vectors
+                                    var dtStop = DateTime.Now;
+                                    label1.Invoke(new Action<TimeSpan>(SetTimeSpanValue), dtStop - dtStart);
                                 } //LPC vectors
                             } //testfiles
                         } //codebooks
