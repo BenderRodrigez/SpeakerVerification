@@ -23,7 +23,7 @@ namespace SpeakerVerification
         private readonly TaskFactory _factory = new TaskFactory();
 
         /*--------------Параметры-анализа-----------------------*/
-        private const double IntervalAnaliza = 0.06; //Интервал анализа, при расчёте КЛП
+        private const double IntervalAnaliza = 0.09; //Интервал анализа, при расчёте КЛП
         private const byte LpcNumber = 16; //Количество КЛП в одном векторе
         private const int LpcMatrixSize = 1024; //Общее количество векторов КЛП для одного файла
         private const int CodeBookSize = 64; //Размер кодовой книги
@@ -235,13 +235,23 @@ namespace SpeakerVerification
 
         private void button3_Click(object sender, EventArgs e)
         {
+            var listOfDistortion = new List<double>();
             using (var writer = new StreamWriter(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)+"//FirstToSecond.txt"))
             {
                 for (int i = 0; i < _lpc2.Length; i++)
                 {
-                    writer.WriteLine(_vq1.QuantizationError(_lpc2[i], _vq1.Quantazation(_lpc2[i])).ToString(CultureInfo.CurrentCulture));
+                    listOfDistortion.Add(_vq1.QuantizationError(_lpc2[i], _vq1.Quantazation(_lpc2[i])));
+                    writer.WriteLine(listOfDistortion[i].ToString(CultureInfo.CurrentCulture));
                 }
 
+            }
+            using (var writer = new WaveFileWriter("distortion.wav", _formatWave1))
+            {
+                foreach (var t in listOfDistortion)
+                {
+                    var samp = Convert.ToSingle(t/100.0);
+                    writer.WriteSample(samp);
+                }
             }
         }
 
