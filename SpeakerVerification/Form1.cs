@@ -20,7 +20,7 @@ namespace SpeakerVerification
         private Image _graphic1, _graphic2;
         private VectorQuantization _vq1;//, _vq2;
         private double[][] _lpc1, _lpc2;
-        private TaskFactory _factory = new TaskFactory();
+        private readonly TaskFactory _factory = new TaskFactory();
 
         /*--------------Параметры-анализа-----------------------*/
         private const double IntervalAnaliza = 0.06; //Интервал анализа, при расчёте КЛП
@@ -336,11 +336,9 @@ namespace SpeakerVerification
             if(folderBrowserDialog1.ShowDialog(this) == DialogResult.OK)
             {
                 var directories = Directory.GetDirectories(folderBrowserDialog1.SelectedPath);
-                progressBar1.Maximum = 19906560;
+                progressBar1.Maximum = 4900500;
                 foreach (var directory in directories)
                 {
-                    //Thread th = new Thread(Experiment);
-                    //th.Start(directory);
                     _factory.StartNew(Experiment, directory);
                 }
             }
@@ -348,7 +346,14 @@ namespace SpeakerVerification
 
         private void Inc()
         {
-            progressBar1.Increment(1);
+            try
+            {
+                progressBar1.Increment(1);
+            }
+            catch (Exception)
+            {
+                if (progressBar1 != null) progressBar1.Maximum *= 2;
+            }
         }
 
         private void Experiment(object dir)
