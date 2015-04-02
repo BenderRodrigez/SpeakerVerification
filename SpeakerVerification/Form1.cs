@@ -27,7 +27,7 @@ namespace SpeakerVerification
         private const byte LpcNumber = 16; //Количество КЛП в одном векторе
         private const int LpcMatrixSize = 1024; //Общее количество векторов КЛП для одного файла
         private const int CodeBookSize = 64; //Размер кодовой книги
-        private const Corellation.WindowType Window = Corellation.WindowType.Hamming; //тип применяемой оконной функции
+        private const Corellation.WindowType Window = Corellation.WindowType.Blackman; //тип применяемой оконной функции
         /*------------------------------------------------------*/
 
         public Form1()

@@ -1,19 +1,18 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Numerics;
 
 namespace SpeakerVerification
 {
     class LinearPredictCoefficient
     {
-        public Corellation.WindowType UsedWindowType { get; set; }
-        public byte UsedNumberOfCoeficients { get; set; }
-        public int UsedAcfWindowSize { get; set; }
-        public double UsedAcfWindowSizeTime { get; set; }
-        public double SamleFrequency { get; set; }
-        public int ImageLenght { get; set; }
+        public Corellation.WindowType UsedWindowType { private get; set; }
+        public byte UsedNumberOfCoeficients { private get; set; }
+        public int UsedAcfWindowSize { private get; set; }
+        public double UsedAcfWindowSizeTime { private get; set; }
+        public double SamleFrequency { private get; set; }
+        public int ImageLenght { private get; set; }
 
         public LinearPredictCoefficient()
         {
@@ -22,6 +21,12 @@ namespace SpeakerVerification
             UsedAcfWindowSize = 992;
         }
 
+
+        /// <summary>
+        /// Calcs LPC coefficients by Durbin algorythm
+        /// </summary>
+        /// <param name="acfVector">Auto-correlation vector from 0 to N</param>
+        /// <param name="lpcCoefficients">Output LPC values vector</param>
         private void DurbinAlgLpcCoefficients(ref double[] acfVector, out double[] lpcCoefficients)
         {
             var tmp = new double[UsedNumberOfCoeficients];
@@ -49,22 +54,38 @@ namespace SpeakerVerification
             }
         }
 
+        /// <summary>
+        /// Gets an Image of LPC of all signal
+        /// </summary>
+        /// <param name="inputAudio">input audio</param>
+        /// <param name="lpcImage">matrix of lpc values</param>
         public void GetLpcImage(ref float[] inputAudio, out double[][] lpcImage)
         {
             lpcImage = new double[ImageLenght][];
+            var correl = new Corellation
+                {
+                    UsedWindowSize = UsedAcfWindowSize,
+                    UsedVectorSize = UsedNumberOfCoeficients + 1,
+                    UsedWindowType = UsedWindowType
+                };
             for (int i = 0; i < lpcImage.Length; i++)
             {
                 var inputAudioIndex = (int)Math.Round((i / (double)ImageLenght) * (inputAudio.Length - UsedAcfWindowSize));
                 double[] lpc;
                 double[] acf;
-                Corellation.AutoCorrelationVectorDurbin(ref inputAudio, UsedAcfWindowSize, UsedNumberOfCoeficients + 1, inputAudioIndex,
-                    out acf, UsedWindowType);
+                correl.AutoCorrelationVectorDurbin(ref inputAudio, inputAudioIndex, out acf);
                 DurbinAlgLpcCoefficients(ref acf, out lpc);
                 lpcImage[i] = lpc;
             }
         }
 
-        public void GetAproximatedSpectr(double[] lpcVector, out double[] spectr, int spectrSize)
+        /// <summary>
+        /// Provide an reconstruted by LPC spectrum of signal
+        /// </summary>
+        /// <param name="lpcVector">LPC vector</param>
+        /// <param name="spectr">output values of spectrum</param>
+        /// <param name="spectrSize">Number of values in spectrum</param>
+        private void GetAproximatedSpectr(double[] lpcVector, out double[] spectr, int spectrSize)
         {
             spectr = new double[spectrSize];
             for (var i = 0; i < spectrSize; i++)
@@ -80,6 +101,12 @@ namespace SpeakerVerification
             }
         }
 
+        /// <summary>
+        /// Gets aproximation of spectrogram of audio through LPC
+        /// </summary>
+        /// <param name="lpc">Matrix of LPC values</param>
+        /// <param name="spectrogramm">Output values</param>
+        /// <param name="spectrSize">Number of values in spectrum vector</param>
         public void GetAproximatedSpectrogramm(ref double[][] lpc, out double[][] spectrogramm, int spectrSize)
         {
             spectrogramm = new double[lpc.Length][];
@@ -101,6 +128,16 @@ namespace SpeakerVerification
             }
         }
 
+        /// <summary>
+        /// Clculate the formants traectories in aproximated spectrogramm
+        /// </summary>
+        /// <param name="lpc"></param>
+        /// <param name="formantsMax"></param>
+        /// <param name="formantsLenght"></param>
+        /// <param name="formantsAmps"></param>
+        /// <param name="formantsEnergy"></param>
+        /// <param name="spectrSize"></param>
+        /// <param name="sampleFrequency"></param>
         public void GetFormants(ref double[][] lpc, out double[][] formantsMax, out double[][] formantsLenght, out double[][] formantsAmps, out double[][] formantsEnergy, int spectrSize, double sampleFrequency)
         {
             formantsMax = new double[lpc.Length][];
@@ -168,7 +205,12 @@ namespace SpeakerVerification
             }
         }
 
-
+        /// <summary>
+        /// Amplitude-response curve aproximation by LPC
+        /// </summary>
+        /// <param name="lpcVector"></param>
+        /// <param name="spectr"></param>
+        /// <param name="spectrSize"></param>
         private void GetArc(double[] lpcVector, out double[] spectr, int spectrSize)//Amplitude-response curve
         {
             spectr = new double[spectrSize];
@@ -185,6 +227,13 @@ namespace SpeakerVerification
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="poles"></param>
+        /// <param name="zeroes"></param>
+        /// <param name="pc"></param>
+        /// <param name="sizeOfPc"></param>
         private void GetPhaseCurve(ref double[] poles, ref double[] zeroes, out double[] pc, int sizeOfPc)
         {
             pc = new double[sizeOfPc];

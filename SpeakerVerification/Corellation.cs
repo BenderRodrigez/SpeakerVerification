@@ -5,12 +5,13 @@ namespace SpeakerVerification
     /// <summary>
     /// Занимается сравнением сигналов и анализом подобия двух сигналов
     /// </summary>
-    static class Corellation
+    class Corellation
     {
         public enum WindowType { Rectangular, Hamming, Blackman };
 
-        private static WindowType _usedWindowType;
-        private static int _usedWindowSize;
+        public WindowType UsedWindowType { private get; set; }
+        public int UsedWindowSize { private get; set; }
+        public int UsedVectorSize { private get; set; }
 
         /// <summary>
         /// Вычисляет автокорелляционную функцию на заданном участке сигнала
@@ -20,7 +21,7 @@ namespace SpeakerVerification
         /// <param name="size">Размер участка (в отсчётах)</param>
         /// <param name="offset">Смещение в сигнале</param>
         /// <param name="ret">Результат</param>
-        public static void AutoCorrelation(ref short[] a, int size, int offset, out double[] ret)
+        public void AutoCorrelation(ref short[] a, int size, int offset, out double[] ret)
         {
             double[] autoCorrelation = new double[size];
             for (int i = 0; i < size; i++)
@@ -39,20 +40,20 @@ namespace SpeakerVerification
         /// <param name="offset">Смещение в сигнале</param>
         /// <param name="k">Коэффициент задержки</param>
         /// <returns>Значение кратковременной автокорелляции</returns>
-        public static double AutoCorrelationPerSample(ref float[] inputSignal, int offset, int k)
+        public double AutoCorrelationPerSample(ref float[] inputSignal, int offset, int k)
         {
             double autoCorrelation = 0;
-            var tmp = new float[_usedWindowSize];
+            var tmp = new float[UsedWindowSize];
 
-            Array.Copy(inputSignal, offset, tmp, 0, _usedWindowSize);
+            Array.Copy(inputSignal, offset, tmp, 0, UsedWindowSize);
             //double[] temp = HammingWindow(tmp, tmp.Length);
-            switch (_usedWindowType)
+            switch (UsedWindowType)
             {
                 case WindowType.Hamming:
                     tmp = HammingWindow(tmp, tmp.Length);
                     break;
                 case WindowType.Blackman:
-                    tmp = BlackmanWindow(tmp, tmp.Length, 0.16, 1.73);
+                    tmp = BlackmanWindow(tmp, tmp.Length, 0.16);
                     break;
                 case WindowType.Rectangular://nothing to do in this case, but it's correct
                     break;
@@ -74,7 +75,7 @@ namespace SpeakerVerification
         /// <param name="input">Сигнал</param>
         /// <param name="n">Размерность БПФ</param>
         /// <returns></returns>
-        private static float[] HammingWindow(float[] input, int n)
+        private float[] HammingWindow(float[] input, int n)
         {
             var x = new float[input.Length];
             var iteratorBorder = (input.Length/2.0) - 4.0;
@@ -107,7 +108,7 @@ namespace SpeakerVerification
             return x;
         }
 
-        private static float[] BlackmanWindow(float[] input, int n, double a, double b)
+        private float[] BlackmanWindow(float[] input, int n, double a)
         {
             var x = new float[input.Length];
             var a0 = (1.0-a)/2.0;
@@ -115,7 +116,7 @@ namespace SpeakerVerification
             var a2 = a/2.0;
             for(var i = 0; i < x.Length; i++)
             {
-                x[i] = input[i] * (float)(a0 - a1 * Math.Cos(2.0 * Math.PI * i / n) + Math.Cos(4.0 * Math.PI * i / n));
+                x[i] = input[i]*(float) (a0 - a1*Math.Cos(2.0*Math.PI*i/n) + a2*Math.Cos(4.0*Math.PI*i/n));
             }
             return x;
         }
@@ -129,10 +130,10 @@ namespace SpeakerVerification
         /// <param name="offset">Смещение в сигнале</param>
         /// <param name="matrix">Матрица хранящая результат</param>
         /// <param name="useWindow"></param>
-        public static void AutoCorrelationSquareMatrix(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[][] matrix, WindowType useWindow)
+        public void AutoCorrelationSquareMatrix(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[][] matrix, WindowType useWindow)
         {
-            _usedWindowType = useWindow;
-            _usedWindowSize = sizeWindow;
+            UsedWindowType = useWindow;
+            UsedWindowSize = sizeWindow;
 
             matrix = new double[size][];
             for(int i = 0; i < size; i++)
@@ -159,10 +160,10 @@ namespace SpeakerVerification
         /// <param name="offset">Смещение в сигнале</param>
         /// <param name="vector">Выходной вектор</param>
         /// <param name="useWindow"></param>
-        public static void AutoCorrelationVector(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowType useWindow)
+        public void AutoCorrelationVector(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowType useWindow)
         {
-            _usedWindowType = useWindow;
-            _usedWindowSize = sizeWindow;
+            UsedWindowType = useWindow;
+            UsedWindowSize = sizeWindow;
             vector = new double[size];
             for(int i = 0; i < size; i++)
             {
@@ -170,12 +171,22 @@ namespace SpeakerVerification
             }
         }
 
-        public static void AutoCorrelationVectorDurbin(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowType useWindow)
+        public void AutoCorrelationVectorDurbin(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowType useWindow)
         {
-            _usedWindowType = useWindow;
-            _usedWindowSize = sizeWindow;
+            UsedWindowType = useWindow;
+            UsedWindowSize = sizeWindow;
+            UsedVectorSize = size;
             vector = new double[size];
             for (int i = 0; i < size; i++)
+            {
+                vector[i] = AutoCorrelationPerSample(ref inputSignal, offset, i);
+            }
+        }
+
+        public void AutoCorrelationVectorDurbin(ref float[] inputSignal, int offset, out double[] vector)
+        {
+            vector = new double[UsedVectorSize];
+            for (int i = 0; i < UsedVectorSize; i++)
             {
                 vector[i] = AutoCorrelationPerSample(ref inputSignal, offset, i);
             }
@@ -189,7 +200,7 @@ namespace SpeakerVerification
         /// <param name="sampleFrequency">Частота опроса</param>
         /// <param name="totalLenght">Общая длина кореллограммы</param>
         /// <returns>Двумерный массив значений кореллограммы, в котором представлено множество функций АКФ в пределах окна, для всего сигнала</returns>
-        public static double[][] AutoCorrelationStart(short[] a, double sizeWindow, int sampleFrequency, int totalLenght)
+        public double[][] AutoCorrelationStart(short[] a, double sizeWindow, int sampleFrequency, int totalLenght)
         {
             int size = (int)Math.Round(sampleFrequency * sizeWindow);//Переводим размер окна в отсчёты
             double[][] corel = new double[totalLenght][];
