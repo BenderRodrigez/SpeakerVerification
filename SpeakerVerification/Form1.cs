@@ -516,7 +516,7 @@ namespace SpeakerVerification
                     string.Concat("[---|CodeBook:", parameter.CodeBookName, "|TestFile:",
                                   parameter.TestFileName, "|WindowSize:", parameter.WindowSize, "|CodebookSize:",
                                   parameter.CodeBookSize, "|ImageLenght:", parameter.ImageLenght, "|VectorType:ARC|VectorSize:",
-                                  parameter.VectorLenght, "|---]:", energyArc));
+                                  parameter.VectorLenght, "|LPCVectorLenght:",parameter.LpcVectorLenght,"---]:", energyArc));
             }
         }
     }
