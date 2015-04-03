@@ -371,6 +371,62 @@ namespace SpeakerVerification
             label1.Text = time.TotalSeconds.ToString(CultureInfo.InvariantCulture);
         }
 
+        private static readonly List<ExperimentParameters> Parameterses = new List<ExperimentParameters>(356400);
+
+        private void MakeParameters(object dir)
+        {
+            var directory = (string)dir;
+            var files = Directory.GetFiles(directory, "*.wav");
+
+            for (var windowSize = 0.01; windowSize < 0.10; windowSize += 0.02)
+            {
+                for (var codeBookSize = 32; codeBookSize < 257; codeBookSize *= 2)
+                {
+                    for (var imageLenght = 128; imageLenght < 2049; imageLenght *= 2)
+                    {
+                        for (var i = 0; i < files.Length; i++)
+                        {
+                            for (var j = 0; j < files.Length; j++)
+                            {
+                                for (var vectorLenghtLpc = 4; vectorLenghtLpc < 25; vectorLenghtLpc += 2)
+                                {
+                                    Parameterses.Add(new ExperimentParameters
+                                        {
+                                            CodeBookName = Path.GetFileName(files[i]),
+                                            CodeBookSize = codeBookSize,
+                                            ImageLenght = imageLenght,
+                                            LpcVectorLenght = vectorLenghtLpc,
+                                            TestFileName = Path.GetFileName(files[j]),
+                                            VectorLenght = vectorLenghtLpc,
+                                            TypeOfCharacteristic = ExperimentParameters.VectorType.LPC,
+                                            WindowSize = windowSize,
+                                            CodeBookIndex = i,
+                                            TestFileIndex = j
+                                        });
+                                    for (var vectorLenghtArc = 32; vectorLenghtArc < 257; vectorLenghtArc *= 2)
+                                    {
+                                        Parameterses.Add(new ExperimentParameters
+                                        {
+                                            CodeBookName = Path.GetFileName(files[i]),
+                                            CodeBookSize = codeBookSize,
+                                            ImageLenght = imageLenght,
+                                            LpcVectorLenght = vectorLenghtLpc,
+                                            TestFileName = Path.GetFileName(files[j]),
+                                            VectorLenght = vectorLenghtArc,
+                                            TypeOfCharacteristic = ExperimentParameters.VectorType.ARC,
+                                            WindowSize = windowSize,
+                                            CodeBookIndex = i,
+                                            TestFileIndex = j
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         private void Experiment(object dir)
         {
             var directory = (string)dir;
@@ -386,81 +442,10 @@ namespace SpeakerVerification
                 ReadFile(out filesData[i], files[i], out fileFormats[i]);
             }
 
-            for (var windowSize = 0.01; windowSize < 0.10; windowSize += 0.02)
-            {
-                for (var codeBookSize = 32; codeBookSize < 257; codeBookSize *= 2)
-                {
-                    for (var imageLenght = 128; imageLenght < 2049; imageLenght *= 2)
-                    {
-                        for (var i = 0; i < files.Length; i++)
-                        {
-                            for (var j = 0; j < files.Length; j++)
-                            {
-                                for (var vectorLenghtLpc = 4; vectorLenghtLpc < 25; vectorLenghtLpc += 2)
-                                {
-                                    double[][] codeBookLpc;
-                                    var dtStart = DateTime.Now;
-                                    var trainLpc = new LinearPredictCoefficient
-                                        {
-                                            UsedWindowType = Corellation.WindowType.Hamming,
-                                            UsedNumberOfCoeficients = (byte) vectorLenghtLpc,
-                                            UsedAcfWindowSize = (int) Math.Round(windowSize*fileFormats[i].SampleRate),
-                                            UsedAcfWindowSizeTime = windowSize,
-                                            SamleFrequency = fileFormats[i].SampleRate,
-                                            ImageLenght = LpcMatrixSize
-                                        };
+            MakeParameters(dir);
 
-                                    trainLpc.GetLpcImage(ref filesData[i], out codeBookLpc);
-
-                                    var vq = new VectorQuantization(codeBookLpc, vectorLenghtLpc, codeBookSize);
-
-                                    double[][] testLpc;
-                                    var testingLpc = new LinearPredictCoefficient
-                                        {
-                                            UsedWindowType = Corellation.WindowType.Hamming,
-                                            UsedNumberOfCoeficients = (byte) vectorLenghtLpc,
-                                            UsedAcfWindowSize = (int) Math.Round(windowSize*fileFormats[j].SampleRate),
-                                            UsedAcfWindowSizeTime = windowSize,
-                                            SamleFrequency = fileFormats[j].SampleRate,
-                                            ImageLenght = LpcMatrixSize
-                                        };
-
-                                    trainLpc.GetLpcImage(ref filesData[j], out testLpc);
-
-                                    var energy = vq.DistortionMeasureEnergy(ref testLpc);
-
-                                    result.Add(
-                                        string.Concat("[---|CodeBook:", Path.GetFileName(files[i]), "|TestFile:",
-                                            Path.GetFileName(files[j]), "|WindowSize:", windowSize, "|CodebookSize:",
-                                            codeBookSize, "|ImageLenght:", imageLenght, "|VectorType:LPC|VectorSize:",
-                                            vectorLenghtLpc, "|---]:", energy));
-
-                                    for (var vectorLenghtArc = 32; vectorLenghtArc < 257; vectorLenghtArc *= 2)
-                                    {
-                                        double[][] codeBookArc;
-                                        trainLpc.GetArcImage(ref codeBookLpc, out codeBookArc,
-                                            vectorLenghtArc);
-                                        var vqArc = new VectorQuantization(codeBookArc, vectorLenghtArc, codeBookSize);
-
-                                        double[][] testArc;
-                                        testingLpc.GetArcImage(ref testLpc, out testArc, vectorLenghtArc);
-                                        var energyArc = vqArc.DistortionMeasureEnergy(ref testArc);
-
-                                        result.Add(
-                                        string.Concat("[---|CodeBook:", Path.GetFileName(files[i]), "|TestFile:",
-                                            Path.GetFileName(files[j]), "|WindowSize:", windowSize, "|CodebookSize:",
-                                            codeBookSize, "|ImageLenght:", imageLenght, "|VectorType:ARC|VectorSize:",
-                                            vectorLenghtLpc, "|---]:", energyArc));
-                                        progressBar1.Invoke(new Action(Inc));
-                                    } //ARC vectors
-                                    var dtStop = DateTime.Now;
-                                    label1.Invoke(new Action<TimeSpan>(SetTimeSpanValue), dtStop - dtStart);
-                                } //LPC vectors
-                            } //testfiles
-                        } //codebooks
-                    } //imageLenght
-                } //codebook size
-            } //window size
+            Parallel.ForEach(Parameterses, parameters => { GetValue(fileFormats, filesData, ref result, parameters); progressBar1.Invoke(new Action(Inc)); });
+                                    
 
 
             using (var writer = new StreamWriter(directory + "\\report.txt"))
@@ -470,6 +455,69 @@ namespace SpeakerVerification
                     writer.WriteLine(result[i]);
                 }
             } //report
+        }
+
+        private void GetValue(WaveFormat[] fileFormats, float[][] filesData, ref List<string> result, ExperimentParameters parameter)
+        {
+            double[][] codeBookLpc;
+            var trainLpc = new LinearPredictCoefficient
+                {
+                    UsedWindowType = Corellation.WindowType.Hamming,
+                    UsedNumberOfCoeficients = (byte) parameter.LpcVectorLenght,
+                    UsedAcfWindowSize = (int)Math.Round(parameter.WindowSize * fileFormats[parameter.CodeBookIndex].SampleRate),
+                    UsedAcfWindowSizeTime = parameter.WindowSize,
+                    SamleFrequency = fileFormats[parameter.CodeBookIndex].SampleRate,
+                    ImageLenght = LpcMatrixSize
+                };
+
+            trainLpc.GetLpcImage(ref filesData[parameter.CodeBookIndex], out codeBookLpc);
+
+            var vq = new VectorQuantization(codeBookLpc, parameter.LpcVectorLenght, parameter.CodeBookSize);
+
+            double[][] testLpc;
+            var testingLpc = new LinearPredictCoefficient
+                {
+                    UsedWindowType = Corellation.WindowType.Hamming,
+                    UsedNumberOfCoeficients = (byte) parameter.LpcVectorLenght,
+                    UsedAcfWindowSize = (int) Math.Round(parameter.WindowSize*fileFormats[parameter.TestFileIndex].SampleRate),
+                    UsedAcfWindowSizeTime = parameter.TestFileIndex,
+                    SamleFrequency = fileFormats[parameter.TestFileIndex].SampleRate,
+                    ImageLenght = LpcMatrixSize
+                };
+
+            trainLpc.GetLpcImage(ref filesData[parameter.TestFileIndex], out testLpc);
+            if (parameter.TypeOfCharacteristic == ExperimentParameters.VectorType.LPC)
+            {
+                var energy = vq.DistortionMeasureEnergy(ref testLpc);
+                //parameter.DistortionEnergy = energy;
+
+                result.Add(
+                    string.Concat("[---|CodeBook:", parameter.CodeBookName, "|TestFile:",
+                                  parameter.CodeBookName, "|WindowSize:", parameter.WindowSize,
+                                  "|CodebookSize:",
+                                  parameter.CodeBookSize, "|ImageLenght:", parameter.ImageLenght,
+                                  "|VectorType:LPC|VectorSize:",
+                                  parameter.VectorLenght, "|---]:", energy));
+            }
+            else
+            {
+
+
+                double[][] codeBookArc;
+                trainLpc.GetArcImage(ref codeBookLpc, out codeBookArc,
+                                     parameter.VectorLenght);
+                var vqArc = new VectorQuantization(codeBookArc, parameter.VectorLenght, parameter.CodeBookSize);
+
+                double[][] testArc;
+                testingLpc.GetArcImage(ref testLpc, out testArc, parameter.VectorLenght);
+                var energyArc = vqArc.DistortionMeasureEnergy(ref testArc);
+
+                result.Add(
+                    string.Concat("[---|CodeBook:", parameter.CodeBookName, "|TestFile:",
+                                  parameter.TestFileName, "|WindowSize:", parameter.WindowSize, "|CodebookSize:",
+                                  parameter.CodeBookSize, "|ImageLenght:", parameter.ImageLenght, "|VectorType:ARC|VectorSize:",
+                                  parameter.VectorLenght, "|---]:", energyArc));
+            }
         }
     }
 }
