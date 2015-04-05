@@ -23,16 +23,21 @@ namespace SpeakerVerification
         private readonly TaskFactory _factory = new TaskFactory();
 
         /*--------------Параметры-анализа-----------------------*/
-        private const double IntervalAnaliza = 0.09; //Интервал анализа, при расчёте КЛП
-        private const byte LpcNumber = 16; //Количество КЛП в одном векторе
-        private const int LpcMatrixSize = 1024; //Общее количество векторов КЛП для одного файла
-        private const int CodeBookSize = 64; //Размер кодовой книги
+        private static double _intervalAnaliza = 0.09; //Интервал анализа, при расчёте КЛП
+        private static byte _lpcNumber = 16; //Количество КЛП в одном векторе
+        private static int _lpcMatrixSize = 1024; //Общее количество векторов КЛП для одного файла
+        private static int _codeBookSize = 64; //Размер кодовой книги
         private const Corellation.WindowType Window = Corellation.WindowType.Blackman; //тип применяемой оконной функции
         /*------------------------------------------------------*/
 
         public Form1()
         {
             InitializeComponent();
+
+            codeBookCombo.SelectedItem = _codeBookSize.ToString();
+            windowSizeCombo.SelectedItem = _intervalAnaliza.ToString();
+            imageLenghtCombo.SelectedItem = _lpcMatrixSize.ToString();
+            vectorLenght.Value = _lpcNumber;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -45,15 +50,15 @@ namespace SpeakerVerification
                 lpc1 = new LinearPredictCoefficient
                     {
                         UsedWindowType = Window,
-                        UsedNumberOfCoeficients = LpcNumber,
-                        UsedAcfWindowSize = (int) Math.Round(IntervalAnaliza*_formatWave1.SampleRate),
-                        UsedAcfWindowSizeTime = IntervalAnaliza,
+                        UsedNumberOfCoeficients = _lpcNumber,
+                        UsedAcfWindowSize = (int) Math.Round(_intervalAnaliza*_formatWave1.SampleRate),
+                        UsedAcfWindowSizeTime = _intervalAnaliza,
                         SamleFrequency = _formatWave1.SampleRate,
-                        ImageLenght = LpcMatrixSize
+                        ImageLenght = _lpcMatrixSize
                     };
 
                 lpc1.GetLpcImage(ref _wave1, out _lpc1);
-                _vq1 = new VectorQuantization(_lpc1, LpcNumber, CodeBookSize);
+                _vq1 = new VectorQuantization(_lpc1, _lpcNumber, _codeBookSize);
                 
                 _graphic1 = new Bitmap(pictureBox1.ClientSize.Width, pictureBox1.ClientSize.Height);
                 pictureBox1.Image = _graphic1;
@@ -192,11 +197,11 @@ namespace SpeakerVerification
                 lpc2 = new LinearPredictCoefficient
                 {
                     UsedWindowType = Window,
-                    UsedNumberOfCoeficients = LpcNumber,
-                    UsedAcfWindowSize = (int)Math.Round(IntervalAnaliza * _formatWave1.SampleRate),
-                    UsedAcfWindowSizeTime = IntervalAnaliza,
+                    UsedNumberOfCoeficients = _lpcNumber,
+                    UsedAcfWindowSize = (int)Math.Round(_intervalAnaliza * _formatWave1.SampleRate),
+                    UsedAcfWindowSizeTime = _intervalAnaliza,
                     SamleFrequency = _formatWave1.SampleRate,
-                    ImageLenght = LpcMatrixSize
+                    ImageLenght = _lpcMatrixSize
                 };
 
                 lpc2.GetLpcImage(ref _wave2, out _lpc2);
@@ -467,7 +472,7 @@ namespace SpeakerVerification
                     UsedAcfWindowSize = (int)Math.Round(parameter.WindowSize * fileFormats[parameter.CodeBookIndex].SampleRate),
                     UsedAcfWindowSizeTime = parameter.WindowSize,
                     SamleFrequency = fileFormats[parameter.CodeBookIndex].SampleRate,
-                    ImageLenght = LpcMatrixSize
+                    ImageLenght = _lpcMatrixSize
                 };
 
             trainLpc.GetLpcImage(ref filesData[parameter.CodeBookIndex], out codeBookLpc);
@@ -482,7 +487,7 @@ namespace SpeakerVerification
                     UsedAcfWindowSize = (int) Math.Round(parameter.WindowSize*fileFormats[parameter.TestFileIndex].SampleRate),
                     UsedAcfWindowSizeTime = parameter.TestFileIndex,
                     SamleFrequency = fileFormats[parameter.TestFileIndex].SampleRate,
-                    ImageLenght = LpcMatrixSize
+                    ImageLenght = _lpcMatrixSize
                 };
 
             trainLpc.GetLpcImage(ref filesData[parameter.TestFileIndex], out testLpc);
@@ -518,6 +523,32 @@ namespace SpeakerVerification
                                   parameter.CodeBookSize, "|ImageLenght:", parameter.ImageLenght, "|VectorType:ARC|VectorSize:",
                                   parameter.VectorLenght, "|LPCVectorLenght:",parameter.LpcVectorLenght,"---]:", energyArc));
             }
+        }
+
+        private void settingsButton_Click(object sender, EventArgs e)
+        {
+            if (windowSizeCombo.SelectedItem != null)
+            {
+                double d;
+                if (double.TryParse((string) windowSizeCombo.SelectedItem, out d))
+                    _intervalAnaliza = d;
+            }
+
+            if (codeBookCombo.SelectedItem != null)
+            {
+                int d;
+                if (int.TryParse((string)codeBookCombo.SelectedItem, out d))
+                    _codeBookSize = d;
+            }
+
+            if (imageLenghtCombo.SelectedItem != null)
+            {
+                int d;
+                if (int.TryParse((string)imageLenghtCombo.SelectedItem, out d))
+                    _lpcMatrixSize = d;
+            }
+
+            _lpcNumber = (byte) vectorLenght.Value;
         }
     }
 }

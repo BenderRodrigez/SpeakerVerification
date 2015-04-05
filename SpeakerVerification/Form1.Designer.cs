@@ -42,8 +42,14 @@
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
             this.button5 = new System.Windows.Forms.Button();
+            this.windowSizeCombo = new System.Windows.Forms.ComboBox();
+            this.codeBookCombo = new System.Windows.Forms.ComboBox();
+            this.imageLenghtCombo = new System.Windows.Forms.ComboBox();
+            this.vectorLenght = new System.Windows.Forms.NumericUpDown();
+            this.settingsButton = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.vectorLenght)).BeginInit();
             this.SuspendLayout();
             // 
             // pictureBox1
@@ -149,12 +155,94 @@
             this.button5.UseVisualStyleBackColor = true;
             this.button5.Click += new System.EventHandler(this.button5_Click);
             // 
+            // windowSizeCombo
+            // 
+            this.windowSizeCombo.FormattingEnabled = true;
+            this.windowSizeCombo.Items.AddRange(new object[] {
+            "0,03",
+            "0,06",
+            "0,09"});
+            this.windowSizeCombo.Location = new System.Drawing.Point(1043, 226);
+            this.windowSizeCombo.Name = "windowSizeCombo";
+            this.windowSizeCombo.Size = new System.Drawing.Size(121, 21);
+            this.windowSizeCombo.TabIndex = 10;
+            // 
+            // codeBookCombo
+            // 
+            this.codeBookCombo.FormattingEnabled = true;
+            this.codeBookCombo.Items.AddRange(new object[] {
+            "16",
+            "32",
+            "64",
+            "128",
+            "256"});
+            this.codeBookCombo.Location = new System.Drawing.Point(1043, 253);
+            this.codeBookCombo.Name = "codeBookCombo";
+            this.codeBookCombo.Size = new System.Drawing.Size(121, 21);
+            this.codeBookCombo.TabIndex = 11;
+            // 
+            // imageLenghtCombo
+            // 
+            this.imageLenghtCombo.FormattingEnabled = true;
+            this.imageLenghtCombo.Items.AddRange(new object[] {
+            "128",
+            "256",
+            "512",
+            "1024",
+            "2048"});
+            this.imageLenghtCombo.Location = new System.Drawing.Point(1043, 281);
+            this.imageLenghtCombo.Name = "imageLenghtCombo";
+            this.imageLenghtCombo.Size = new System.Drawing.Size(121, 21);
+            this.imageLenghtCombo.TabIndex = 12;
+            // 
+            // vectorLenght
+            // 
+            this.vectorLenght.Increment = new decimal(new int[] {
+            2,
+            0,
+            0,
+            0});
+            this.vectorLenght.Location = new System.Drawing.Point(1043, 309);
+            this.vectorLenght.Maximum = new decimal(new int[] {
+            30,
+            0,
+            0,
+            0});
+            this.vectorLenght.Minimum = new decimal(new int[] {
+            4,
+            0,
+            0,
+            0});
+            this.vectorLenght.Name = "vectorLenght";
+            this.vectorLenght.Size = new System.Drawing.Size(120, 20);
+            this.vectorLenght.TabIndex = 13;
+            this.vectorLenght.Value = new decimal(new int[] {
+            4,
+            0,
+            0,
+            0});
+            // 
+            // settingsButton
+            // 
+            this.settingsButton.Location = new System.Drawing.Point(1043, 336);
+            this.settingsButton.Name = "settingsButton";
+            this.settingsButton.Size = new System.Drawing.Size(75, 23);
+            this.settingsButton.TabIndex = 14;
+            this.settingsButton.Text = "Задать";
+            this.settingsButton.UseVisualStyleBackColor = true;
+            this.settingsButton.Click += new System.EventHandler(this.settingsButton_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ActiveCaption;
             this.ClientSize = new System.Drawing.Size(1201, 568);
+            this.Controls.Add(this.settingsButton);
+            this.Controls.Add(this.vectorLenght);
+            this.Controls.Add(this.imageLenghtCombo);
+            this.Controls.Add(this.codeBookCombo);
+            this.Controls.Add(this.windowSizeCombo);
             this.Controls.Add(this.button5);
             this.Controls.Add(this.progressBar1);
             this.Controls.Add(this.button4);
@@ -171,6 +259,7 @@
             this.Text = "Form1";
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.vectorLenght)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -192,6 +281,11 @@
         private System.Windows.Forms.Button button5;
         private LinearPredictCoefficient lpc1;
         private LinearPredictCoefficient lpc2;
+        private System.Windows.Forms.ComboBox windowSizeCombo;
+        private System.Windows.Forms.ComboBox codeBookCombo;
+        private System.Windows.Forms.ComboBox imageLenghtCombo;
+        private System.Windows.Forms.NumericUpDown vectorLenght;
+        private System.Windows.Forms.Button settingsButton;
     }
 }
 
