@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using NAudio.Wave;
+using System.Diagnostics;
 
 // ReSharper disable RedundantArgumentDefaultValue
 
@@ -18,16 +19,21 @@ namespace SpeakerVerification
         private float[] _wave1, _wave2;
         private WaveFormat _formatWave1, _formatWave2;
         private Image _graphic1, _graphic2;
-        private VectorQuantization _vq1;//, _vq2;
-        private double[][] _lpc1, _lpc2;
+        private VectorQuantization _vq1, _vq2;
+        private double[][] _image1, _image2;
         private readonly TaskFactory _factory = new TaskFactory();
+        private Cepstrum _cep1, _cep2;
+        private string _vadProgram = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\YandexDisk\\Documents\\Projects\\VAD\\VAD\\bin\\Debug\\VAD.exe";
+        private int _activeVoiceStart1, _activeVoiceStart2, _activeVoiceStop1, _activeVoiceStop2;
 
         /*--------------Параметры-анализа-----------------------*/
         private static double _intervalAnaliza = 0.09; //Интервал анализа, при расчёте КЛП
-        private static byte _lpcNumber = 16; //Количество КЛП в одном векторе
+        private static int _lpcNumber = 10; //Количество КЛП в одном векторе
+        private static int _cepNumber = 13;
+        private static int _furieSizePow = 7;//TODO:привязать к интервалу анализа
         private static int _lpcMatrixSize = 1024; //Общее количество векторов КЛП для одного файла
         private static int _codeBookSize = 64; //Размер кодовой книги
-        private const Corellation.WindowType Window = Corellation.WindowType.Blackman; //тип применяемой оконной функции
+        private const WindowFunctions.WindowType Window = WindowFunctions.WindowType.Blackman; //тип применяемой оконной функции
         /*------------------------------------------------------*/
 
         public Form1()
@@ -45,34 +51,53 @@ namespace SpeakerVerification
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 _fileName1 = openFileDialog1.FileName;
-
-                ReadFile(out _wave1, _fileName1, out _formatWave1);
+                if(_vadProgram != null && !File.Exists(_fileName1+".txt"))
+                {
+                    ProcessVad(_fileName1);
+                }
+                ReadFile(out _wave1, _fileName1, out _formatWave1, out _activeVoiceStart1, out _activeVoiceStop1);
                 lpc1 = new LinearPredictCoefficient
                     {
                         UsedWindowType = Window,
                         UsedNumberOfCoeficients = _lpcNumber,
-                        UsedAcfWindowSize = (int) Math.Round(_intervalAnaliza*_formatWave1.SampleRate),
+                        UsedAcfWindowSize = (int)Math.Round(_intervalAnaliza * _formatWave1.SampleRate),
                         UsedAcfWindowSizeTime = _intervalAnaliza,
                         SamleFrequency = _formatWave1.SampleRate,
                         ImageLenght = _lpcMatrixSize
                     };
 
-                lpc1.GetLpcImage(ref _wave1, out _lpc1);
-                _vq1 = new VectorQuantization(_lpc1, _lpcNumber, _codeBookSize);
-                
+                lpc1.GetLpcImage(ref _wave1, out _image1);
+                double[][] arc;
+                lpc1.GetArcImage(ref _image1, out arc, 128);
+                _image1 = arc;
+                _image1 = lpc1.GetArcVocalTractImage(ref _wave1, _intervalAnaliza, _formatWave1.SampleRate, _lpcMatrixSize, 128, ref _image1, Window);
+                //_cep1 = new Cepstrum(_cepNumber, _intervalAnaliza, _formatWave1.SampleRate);
+                //_image1 = _cep1.GetCepstrogram(ref _wave1, Window, _lpcMatrixSize);
+
+                MakeDelta(ref _image1);
+                _vq1 = new VectorQuantization(_image1, 127, _codeBookSize);
                 _graphic1 = new Bitmap(pictureBox1.ClientSize.Width, pictureBox1.ClientSize.Height);
                 pictureBox1.Image = _graphic1;
-                DrawLpcMatrix(ref _lpc1, ref _graphic1);
-                DrawAxes(ref _graphic1, ref _lpc1);
-                //using (StreamWriter writer = new StreamWriter("file1.txt"))
-                //{
-                //    for (int i = 0; i < vq1.CodeBook.Length; i++)
-                //    {
-                //        for (int j = 0; j < vq1.CodeBook[i].Length; j++)
-                //            writer.Write(vq1.CodeBook[i][j].ToString() + " ");
-                //        writer.WriteLine();
-                //    }
-                //}
+                DrawLpcMatrix(ref _image1, ref _graphic1);
+                DrawAxes(ref _graphic1, ref _image1);
+            }
+        }
+
+        private void ProcessVad(string fileName)
+        {
+            var info = new ProcessStartInfo(_vadProgram, "0,2 '" + fileName + "'")
+            {
+                UseShellExecute = false,
+                RedirectStandardInput = true
+            };
+            var vadProg = Process.Start(info);
+
+            while (!File.Exists(fileName + ".txt")) ;
+
+            if (vadProg != null)
+            {
+                vadProg.StandardInput.WriteLine("exit");
+                vadProg.WaitForExit();
             }
         }
 
@@ -86,6 +111,17 @@ namespace SpeakerVerification
                 {//идём по коэфициенту
                     for (int k = 0; k < (double)graphic.Height / lpc[i].Length; k++)
                         ((Bitmap) graphic).SetPixel(graphicIndex, (j * graphic.Height / lpc[i].Length) + k, GetLPCColor(lpc[i][j], max, min));
+                }
+            }
+        }
+
+        private void MakeDelta(ref double[][] image)
+        {
+            for(int i = image.Length -1; i > 0; i--)
+            {
+                for(int j = 0; j < image[i].Length; j++)
+                {
+                    image[i][j] -= image[i - 1][j];
                 }
             }
         }
@@ -175,15 +211,37 @@ namespace SpeakerVerification
             return value > 0 ? Color.FromArgb((int)Math.Round((value + Math.Abs(min)) * 255.0 / Math.Abs(max + Math.Abs(min))), 0, 0) : Color.FromArgb(0, 0, (int)Math.Round((value + Math.Abs(min)) * 255.0 / Math.Abs(max + Math.Abs(min))));
         }
 
-        private void ReadFile(out float[] soundArray, string fileName, out WaveFormat waveFormat)
+        private void ReadFile(out float[] soundArray, string fileName, out WaveFormat waveFormat, out int startPoint, out int stopPont)
         {
+            using (var paramReader = new StreamReader(fileName + ".txt"))
+            {
+                if (!int.TryParse(paramReader.ReadLine(), out startPoint))
+                {
+                    startPoint = 0;
+                }
+                if (!int.TryParse(paramReader.ReadLine(), out stopPont))
+                {
+                    stopPont = int.MaxValue;
+                }
+            }
             using (var reader = new WaveFileReader(fileName))
             {
                 waveFormat = reader.WaveFormat;
-                soundArray = new float[reader.SampleCount];
-                for (int i = 0; i < soundArray.Length; i++)
-                    soundArray[i] = reader.ReadNextSampleFrame()[0];
+                var arrayLenght = stopPont - startPoint+1;
+                soundArray = new float[arrayLenght];
+                int j = 0;
+                for (int i = 0; i < reader.SampleCount; i++)
+                    if (i >= startPoint && i <= stopPont)
+                    {
+                        soundArray[j] = reader.ReadNextSampleFrame()[0];
+                        j++;
+                    }
+                    else
+                    {
+                        reader.ReadNextSampleFrame();
+                    }
             }
+
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -191,34 +249,36 @@ namespace SpeakerVerification
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 _fileName2 = openFileDialog1.FileName;
-
-                ReadFile(out _wave2, _fileName2, out _formatWave2);
+                if (_vadProgram != null && !File.Exists(_fileName2 + ".txt"))
+                {
+                    ProcessVad(_fileName2);
+                }
+                ReadFile(out _wave2, _fileName2, out _formatWave2, out _activeVoiceStart2, out _activeVoiceStop2);
 
                 lpc2 = new LinearPredictCoefficient
                 {
                     UsedWindowType = Window,
                     UsedNumberOfCoeficients = _lpcNumber,
-                    UsedAcfWindowSize = (int)Math.Round(_intervalAnaliza * _formatWave1.SampleRate),
+                    UsedAcfWindowSize = (int)Math.Round(_intervalAnaliza * _formatWave2.SampleRate),
                     UsedAcfWindowSizeTime = _intervalAnaliza,
-                    SamleFrequency = _formatWave1.SampleRate,
+                    SamleFrequency = _formatWave2.SampleRate,
                     ImageLenght = _lpcMatrixSize
                 };
 
-                lpc2.GetLpcImage(ref _wave2, out _lpc2);
-                //vq2 = new VectorQuantization(LPC2, LPCNumber, CodeBookSize);
+                lpc2.GetLpcImage(ref _wave2, out _image2);
+                double[][] arc;
+                lpc2.GetArcImage(ref _image2, out arc, 128);
+                _image2 = arc;
+                _image2 = lpc2.GetArcVocalTractImage(ref _wave2, _intervalAnaliza, _formatWave2.SampleRate, _lpcMatrixSize, 128, ref _image2, Window);
+                //_cep2 = new Cepstrum(_cepNumber, _intervalAnaliza, _formatWave2.SampleRate);
+                //_image2 = _cep2.GetCepstrogram(ref _wave2, Window, _lpcMatrixSize);
+
+                MakeDelta(ref _image2);
+                _vq2 = new VectorQuantization(_image2, 127, _codeBookSize);
                 _graphic2 = new Bitmap(pictureBox2.ClientSize.Width, pictureBox2.ClientSize.Height);
                 pictureBox2.Image = _graphic2;
-                DrawLpcMatrix(ref _lpc2, ref _graphic2);
-                DrawAxes(ref _graphic2, ref _lpc2);
-                //using (StreamWriter writer = new StreamWriter("file2.txt"))
-                //{
-                //    for (int i = 0; i < vq2.CodeBook.Length; i++)
-                //    {
-                //        for (int j = 0; j < vq2.CodeBook[i].Length; j++)
-                //            writer.Write(vq2.CodeBook[i][j].ToString() + " ");
-                //        writer.WriteLine();
-                //    }
-                //}
+                DrawLpcMatrix(ref _image2, ref _graphic2);
+                DrawAxes(ref _graphic2, ref _image2);
             }
         }
 
@@ -233,31 +293,40 @@ namespace SpeakerVerification
             else
             {
                 //TODO: Show LPC1 values
-                DrawLpc(ref _lpc1, ref _graphic1);
-                DrawAxes(ref _graphic1, ref _lpc1);
+                DrawLpc(ref _image1, ref _graphic1);
+                DrawAxes(ref _graphic1, ref _image1);
             }
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            var listOfDistortion = new List<double>();
             using (var writer = new StreamWriter(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)+"//FirstToSecond.txt"))
             {
-                for (int i = 0; i < _lpc2.Length; i++)
+                //_vq1.SetAverageAndDispersion(ref _image2);
+                for (int i = 0; i < _image2.Length; i++)
                 {
-                    listOfDistortion.Add(_vq1.QuantizationError(_lpc2[i], _vq1.Quantazation(_lpc2[i])));
-                    writer.WriteLine(listOfDistortion[i].ToString(CultureInfo.CurrentCulture));
+                    var listOfDistortion = _vq1.QuantizationErrorNormal(_image2[i], _vq1.Quantazation(_image2[i]));//
+                                          // _vq1.QuantizationError(_image1[i], _vq1.Quantazation(_image1[i]));
+                    writer.WriteLine(listOfDistortion.ToString(CultureInfo.CurrentCulture));
                 }
 
             }
-            using (var writer = new WaveFileWriter("distortion.wav", _formatWave1))
+
+            using (var writer = new StreamWriter(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + "//codeBookDistance.txt"))
             {
-                foreach (var t in listOfDistortion)
+                var listOfDistortion = _vq1.CodeBookDistances(_vq1.CodeBook, _vq2.CodeBook);
+                for (int i = 0; i < listOfDistortion.Length; i++)
                 {
-                    var samp = Convert.ToSingle(t/100.0);
-                    writer.WriteSample(samp);
+                    writer.WriteLine(listOfDistortion[i].ToString(CultureInfo.CurrentCulture));
                 }
             }
+
+            using (var writer = new StreamWriter(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + "//codeBookAverage.txt"))
+            {
+                var listOfDistortion = _vq1.AverageCodeBookDistance(_vq1.CodeBook, _vq2.CodeBook);
+                writer.WriteLine(listOfDistortion.ToString(CultureInfo.CurrentCulture));
+            }
+
         }
 
         private void button4_Click(object sender, EventArgs e)
@@ -270,9 +339,9 @@ namespace SpeakerVerification
             double[][] arc;
             double[][] pc;
 
-            lpc1.GetAproximatedSpectrogramm(ref _lpc1, out spectrogram, 256);
-            lpc1.GetFormants(ref _lpc1, out formantsTrack, out formantsLenght, out formantsApms, out formantsEnergy, 256, _formatWave1.SampleRate);
-            lpc1.GetArcAndPcImages(ref _lpc1, out arc, out pc, 256);
+            lpc1.GetAproximatedSpectrogramm(ref _image1, out spectrogram, 256);
+            lpc1.GetFormants(ref _image1, out formantsTrack, out formantsLenght, out formantsApms, out formantsEnergy, 256, _formatWave1.SampleRate);
+            lpc1.GetArcAndPcImages(ref _image1, out arc, out pc, 256);
 
             var culture = CultureInfo.CreateSpecificCulture("en-US");
 
@@ -444,7 +513,8 @@ namespace SpeakerVerification
             var fileFormats = new WaveFormat[files.Length];
             for (int i = 0; i < files.Length; i++)
             {
-                ReadFile(out filesData[i], files[i], out fileFormats[i]);
+                int t, tt;
+                ReadFile(out filesData[i], files[i], out fileFormats[i], out t, out tt);
             }
 
             MakeParameters(dir);
@@ -467,7 +537,7 @@ namespace SpeakerVerification
             double[][] codeBookLpc;
             var trainLpc = new LinearPredictCoefficient
                 {
-                    UsedWindowType = Corellation.WindowType.Hamming,
+                    UsedWindowType = WindowFunctions.WindowType.Blackman,
                     UsedNumberOfCoeficients = (byte) parameter.LpcVectorLenght,
                     UsedAcfWindowSize = (int)Math.Round(parameter.WindowSize * fileFormats[parameter.CodeBookIndex].SampleRate),
                     UsedAcfWindowSizeTime = parameter.WindowSize,
@@ -482,7 +552,7 @@ namespace SpeakerVerification
             double[][] testLpc;
             var testingLpc = new LinearPredictCoefficient
                 {
-                    UsedWindowType = Corellation.WindowType.Hamming,
+                    UsedWindowType = WindowFunctions.WindowType.Blackman,
                     UsedNumberOfCoeficients = (byte) parameter.LpcVectorLenght,
                     UsedAcfWindowSize = (int) Math.Round(parameter.WindowSize*fileFormats[parameter.TestFileIndex].SampleRate),
                     UsedAcfWindowSizeTime = parameter.TestFileIndex,
@@ -549,6 +619,14 @@ namespace SpeakerVerification
             }
 
             _lpcNumber = (byte) vectorLenght.Value;
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            if(openFileDialog2.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                _vadProgram = openFileDialog2.FileName;
+            }
         }
     }
 }

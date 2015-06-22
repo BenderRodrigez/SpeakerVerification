@@ -16,7 +16,7 @@ namespace SpeakerVerification
         /// <summary>
         /// Выборка векторов признаков, на основе которых будет производиться обучение кодовой книги
         /// </summary>
-        private readonly double[][] _trainingSet;
+        public readonly double[][] TrainingSet;
 
         /// <summary>
         /// Размер кодовой книги, по которой будем выявлять диктора
@@ -28,7 +28,7 @@ namespace SpeakerVerification
         /// </summary>
         private const double E = 0.05;
 
-        public double AverageDistortionMeasure;
+        private double _averageDistortionMeasure;
 
         private readonly double _distortionDispertion;
 
@@ -44,13 +44,13 @@ namespace SpeakerVerification
         public VectorQuantization(double[][] traningSet, int lpcNumber, int codeBookSize = 64)
         {
             _codeBookSize = codeBookSize;
-			_trainingSet = traningSet;
-            _trainingSetMax = new double[_trainingSet[0].Length];
-            _trainingSetMin = new double[_trainingSet[0].Length];
+			TrainingSet = traningSet;
+            _trainingSetMax = new double[TrainingSet[0].Length];
+            _trainingSetMin = new double[TrainingSet[0].Length];
             for (int i = 0; i < _trainingSetMax.Length; i++)
             {
-                _trainingSetMax[i] = _trainingSet.Max(x => x[i]);
-                _trainingSetMin[i] = _trainingSet.Min(x => x[i]);
+                _trainingSetMax[i] = TrainingSet.Max(x => x[i]);
+                _trainingSetMin[i] = TrainingSet.Min(x => x[i]);
             }
             CodeBookInit(lpcNumber);
             _distortionDispertion = DistortionMeasureDispersion();
@@ -58,34 +58,34 @@ namespace SpeakerVerification
 
         private double DistortionMeasureDispersion()
         {
-            double msquare = 0;
-            for(int i = 0; i < _trainingSet.Length; i++)
+            double msquare = 0.0;
+            for(int i = 0; i < TrainingSet.Length; i++)
             {
-                msquare += Math.Pow(QuantizationError(_trainingSet[i], Quantazation(_trainingSet[i])) - AverageDistortionMeasure, 2);
+                msquare += Math.Pow(QuantizationError(TrainingSet[i], Quantazation(TrainingSet[i])) - _averageDistortionMeasure, 2);
             }
-            msquare /= (_trainingSet.Length - 1);
+            msquare /= (TrainingSet.Length);
 
             return msquare;
         }
 
-        public double DistortionMeasureEnergy(ref double[][] lpc1, ref double[][] lpc2, int intervalNumber, int totalIntervals)
-        {
-            double sum = 0;
-            if (lpc1.Length < lpc2.Length)
-            {
-                int intervalSize = (int)Math.Ceiling((double)lpc1.Length / totalIntervals);//размер интервала
-                for (int i = intervalSize * intervalNumber; i < lpc1.Length && i < (intervalNumber + 1) * intervalSize; i++)
-                    sum += QuantizationErrorNormal(lpc1[i], Quantazation(lpc2[i]));
-                return Math.Abs(sum / intervalSize);
-            }
-            else
-            {
-                int intervalSize = (int)Math.Ceiling((double)lpc2.Length / totalIntervals);//размер интервала
-                for (int i = intervalSize * intervalNumber; i < lpc2.Length && i < (intervalNumber + 1) * intervalSize; i++)
-                    sum += QuantizationErrorNormal(lpc1[i], Quantazation(lpc2[i]));
-                return Math.Abs(sum / intervalSize);
-            }
-        }
+        //public double DistortionMeasureEnergy(ref double[][] lpc1, ref double[][] lpc2, int intervalNumber, int totalIntervals)
+        //{
+        //    double sum = 0;
+        //    if (lpc1.Length < lpc2.Length)
+        //    {
+        //        int intervalSize = (int)Math.Ceiling((double)lpc1.Length / totalIntervals);//размер интервала
+        //        for (int i = intervalSize * intervalNumber; i < lpc1.Length && i < (intervalNumber + 1) * intervalSize; i++)
+        //            sum += QuantizationErrorNormal(lpc1[i], Quantazation(lpc2[i]));
+        //        return Math.Abs(sum / intervalSize);
+        //    }
+        //    else
+        //    {
+        //        int intervalSize = (int)Math.Ceiling((double)lpc2.Length / totalIntervals);//размер интервала
+        //        for (int i = intervalSize * intervalNumber; i < lpc2.Length && i < (intervalNumber + 1) * intervalSize; i++)
+        //            sum += QuantizationErrorNormal(lpc1[i], Quantazation(lpc2[i]));
+        //        return Math.Abs(sum / intervalSize);
+        //    }
+        //}
 
 		/// <summary>
 		/// Инициализирует кодовую книгу для заданного набора обучающих значений
@@ -98,9 +98,9 @@ namespace SpeakerVerification
             CodeBook[0] = new double[lpcNumber];
             for (int j = 0; j < lpcNumber; j++)
             {//идём по каждому элементу вектора
-                for (int i = 0; i < _trainingSet.Length; i++)
-                    CodeBook[0][j] += _trainingSet[i][j];//добавляем значения из обучающей выборки
-                CodeBook[0][j] /= _trainingSet.Length;
+                for (int i = 0; i < TrainingSet.Length; i++)
+                    CodeBook[0][j] += TrainingSet[i][j];//добавляем значения из обучающей выборки
+                CodeBook[0][j] /= TrainingSet.Length;
             }
             var averageQuantError = AverageQuantizationError();
 
@@ -138,14 +138,14 @@ namespace SpeakerVerification
                     //yi = total_sum(xi)/N
 					var tmpCodeBook = new double[CodeBook.Length][];
                     var vectorsCount = new int[CodeBook.Length];
-					for (int i = 0; i < _trainingSet.Length; i++)
+					for (int i = 0; i < TrainingSet.Length; i++)
 					{
-						int codeBookIndex = QuantazationIndex (_trainingSet [i]);
+						int codeBookIndex = QuantazationIndex (TrainingSet [i]);
 						if (tmpCodeBook [codeBookIndex] == null)
                             tmpCodeBook[codeBookIndex] = new double[lpcNumber];
                         for (int j = 0; j < lpcNumber; j++)
                         {
-                            tmpCodeBook[codeBookIndex][j] += _trainingSet[i][j];
+                            tmpCodeBook[codeBookIndex][j] += TrainingSet[i][j];
                             vectorsCount[codeBookIndex]++;
                         }
 					}
@@ -160,7 +160,7 @@ namespace SpeakerVerification
                     averageQuantError = AverageQuantizationError();
                 }
             }
-            AverageDistortionMeasure = AverageQuantizationError();
+            _averageDistortionMeasure = AverageQuantizationError();
         }
 
 		/// <summary>
@@ -170,9 +170,9 @@ namespace SpeakerVerification
         private double AverageQuantizationError()
         {//D=(total_sum(d(x, Q(x))))/N
             double errorRate = 0;
-            for (int i = 0; i < _trainingSet.Length; i++)
-                errorRate += QuantizationError(_trainingSet[i], Quantazation(_trainingSet[i]));
-            errorRate /= _trainingSet.Length;
+            for (int i = 0; i < TrainingSet.Length; i++)
+                errorRate += QuantizationError(TrainingSet[i], Quantazation(TrainingSet[i]));
+            errorRate /= TrainingSet.Length;
             return errorRate;
         }
 
@@ -253,10 +253,30 @@ namespace SpeakerVerification
                 {
                     error += Math.Pow(a[i] - b[i], 2);
                 }
-                return (error - AverageDistortionMeasure) / _distortionDispertion;
+                return (error - _averageDistortionMeasure)/_distortionDispertion;
             }
             else
                 throw new Exception("Вектора разной длины!");
+        }
+
+        public double[] CodeBookDistances(double[][] cb1, double[][] cb2)
+        {
+            if (cb1.Length == cb2.Length)
+            {
+                double[] distance = new double[cb1.Length];
+                for (int i = 0; i < cb1.Length; i++)
+                {
+                    distance[i] = QuantizationError(cb1[i], cb2[i]);
+                }
+                return distance;
+            }
+            else
+                throw new Exception("Вектора разной длины!");
+        }
+
+        public double AverageCodeBookDistance(double[][] _cb1, double[][] _cb2)
+        {
+            return CodeBookDistances(_cb1, _cb2).Average();
         }
     }
 }

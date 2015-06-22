@@ -7,9 +7,8 @@ namespace SpeakerVerification
     /// </summary>
     class Corellation
     {
-        public enum WindowType { Rectangular, Hamming, Blackman };
 
-        public WindowType UsedWindowType { private get; set; }
+        public WindowFunctions.WindowType UsedWindowType { private get; set; }
         public int UsedWindowSize { private get; set; }
         public int UsedVectorSize { private get; set; }
 
@@ -42,83 +41,26 @@ namespace SpeakerVerification
         /// <returns>Значение кратковременной автокорелляции</returns>
         public double AutoCorrelationPerSample(ref float[] inputSignal, int offset, int k)
         {
-            double autoCorrelation = 0;
+            var autoCorrelation = 0.0;
+            var energy = 0.0;
             var tmp = new float[UsedWindowSize];
 
             Array.Copy(inputSignal, offset, tmp, 0, UsedWindowSize);
             //double[] temp = HammingWindow(tmp, tmp.Length);
-            switch (UsedWindowType)
-            {
-                case WindowType.Hamming:
-                    tmp = HammingWindow(tmp, tmp.Length);
-                    break;
-                case WindowType.Blackman:
-                    tmp = BlackmanWindow(tmp, tmp.Length, 0.16);
-                    break;
-                case WindowType.Rectangular://nothing to do in this case, but it's correct
-                    break;
-            }
+            var windows = new WindowFunctions();
+            tmp = windows.PlaceWindow(tmp, UsedWindowType);
 
             for (int j = 0; j < tmp.Length; j++ )
             {
                 if (j + k < tmp.Length)
-                    autoCorrelation += tmp[j] * tmp[j + k];
+                {
+                    autoCorrelation += tmp[j]*tmp[j + k];
+                    energy += tmp[j]*tmp[j];
+                }
                 else
                     autoCorrelation += 0.0;
             }
-            return autoCorrelation;
-        }
-
-        /// <summary>
-        /// Наложение окна Хемминга на входной сигнал
-        /// </summary>
-        /// <param name="input">Сигнал</param>
-        /// <param name="n">Размерность БПФ</param>
-        /// <returns></returns>
-        private float[] HammingWindow(float[] input, int n)
-        {
-            var x = new float[input.Length];
-            var iteratorBorder = (input.Length/2.0) - 4.0;
-            var iterator = 0;
-            var iterator2 = input.Length - 1;
-            const double omega = 2.0*Math.PI;
-
-            while (iterator <= iteratorBorder)
-            {
-                x[iterator] = (float)(input[iterator] * (0.54 - 0.46 * Math.Cos(omega * iterator / n)));
-                x[iterator + 1] = (float) (input[iterator + 1]*(0.54 - 0.46*Math.Cos(omega*(iterator + 1)/n)));
-                x[iterator + 2] = (float) (input[iterator + 2]*(0.54 - 0.46*Math.Cos(omega*(iterator + 2)/n)));
-                x[iterator + 3] = (float) (input[iterator + 3]*(0.54 - 0.46*Math.Cos(omega*(iterator + 3)/n)));
-                x[iterator + 4] = (float) (input[iterator + 4]*(0.54 - 0.46*Math.Cos(omega*(iterator + 4)/n)));
-
-                x[iterator2] = (float)(input[iterator2] * (0.54 - 0.46 * Math.Cos(omega * iterator2 / n)));
-                x[iterator2 - 1] = (float) (input[iterator2 - 1]*(0.54 - 0.46*Math.Cos(omega*(iterator2 - 1)/n)));
-                x[iterator2 - 2] = (float) (input[iterator2 - 2]*(0.54 - 0.46*Math.Cos(omega*(iterator2 - 2)/n)));
-                x[iterator2 - 3] = (float) (input[iterator2 - 3]*(0.54 - 0.46*Math.Cos(omega*(iterator2 - 3)/n)));
-                x[iterator2 - 4] = (float) (input[iterator2 - 4]*(0.54 - 0.46*Math.Cos(omega*(iterator2 - 4)/n)));
-                iterator += 5;
-                iterator2 -= 5;
-            }
-            x[iterator] = (float)(input[iterator] * (0.54 - 0.46 * Math.Cos(omega * iterator / n)));
-            x[iterator2] = (float)(input[iterator2] * (0.54 - 0.46 * Math.Cos(omega * iterator2 / n)));
-            //for (int i = 0; i < input.Length/2; i++)
-            //{
-            //    x[i] = (float)(input[i] * (0.54 - 0.46 * Math.Cos(2.0 * Math.PI * i / n)));
-            //}
-            return x;
-        }
-
-        private float[] BlackmanWindow(float[] input, int n, double a)
-        {
-            var x = new float[input.Length];
-            var a0 = (1.0-a)/2.0;
-            const double a1 = 0.5;
-            var a2 = a/2.0;
-            for(var i = 0; i < x.Length; i++)
-            {
-                x[i] = input[i]*(float) (a0 - a1*Math.Cos(2.0*Math.PI*i/n) + a2*Math.Cos(4.0*Math.PI*i/n));
-            }
-            return x;
+            return autoCorrelation/energy;
         }
 
         /// <summary>
@@ -130,7 +72,7 @@ namespace SpeakerVerification
         /// <param name="offset">Смещение в сигнале</param>
         /// <param name="matrix">Матрица хранящая результат</param>
         /// <param name="useWindow"></param>
-        public void AutoCorrelationSquareMatrix(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[][] matrix, WindowType useWindow)
+        public void AutoCorrelationSquareMatrix(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[][] matrix, WindowFunctions.WindowType useWindow)
         {
             UsedWindowType = useWindow;
             UsedWindowSize = sizeWindow;
@@ -160,7 +102,7 @@ namespace SpeakerVerification
         /// <param name="offset">Смещение в сигнале</param>
         /// <param name="vector">Выходной вектор</param>
         /// <param name="useWindow"></param>
-        public void AutoCorrelationVector(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowType useWindow)
+        public void AutoCorrelationVector(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowFunctions.WindowType useWindow)
         {
             UsedWindowType = useWindow;
             UsedWindowSize = sizeWindow;
@@ -171,7 +113,7 @@ namespace SpeakerVerification
             }
         }
 
-        public void AutoCorrelationVectorDurbin(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowType useWindow)
+        public void AutoCorrelationVectorDurbin(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowFunctions.WindowType useWindow)
         {
             UsedWindowType = useWindow;
             UsedWindowSize = sizeWindow;

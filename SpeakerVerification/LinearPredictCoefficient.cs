@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Numerics;
@@ -7,8 +8,8 @@ namespace SpeakerVerification
 {
     class LinearPredictCoefficient
     {
-        public Corellation.WindowType UsedWindowType { private get; set; }
-        public byte UsedNumberOfCoeficients { private get; set; }
+        public WindowFunctions.WindowType UsedWindowType { private get; set; }
+        public int UsedNumberOfCoeficients { private get; set; }
         public int UsedAcfWindowSize { private get; set; }
         public double UsedAcfWindowSizeTime { private get; set; }
         public double SamleFrequency { private get; set; }
@@ -16,7 +17,7 @@ namespace SpeakerVerification
 
         public LinearPredictCoefficient()
         {
-            UsedWindowType = Corellation.WindowType.Hamming;
+            UsedWindowType = WindowFunctions.WindowType.Hamming;
             UsedNumberOfCoeficients = 10;
             UsedAcfWindowSize = 992;
         }
@@ -291,33 +292,98 @@ namespace SpeakerVerification
             }
         }
 
-        private double GetImpulseCharacteristic(ref double[] lpc, ref double[] impulse, int sampleNumber, ref double[] result, int k = 0)
+        /// <summary>
+        /// Вычисление поворачивающего модуля e^(-i*2*PI*k/N)
+        /// </summary>
+        /// <param name="k"></param>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        private Complex W(int k, int n)
         {
-            if (sampleNumber > -1)
-            {
-                if (k == 0)
-                {
-                    double tmp = 0;
-                    for (int i = 0; i < lpc.Length; i++)
-                    {
-                        tmp += lpc[i] * GetImpulseCharacteristic(ref lpc, ref impulse, sampleNumber - i, ref result, i) + impulse[sampleNumber];//Sadness, too much computing
-                    }
-                    return tmp;
-                }
-                return result[sampleNumber];
-            }
-            return 0;
-
+            if (k % n == 0) return 1.0;
+            var arg = -2.0 * Math.PI * k / n;
+            return new Complex(Math.Cos(arg), Math.Sin(arg));
         }
 
-        public double[] GetImpulseCharacteristicImage(ref double[][] lpc, ref double[] impulse)
+        /// <summary>
+        /// Возвращает спектр сигнала
+        /// </summary>
+        /// <param name="x">Массив значений сигнала. Количество значений должно быть степенью 2</param>
+        /// <returns>Массив со значениями спектра сигнала</returns>
+        private Complex[] FastFurieTransform(Complex[] x)
         {
-            double[] res = new double[lpc.Length];
-            for(int i = 0; i < lpc.Length; i++)
+            Complex[] transform;
+            int n = x.Length;
+            if (n == 2)
             {
-                res[i] = GetImpulseCharacteristic(ref lpc[i], ref impulse, i, ref res);
+                transform = new Complex[2];
+                transform[0] = x[0] + x[1];
+                transform[1] = x[0] - x[1];
             }
-            return res;
+            else
+            {
+                var xEven = new Complex[n / 2];
+                var xOdd = new Complex[n / 2];
+                for (int i = 0; i < n / 2; i++)
+                {
+                    xEven[i] = x[2 * i];
+                    xOdd[i] = x[2 * i + 1];
+                }
+                var even = FastFurieTransform(xEven);
+                var odd = FastFurieTransform(xOdd);
+                transform = new Complex[n];
+                for (int i = 0; i < n / 2; i++)
+                {
+                    transform[i] = even[i] + W(i, n) * odd[i];
+                    transform[i + n / 2] = even[i] - W(i, n) * odd[i];
+                }
+            }
+            return transform;
+        }
+
+        public double[][] GetArcVocalTractImage(ref float[] inputSignal, double analysisInterval, int sampleRate, int imageSize, int arcImageSize, ref double[][] arcImage, WindowFunctions.WindowType window)
+        {
+            var vocalTractImage = new double[imageSize][];
+            var windowFunc = new WindowFunctions();
+            var windowSize = (int)Math.Round(sampleRate*analysisInterval);
+            var furieSize = (int)Math.Pow(2.0, Math.Round(Math.Log(analysisInterval*sampleRate, 2.0)));
+            var place = 0;
+            for (int i = 0; i < imageSize; i++)
+            {
+                var startIndex = (int)Math.Round(i*(inputSignal.Length - furieSize)/(double) imageSize);
+                var tmp = new float[furieSize];
+                Array.Copy(inputSignal, startIndex, tmp, 0, tmp.Length);
+                tmp = windowFunc.PlaceWindow(tmp, window);
+                var tmpSpectrum = Array.ConvertAll(tmp, x => (Complex) x);
+
+                tmpSpectrum = FastFurieTransform(tmpSpectrum);
+
+                var spectrum = SmoothAndWrapSpectrum(tmpSpectrum, arcImageSize);
+                for (int j = 0; j < spectrum.Length; j++)
+                    spectrum[j] /= arcImage[place][j];
+                vocalTractImage[place] = spectrum;
+                place++;
+            }
+            return vocalTractImage;
+        }
+
+        private double[] SmoothAndWrapSpectrum(Complex[] spectrum, int arcLenght)
+        {
+            var halfSpectrum = new Complex[spectrum.Length/2];
+            Array.Copy(spectrum, 0, halfSpectrum, 0, spectrum.Length/2);
+            var magnitudeSpectrum = Array.ConvertAll(halfSpectrum, input => input.Magnitude);
+
+            var wrapedSpectrum = new List<double>();
+            var wrappingCefficient = (int)Math.Round(((magnitudeSpectrum.Length/(double) arcLenght)*2.0 + 1.0)/2.0);
+            var smoothPower = (int)Math.Floor(wrappingCefficient/2.0);
+            for (int i = smoothPower; i < magnitudeSpectrum.Length - smoothPower; i+=wrappingCefficient)
+            {
+                var tmp = 0.0;
+                for (int j = i - smoothPower; j < i + smoothPower; j++)
+                    tmp += magnitudeSpectrum[j];
+                wrapedSpectrum.Add(tmp/wrappingCefficient);
+            }
+            return wrapedSpectrum.ToArray();
         }
     }
 }

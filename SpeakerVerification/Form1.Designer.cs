@@ -47,6 +47,8 @@
             this.imageLenghtCombo = new System.Windows.Forms.ComboBox();
             this.vectorLenght = new System.Windows.Forms.NumericUpDown();
             this.settingsButton = new System.Windows.Forms.Button();
+            this.button6 = new System.Windows.Forms.Button();
+            this.openFileDialog2 = new System.Windows.Forms.OpenFileDialog();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.vectorLenght)).BeginInit();
@@ -232,12 +234,27 @@
             this.settingsButton.UseVisualStyleBackColor = true;
             this.settingsButton.Click += new System.EventHandler(this.settingsButton_Click);
             // 
+            // button6
+            // 
+            this.button6.Location = new System.Drawing.Point(1043, 366);
+            this.button6.Name = "button6";
+            this.button6.Size = new System.Drawing.Size(146, 23);
+            this.button6.TabIndex = 15;
+            this.button6.Text = "button6";
+            this.button6.UseVisualStyleBackColor = true;
+            this.button6.Click += new System.EventHandler(this.button6_Click);
+            // 
+            // openFileDialog2
+            // 
+            this.openFileDialog2.FileName = "openFileDialog2";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ActiveCaption;
             this.ClientSize = new System.Drawing.Size(1201, 568);
+            this.Controls.Add(this.button6);
             this.Controls.Add(this.settingsButton);
             this.Controls.Add(this.vectorLenght);
             this.Controls.Add(this.imageLenghtCombo);
@@ -286,6 +303,8 @@
         private System.Windows.Forms.ComboBox imageLenghtCombo;
         private System.Windows.Forms.NumericUpDown vectorLenght;
         private System.Windows.Forms.Button settingsButton;
+        private System.Windows.Forms.Button button6;
+        private System.Windows.Forms.OpenFileDialog openFileDialog2;
     }
 }
 
