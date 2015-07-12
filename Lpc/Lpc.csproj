@@ -4,15 +4,16 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{B9ED183A-5D62-4D85-99EC-42303D08F50A}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <ProjectGuid>{82BF3E9C-1CA2-4F98-90C0-34DCA989CA04}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>HelpersLibrary</RootNamespace>
-    <AssemblyName>HelpersLibrary</AssemblyName>
+    <RootNamespace>Lpc</RootNamespace>
+    <AssemblyName>Lpc</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -22,6 +23,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -40,19 +42,27 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AnalysisSettings.cs" />
-    <Compile Include="DspAlgorithms\Cepstrum.cs" />
-    <Compile Include="DspAlgorithms\Corellation.cs" />
-    <Compile Include="DspAlgorithms\Filters\HPF.cs" />
-    <Compile Include="DspAlgorithms\FurieTransform.cs" />
-    <Compile Include="DspAlgorithms\LinearPredictCoefficient.cs" />
-    <Compile Include="DspAlgorithms\SpeechSearch.cs" />
-    <Compile Include="DspAlgorithms\WindowFunctions.cs" />
-    <Compile Include="FileSettings.cs" />
-    <Compile Include="Logger.cs" />
-    <Compile Include="RawDataFiles.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="WavSimpleReader.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="Settings.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HelpersLibrary\HelpersLibrary.csproj">
+      <Project>{b9ed183a-5d62-4d85-99ec-42303d08f50a}</Project>
+      <Name>HelpersLibrary</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

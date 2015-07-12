@@ -67,15 +67,15 @@ namespace SpeakerVerification
                     };
 
                 lpc1.GetLpcImage(ref _wave1, out _image1);
-                double[][] arc;
-                lpc1.GetArcImage(ref _image1, out arc, 128);
-                _image1 = arc;
-                _image1 = lpc1.GetArcVocalTractImage(ref _wave1, _intervalAnaliza, _formatWave1.SampleRate, _lpcMatrixSize, 128, ref _image1, Window);
+                //double[][] arc;
+                //lpc1.GetArcImage(ref _image1, out arc, 128);
+                //_image1 = arc;
+                //_image1 = lpc1.GetArcVocalTractImage(ref _wave1, _intervalAnaliza, _formatWave1.SampleRate, _lpcMatrixSize, 128, ref _image1, Window);
                 //_cep1 = new Cepstrum(_cepNumber, _intervalAnaliza, _formatWave1.SampleRate);
                 //_image1 = _cep1.GetCepstrogram(ref _wave1, Window, _lpcMatrixSize);
 
-                MakeDelta(ref _image1);
-                _vq1 = new VectorQuantization(_image1, 127, _codeBookSize);
+                //MakeDelta(ref _image1);
+                _vq1 = new VectorQuantization(_image1, _lpcNumber, _codeBookSize);
                 _graphic1 = new Bitmap(pictureBox1.ClientSize.Width, pictureBox1.ClientSize.Height);
                 pictureBox1.Image = _graphic1;
                 DrawLpcMatrix(ref _image1, ref _graphic1);
@@ -266,15 +266,15 @@ namespace SpeakerVerification
                 };
 
                 lpc2.GetLpcImage(ref _wave2, out _image2);
-                double[][] arc;
-                lpc2.GetArcImage(ref _image2, out arc, 128);
-                _image2 = arc;
-                _image2 = lpc2.GetArcVocalTractImage(ref _wave2, _intervalAnaliza, _formatWave2.SampleRate, _lpcMatrixSize, 128, ref _image2, Window);
+                //double[][] arc;
+                //lpc2.GetArcImage(ref _image2, out arc, 128);
+                //_image2 = arc;
+                //_image2 = lpc2.GetArcVocalTractImage(ref _wave2, _intervalAnaliza, _formatWave2.SampleRate, _lpcMatrixSize, 128, ref _image2, Window);
                 //_cep2 = new Cepstrum(_cepNumber, _intervalAnaliza, _formatWave2.SampleRate);
                 //_image2 = _cep2.GetCepstrogram(ref _wave2, Window, _lpcMatrixSize);
 
-                MakeDelta(ref _image2);
-                _vq2 = new VectorQuantization(_image2, 127, _codeBookSize);
+                //MakeDelta(ref _image2);
+                _vq2 = new VectorQuantization(_image2, _lpcNumber, _codeBookSize);
                 _graphic2 = new Bitmap(pictureBox2.ClientSize.Width, pictureBox2.ClientSize.Height);
                 pictureBox2.Image = _graphic2;
                 DrawLpcMatrix(ref _image2, ref _graphic2);
