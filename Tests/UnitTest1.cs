@@ -357,7 +357,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public void TestMfccCalculations()
+        public double[][] TestMfccCalculations()
         {
             const string fileName = "C:\\Users\\box12_000\\YandexDisk\\Documents\\Проекты записей голоса\\Экспорт\\А\\ГРР1.wav";
             var wavReader =
@@ -381,7 +381,7 @@ namespace Tests
             var resSound = filter1.Filter(sound);
             Console.WriteLine("Sound successfully filtered by HPF with cut freq. 70 Hz");
 
-            var searcher = new SpeechSearch(20, 0.04f, 0.9f, sampleFrequency);
+            var searcher = new SpeechSearch(10, 0.04f, 0.9f, sampleFrequency);
             var energy = searcher.CalculateEnergyFunction(resSound);
             Console.WriteLine("Energy successfully calculated");
 
@@ -407,6 +407,38 @@ namespace Tests
             Image img = new Bitmap(res.Length, 256);
             DrawLpcMatrix(ref res, ref img);
             img.Save("C:\\Users\\box12_000\\YandexDisk\\Documents\\Проекты записей голоса\\Экспорт\\А\\ГРР1.wav.files\\test.png");
+            return res;
+        }
+
+        [TestMethod]
+        public void TestPloting()
+        {
+            const string fileName = "C:\\Users\\box12_000\\YandexDisk\\Documents\\Проекты записей голоса\\Экспорт\\А\\ГРР1.wav";
+            var wavReader =
+                new WavSimpleReader(fileName);
+            var settings = FileSettings.LoadSettings(fileName);
+            settings.DictorName = Path.GetFileNameWithoutExtension(fileName);
+
+            var writer = new RawDataFiles(Path.Combine(settings.FileMetaDataFolder, "raw_wav.sbd"));
+            int sampleFrequency;
+            writer.WriteShortArray(wavReader.ReadFileData(out sampleFrequency), "WAVE");
+            settings.SampleFrequency = sampleFrequency;
+            settings.Save();
+            //---------------------------------------------------------
+            var speechFileDataReader = new WavSimpleReader(fileName);
+            var speechFileData = speechFileDataReader.ReadFileData(out sampleFrequency);
+            var soundWave = speechFileData.Select(x => x[0]).ToArray();
+            var ploter = new HelpersLibrary.DataVisualisation.WaveOscilationsPlot();
+            ploter.PlotToPng(soundWave, fileName+".png");
+        }
+
+        [TestMethod]
+        public void TestHeatmap()
+        {
+            const string fileName = "C:\\Users\\box12_000\\YandexDisk\\Documents\\Проекты записей голоса\\Экспорт\\А\\ГРР1.wav";
+            var data = TestMfccCalculations();
+            var plot = new HelpersLibrary.DataVisualisation.MatrixDataPlot();
+            plot.PlotToPng(data, fileName + "1.png");
         }
 
 
