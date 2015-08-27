@@ -59,14 +59,6 @@
       <Project>{b9ed183a-5d62-4d85-99ec-42303d08f50a}</Project>
       <Name>HelpersLibrary</Name>
     </ProjectReference>
-    <ProjectReference Include="..\SpeechSprocessingModule\SpeechSprocessingModule.csproj">
-      <Project>{2dac0fa1-0740-4d60-8eef-cb9bec61b9dd}</Project>
-      <Name>SpeechSprocessingModule</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\WavFileTransformer\WavFileTransformer.csproj">
-      <Project>{da306314-4d1b-46d4-9755-11ff57f03e3e}</Project>
-      <Name>WavFileTransformer</Name>
-    </ProjectReference>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

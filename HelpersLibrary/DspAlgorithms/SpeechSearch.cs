@@ -68,7 +68,7 @@ namespace HelpersLibrary.DspAlgorithms
             {
                 for (int j = 0; j < _windowSize; j++)
                 {
-                    tmp[i] += 30.0 * Math.Log10(Math.Pow(sound[i + j], 2) / _windowSize);
+                    tmp[i] += Math.Pow(sound[i + j], 2);
                 }
                 for (int k = i + 1; k < i + jump && k < tmp.Length; k++)
                     tmp[k] = tmp[i];

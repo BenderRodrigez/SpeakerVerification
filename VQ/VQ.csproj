@@ -4,15 +4,16 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{B9ED183A-5D62-4D85-99EC-42303D08F50A}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <ProjectGuid>{AB070D46-4DBB-4034-AF2C-18A220D7D069}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>HelpersLibrary</RootNamespace>
-    <AssemblyName>HelpersLibrary</AssemblyName>
+    <RootNamespace>VQ</RootNamespace>
+    <AssemblyName>VQ</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -22,6 +23,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -30,23 +32,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="OxyPlot">
-      <HintPath>..\packages\OxyPlot.Core.2014.1.546\lib\portable-net4+sl4+wp71+win8\OxyPlot.dll</HintPath>
-    </Reference>
-    <Reference Include="OxyPlot.WindowsForms">
-      <HintPath>..\packages\OxyPlot.2014.1.546\lib\net45\OxyPlot.WindowsForms.dll</HintPath>
-    </Reference>
-    <Reference Include="OxyPlot.Wpf">
-      <HintPath>..\packages\OxyPlot.2014.1.546\lib\net45\OxyPlot.Wpf.dll</HintPath>
-    </Reference>
-    <Reference Include="OxyPlot.Xps">
-      <HintPath>..\packages\OxyPlot.2014.1.546\lib\net45\OxyPlot.Xps.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -54,22 +41,26 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DataVisualisation\MatrixDataPlot.cs" />
-    <Compile Include="DataVisualisation\WaveOscilationsPlot.cs" />
-    <Compile Include="DspAlgorithms\Cepstrum.cs" />
-    <Compile Include="DspAlgorithms\Corellation.cs" />
-    <Compile Include="DspAlgorithms\Filters\HPF.cs" />
-    <Compile Include="DspAlgorithms\FurieTransform.cs" />
-    <Compile Include="DspAlgorithms\LinearPredictCoefficient.cs" />
-    <Compile Include="DspAlgorithms\SpeechSearch.cs" />
-    <Compile Include="DspAlgorithms\WindowFunctions.cs" />
-    <Compile Include="LearningAlgorithms\VectorQuantization.cs" />
-    <Compile Include="Logger.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
-    <None Include="packages.config" />
+    <None Include="App.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HelpersLibrary\HelpersLibrary.csproj">
+      <Project>{b9ed183a-5d62-4d85-99ec-42303d08f50a}</Project>
+      <Name>HelpersLibrary</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

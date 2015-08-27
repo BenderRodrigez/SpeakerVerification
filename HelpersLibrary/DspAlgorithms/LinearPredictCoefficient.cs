@@ -72,7 +72,7 @@ namespace HelpersLibrary.DspAlgorithms
         /// <param name="lpcImage">matrix of lpc values</param>
         /// <param name="startPoint"></param>
         /// <param name="stopPoint"></param>
-        public void GetLpcImage(ref short[] inputAudio, out double[][] lpcImage, int startPoint, int stopPoint)
+        public void GetLpcImage(ref float[] inputAudio, out double[][] lpcImage, int startPoint, int stopPoint)
         {
             var lpcImageList = new List<double[]>();
             var correl = new Corellation
@@ -153,7 +153,7 @@ namespace HelpersLibrary.DspAlgorithms
             }
         }
 
-        public void GetArcImage(ref short[] sound, out double[][] arcImage, int startPosition, int endPosition, int vectorSize)
+        public void GetArcImage(ref float[] sound, out double[][] arcImage, int startPosition, int endPosition, int vectorSize)
         {
             var arcImageList = new List<double[]>();
             var correl = new Corellation
@@ -177,7 +177,7 @@ namespace HelpersLibrary.DspAlgorithms
             arcImage = arcImageList.ToArray();
         }
 
-        public void GetArcVocalTractImage(ref short[] inputSignal, int sampleRate, int vectorSize, out double[][] vtcImage, int startPosition, int endPosition)
+        public void GetArcVocalTractImage(ref float[] inputSignal, int sampleRate, int vectorSize, out double[][] vtcImage, int startPosition, int endPosition)
         {
             var vocalTractImageList = new List<double[]>();
             var furieSize = (int)Math.Pow(2.0, Math.Round(Math.Log(_usedAcfWindowSizeTime * sampleRate, 2.0)));

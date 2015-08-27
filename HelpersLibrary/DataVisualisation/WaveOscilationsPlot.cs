@@ -9,7 +9,7 @@ namespace HelpersLibrary.DataVisualisation
 {
     public class WaveOscilationsPlot
     {
-        public void PlotToPng(short[] soundWave, string fileName)
+        public static void PlotToPng(short[] soundWave, string fileName)
         {
             var plotModel = new PlotModel {Culture = CultureInfo.CurrentCulture};
             var linearAxis1 = new LinearAxis

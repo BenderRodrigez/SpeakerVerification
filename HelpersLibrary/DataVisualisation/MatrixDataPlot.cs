@@ -9,7 +9,7 @@ namespace HelpersLibrary.DataVisualisation
 {
     public class MatrixDataPlot
     {
-        public void PlotToPng(double[][] data, string fileName)
+        public static void PlotToPng(double[][] data, string fileName)
         {
             var plotModel = new PlotModel { Culture = CultureInfo.CurrentCulture };
             var linearColorAxis1 = new LinearColorAxis

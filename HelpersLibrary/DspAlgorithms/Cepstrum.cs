@@ -112,7 +112,7 @@ namespace HelpersLibrary.DspAlgorithms
             return postDct.ToArray();
         }
 
-        public void GetCepstrogram(ref short[] inputAudio, WindowFunctions.WindowType windowType, int startPoint, int stopPoint, out double[][] mfccCepstrogram)
+        public void GetCepstrogram(ref float[] inputAudio, WindowFunctions.WindowType windowType, int startPoint, int stopPoint, out double[][] mfccCepstrogram)
         {
             var mfccImageList = new List<double[]>();
             var window = new WindowFunctions();

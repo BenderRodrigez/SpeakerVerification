@@ -20,7 +20,7 @@ namespace HelpersLibrary.DspAlgorithms
         /// <param name="size">Размер участка (в отсчётах)</param>
         /// <param name="offset">Смещение в сигнале</param>
         /// <param name="ret">Результат</param>
-        public void AutoCorrelation(ref short[] a, int size, int offset, out double[] ret)
+        public void AutoCorrelation(ref float[] a, int size, int offset, out double[] ret)
         {
             double[] autoCorrelation = new double[size];
             for (int i = 0; i < size; i++)
@@ -39,7 +39,7 @@ namespace HelpersLibrary.DspAlgorithms
         /// <param name="offset">Смещение в сигнале</param>
         /// <param name="k">Коэффициент задержки</param>
         /// <returns>Значение кратковременной автокорелляции</returns>
-        public double AutoCorrelationPerSample(ref short[] inputSignal, int offset, int k)
+        public double AutoCorrelationPerSample(ref float[] inputSignal, int offset, int k)
         {
             var autoCorrelation = 0.0;
             var energy = 0.0;
@@ -72,7 +72,7 @@ namespace HelpersLibrary.DspAlgorithms
         /// <param name="offset">Смещение в сигнале</param>
         /// <param name="matrix">Матрица хранящая результат</param>
         /// <param name="useWindow"></param>
-        public void AutoCorrelationSquareMatrix(ref short[] inputSignal, int sizeWindow, int size, int offset, out double[][] matrix, WindowFunctions.WindowType useWindow)
+        public void AutoCorrelationSquareMatrix(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[][] matrix, WindowFunctions.WindowType useWindow)
         {
             UsedWindowType = useWindow;
             UsedWindowSize = sizeWindow;
@@ -102,7 +102,7 @@ namespace HelpersLibrary.DspAlgorithms
         /// <param name="offset">Смещение в сигнале</param>
         /// <param name="vector">Выходной вектор</param>
         /// <param name="useWindow"></param>
-        public void AutoCorrelationVector(ref short[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowFunctions.WindowType useWindow)
+        public void AutoCorrelationVector(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowFunctions.WindowType useWindow)
         {
             UsedWindowType = useWindow;
             UsedWindowSize = sizeWindow;
@@ -113,7 +113,7 @@ namespace HelpersLibrary.DspAlgorithms
             }
         }
 
-        public void AutoCorrelationVectorDurbin(ref short[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowFunctions.WindowType useWindow)
+        public void AutoCorrelationVectorDurbin(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowFunctions.WindowType useWindow)
         {
             UsedWindowType = useWindow;
             UsedWindowSize = sizeWindow;
@@ -125,7 +125,7 @@ namespace HelpersLibrary.DspAlgorithms
             }
         }
 
-        public void AutoCorrelationVectorDurbin(ref short[] inputSignal, int offset, out double[] vector)
+        public void AutoCorrelationVectorDurbin(ref float[] inputSignal, int offset, out double[] vector)
         {
             vector = new double[UsedVectorSize];
             for (int i = 0; i < UsedVectorSize; i++)
@@ -142,7 +142,7 @@ namespace HelpersLibrary.DspAlgorithms
         /// <param name="sampleFrequency">Частота опроса</param>
         /// <param name="totalLenght">Общая длина кореллограммы</param>
         /// <returns>Двумерный массив значений кореллограммы, в котором представлено множество функций АКФ в пределах окна, для всего сигнала</returns>
-        public double[][] AutoCorrelationStart(short[] a, double sizeWindow, int sampleFrequency, int totalLenght)
+        public double[][] AutoCorrelationStart(float[] a, double sizeWindow, int sampleFrequency, int totalLenght)
         {
             int size = (int)Math.Round(sampleFrequency * sizeWindow);//Переводим размер окна в отсчёты
             double[][] corel = new double[totalLenght][];

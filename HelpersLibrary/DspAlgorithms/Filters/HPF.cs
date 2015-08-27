@@ -45,7 +45,7 @@ namespace HelpersLibrary.DspAlgorithms.Filters
             _w1[k] = _w0[k];
         }
 
-        public float[] Filter(short[] signal)
+        public float[] Filter(float[] signal)
         {
             _w0 = new double[_elementsNumber];
             _w1 = new double[_elementsNumber];
@@ -53,7 +53,7 @@ namespace HelpersLibrary.DspAlgorithms.Filters
             var resSignal = new float[signal.Length];
             for (int i = 0; i < signal.Length; i++)
             {
-                var x = (float)signal[i];
+                var x = signal[i];
                 var y = 0.0f;
                 var y1 = 0.0f;
                 var y2 = 0.0f;
