@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using HelpersLibrary.DspAlgorithms;
 using NAudio.Wave;
 using OxyPlot;
 using OxyPlot.Axes;
@@ -18,91 +14,212 @@ namespace SpeakerVerification
 {
     public partial class Form1 : Form
     {
-        public PlotView PlotView1;
-        public PlotView PlotView2;
-
-        private string _fileName1, _fileName2;
-        private float[] _wave1, _wave2;
-        private WaveFormat _formatWave1, _formatWave2;
-        private Image _graphic1, _graphic2;
-        private VectorQuantization _vq1, _vq2;
-        private double[][] _image1, _image2;
-        private Cepstrum _cep1, _cep2;
-
-        private int _activeVoiceStart1, _activeVoiceStart2, _activeVoiceStop1, _activeVoiceStop2;
+        public PlotView CodeBookPlotView;
+        public PlotView FeaturesTrainDataPlotView;
+        public PlotView FeatureTestDataPlotView;
 
         /*--------------Параметры-анализа-----------------------*/
         private static double _intervalAnaliza = 0.09; //Интервал анализа, при расчёте КЛП
         private static int _lpcNumber = 10; //Количество КЛП в одном векторе
         private static int _cepNumber = 13;
-        private static int _furieSizePow = 7; //TODO:привязать к интервалу анализа
+        private static int _furieSizePow = 7; //
         private static int _lpcMatrixSize = 1024; //Общее количество векторов КЛП для одного файла
         private static int _codeBookSize = 64; //Размер кодовой книги
-
-        private const WindowFunctions.WindowType Window = WindowFunctions.WindowType.Blackman;
-            //тип применяемой оконной функции
-
+        private const WindowFunctions.WindowType Window = WindowFunctions.WindowType.Blackman;//тип применяемой оконной функции
         /*------------------------------------------------------*/
 
         public Form1()
         {
             InitializeComponent();
-            //PlotView1 = new PlotView();
-            //var model = new PlotModel
-            //{
-            //    PlotType = PlotType.XY,
-            //    Background = OxyColors.White,
-            //    TextColor = OxyColors.Black
-            //};
-            //PlotView1.Model = model;
+            CodeBookPlotView = new PlotView();
+            var model = new PlotModel
+            {
+                PlotType = PlotType.XY,
+                Background = OxyColors.White,
+                TextColor = OxyColors.Black
+            };
+            var linearColorAxis = new LinearColorAxis
+            {
+                HighColor = OxyColors.White,
+                LowColor = OxyColors.Black,
+                Position = AxisPosition.Right,
+                Palette = OxyPalettes.Hot(200),
+            };
+            model.Axes.Add(linearColorAxis);
+            CodeBookPlotView.Model = model;
 
-            //PlotView1.Width = 512;
-            //PlotView1.Height = 64;
+            CodeBookPlotView.Dock = DockStyle.Fill;
+            codeBookGroupBox.Controls.Add(CodeBookPlotView);
+            
 
-            //PlotView1.Top = 10;
-            //PlotView1.Left = 10;
-            //groupBox1.Controls.Add(PlotView1);
-            //var linearAxis1 = new LinearAxis
-            //{
-            //    MajorGridlineStyle = LineStyle.Solid,
-            //    MaximumPadding = 0,
-            //    MinimumPadding = 0,
-            //    MinorGridlineStyle = LineStyle.Dot,
-            //    Position = AxisPosition.Bottom
-            //};
-            //PlotView1.Model.Axes.Add(linearAxis1);
-            //var linearAxis2 = new LinearAxis
-            //{
-            //    MajorGridlineStyle = LineStyle.Solid,
-            //    MaximumPadding = 0,
-            //    MinimumPadding = 0,
-            //    MinorGridlineStyle = LineStyle.Dot
-            //};
-            //PlotView1.Model.Axes.Add(linearAxis2);
-            //var series = new LineSeries { Color = OxyColors.Black };
+            FeaturesTrainDataPlotView = new PlotView();
+            var model2 = new PlotModel
+            {
+                PlotType = PlotType.XY,
+                Background = OxyColors.White,
+                TextColor = OxyColors.Black
+            };
+            var linearColorAxis1 = new LinearColorAxis
+            {
+                HighColor = OxyColors.White,
+                LowColor = OxyColors.Black,
+                Position = AxisPosition.Right,
+                Palette = OxyPalettes.Hot(200),
+            };
+            model2.Axes.Add(linearColorAxis1);
+            FeaturesTrainDataPlotView.Model = model2;
+            FeaturesTrainDataPlotView.Dock = DockStyle.Fill;
+            trainFeaturesGroupBox.Controls.Add(FeaturesTrainDataPlotView);
 
-            //var rand = new Random();
-            //for (int i = 0; i < 3000; i++)
-            //    series.Points.Add(new DataPoint(i, rand.NextDouble()));
+            FeatureTestDataPlotView = new PlotView();
+            var model3 = new PlotModel
+            {
+                PlotType = PlotType.XY,
+                Background = OxyColors.White,
+                TextColor = OxyColors.Black
+            };
+            var linearColorAxis2 = new LinearColorAxis
+            {
+                HighColor = OxyColors.White,
+                LowColor = OxyColors.Black,
+                Position = AxisPosition.Right,
+                Palette = OxyPalettes.Hot(200),
+            };
+            model3.Axes.Add(linearColorAxis2);
+            FeatureTestDataPlotView.Model = model3;
+            FeatureTestDataPlotView.Dock = DockStyle.Fill;
+            featureTestGroupBox.Controls.Add(FeatureTestDataPlotView);
 
-            //PlotView1.Model.Series.Add(series);
+            for(var type = HelpersLibrary.DspAlgorithms.WindowFunctions.WindowType.Rectangular; type <= HelpersLibrary.DspAlgorithms.WindowFunctions.WindowType.Blackman; type++)
+            {
+                windowTypeComboBox.Items.Add(type.ToString());
+            }
+            windowTypeComboBox.SelectedItem = Window.ToString();
+        }
 
-            //PlotView2 = new PlotView();
-            //var model2 = new PlotModel
-            //{
-            //    PlotType = PlotType.XY,
-            //    Background = OxyColors.White,
-            //    TextColor = OxyColors.Black
-            //};
-            //PlotView2.Model = model2;
+        private void trainDataSelectButton_Click(object sender, EventArgs e)
+        {
+            if (wavFileOpenDialog.ShowDialog(this) == DialogResult.OK)
+            {
+                trainDataFileNameLabel.Text = wavFileOpenDialog.FileName;
 
-            //PlotView2.Width = 512;
-            //PlotView2.Height = 64;
+                int speechStartPosition, speechStopPosition;
+                WaveFormat speechFileFormat;
+                float[] speechFile;
+                ReadWavFile(wavFileOpenDialog.FileName, out speechFileFormat, out speechFile);
+                var speechSearcher = new SpeechSearch((byte) histogrammBagsNumberUpDown.Value,
+                    (float) analysisIntervalUpDown.Value, ((float) overlappingUpDown.Value)/100,
+                    speechFileFormat.SampleRate);
+                speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);
+                switch (featureSelectComboBox.SelectedItem as string)
+                {
+                    case "LPC":
+                        var trainData = GetLpcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
+                        PlotTrainFeatureMatrix(trainData);
+                        var vq = new HelpersLibrary.LearningAlgorithms.VectorQuantization(trainData, (int)lpcVectorLenghtUpDown.Value, 64);
+                        PlotCodeBook(vq.CodeBook);
+                        break;
+                    case "ARC":
+                        break;
+                    case "MFCC":
+                        break;
+                    case "VTC":
+                        break;
+                    default:
+                        return;
+                }
+            }
+        }
 
-            //PlotView2.Top = 74;
-            //PlotView2.Left = 10;
-            //groupBox1.Controls.Add(PlotView2);
+        private double[][] GetLpcImage(WaveFormat speechFileFormat, float[] speechFile, int speechStart, int speechStop)
+        {
+            double[][] featureMatrix;
+            var lpc = new HelpersLibrary.DspAlgorithms.LinearPredictCoefficient
+            {
+                SamleFrequency = speechFileFormat.SampleRate,
+                UsedAcfWindowSizeTime = (float) analysisIntervalUpDown.Value,
+                UsedNumberOfCoeficients = (int) lpcVectorLenghtUpDown.Value
+            };
+            HelpersLibrary.DspAlgorithms.WindowFunctions.WindowType windowType;
+            Enum.TryParse(
+                windowTypeComboBox.SelectedItem as string, out windowType);
+            lpc.UsedWindowType = windowType;
+            lpc.Overlapping = ((float)overlappingUpDown.Value) / 100;
+            lpc.GetLpcImage(ref speechFile, out featureMatrix, speechStart, speechStop);
+            return featureMatrix;
+        }
 
+        private static void ReadWavFile(string fileName, out WaveFormat speechFileFormat, out float[] speechFile)
+        {
+            using (var reader = new WaveFileReader(fileName))
+            {
+                speechFile = new float[reader.SampleCount];
+                for (int i = 0; i < reader.SampleCount; i++)
+                {
+                    speechFile[i] = reader.ReadNextSampleFrame()[0];
+                }
+                speechFileFormat = reader.WaveFormat;
+            }
+        }
+
+        private void PlotTestFeatureMatrix(double[][] featureSet)
+        {
+            var heatMap = new HeatMapSeries
+            {
+                Data = new double[featureSet.Length, featureSet[0].Length],
+                X0 = 0,
+                X1 = featureSet.Length,
+                Y0 = 0,
+                Y1 = featureSet[0].Length,
+                Interpolate = false
+            };
+            for (int i = 0; i < featureSet.Length; i++)
+                for (int j = 0; j < featureSet[i].Length; j++)
+                {
+                    heatMap.Data[i, j] = featureSet[i][j];
+                }
+            FeatureTestDataPlotView.Model.Series.Add(heatMap);
+            FeatureTestDataPlotView.Model.InvalidatePlot(true);
+        }
+
+        private void PlotTrainFeatureMatrix(double[][] featureSet)
+        {
+            var heatMap = new HeatMapSeries
+            {
+                Data = new double[featureSet.Length, featureSet[0].Length],
+                X0 = 0,
+                X1 = featureSet.Length,
+                Y0 = 0,
+                Y1 = featureSet[0].Length,
+                Interpolate = false
+            };
+            for (int i = 0; i < featureSet.Length; i++)
+                for (int j = 0; j < featureSet[i].Length; j++)
+                {
+                    heatMap.Data[i, j] = featureSet[i][j];
+                }
+            FeaturesTrainDataPlotView.Model.Series.Add(heatMap);
+            FeaturesTrainDataPlotView.Model.InvalidatePlot(true);
+        }
+
+        private void PlotCodeBook(double[][] codeBook)
+        {
+            var heatMap = new HeatMapSeries
+            {
+                Data = new double[codeBook.Length, codeBook[0].Length],
+                X0 = 0,
+                X1 = codeBook.Length,
+                Y0 = 0,
+                Y1 = codeBook[0].Length,
+                Interpolate = false
+            };
+            for (int i = 0; i < codeBook.Length; i++)
+                for (int j = 0; j < codeBook[i].Length; j++)
+                {
+                    heatMap.Data[i, j] = codeBook[i][j];
+                }
+            CodeBookPlotView.Model.Series.Add(heatMap);
+            CodeBookPlotView.Model.InvalidatePlot(true);
         }
     }
 }

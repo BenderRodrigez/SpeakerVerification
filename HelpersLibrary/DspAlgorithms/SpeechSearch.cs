@@ -16,8 +16,16 @@ namespace HelpersLibrary.DspAlgorithms
             _overlapping = overlapping;
         }
 
+        public void GetMarks(float[] speechWave, out int startPosition, out int stopPosition)
+        {
+            var energy = CalculateEnergyFunction(speechWave);
+            double border;
+            CalcHistogramm(energy, out border);
+            SearchSpeech(energy, out startPosition, out stopPosition, border);
+        }
 
-        public void SearchSpeech(double[] energy, out int startPoint, out int endPoint, double speechDetectorBorder)
+
+        private void SearchSpeech(double[] energy, out int startPoint, out int endPoint, double speechDetectorBorder)
         {
             startPoint = int.MinValue;
             endPoint = int.MinValue;
@@ -36,7 +44,7 @@ namespace HelpersLibrary.DspAlgorithms
             }
         }
 
-        public float[] CalcHistogramm(double[] energy, out double speechDetectorBorder)
+        private float[] CalcHistogramm(double[] energy, out double speechDetectorBorder)
         {
             var signalRange = energy.Max() - energy.Min();
             var minValue = energy.Min();
@@ -60,7 +68,7 @@ namespace HelpersLibrary.DspAlgorithms
             return bags;
         }
 
-        public double[] CalculateEnergyFunction(float[] sound)
+        private double[] CalculateEnergyFunction(float[] sound)
         {
             var tmp = new double[sound.Length - _windowSize];
             var jump = (int)Math.Round(_windowSize * (1.0 - _overlapping));
