@@ -78,27 +78,32 @@ namespace HelpersLibrary.LearningAlgorithms
 		    while (iteration < _codeBookSize)
             {
                 var newCodeBook = new double[iteration*2][];
-                //TODO: всё нижеследующее помещённое в коментарий является одним сплошным багом. Нужно переписать.
-                //for (int i = 0; i < iteration; i++ )
-                //{
-                //    //yi = y(i) + p
-                //    newCodeBook[i] = new double[CodeBook[i].Length];
-                //    for (int j = 0; j < CodeBook[i].Length; j++)
-                //    {
-                //        //newCodeBook[i][j] = (CodeBook[i][j] + _trainingSetMax[j]) / 2;
-                //        newCodeBook[i][j] = CodeBook[i][j] * 1.1;
-                //    }
-                //}
-                //for (int i = iteration; i < iteration * 2; i++ )
-                //{
-                //    //yi = y(i-k) - p
-                //    newCodeBook[i] = new double[CodeBook[i - iteration].Length];
-                //    for (int j = 0; j < CodeBook[i - iteration].Length; j++)
-                //    {
-                //        //newCodeBook[i][j] = (CodeBook[i - iteration][j] + _trainingSetMin[j]) / 2;
-                //        newCodeBook[i][j] = CodeBook[i - iteration][j] * 0.9;
-                //    }
-                //}
+                var centrOne = new double[vectorLength];
+                var centrOneDistance = double.NegativeInfinity;
+                var centrTwo = new double[vectorLength];
+                var centrTwoDistance = double.NegativeInfinity;
+                for (int cb = 0; cb < CodeBook.Length; cb++)
+                {
+                    for (int i = 0; i < TrainingSet.Length; i++)
+                    {
+                        var lenght = QuantizationError(TrainingSet[i], CodeBook[cb]);
+                        if (lenght > centrOneDistance)
+                        {
+                            centrTwo = centrOne;
+                            centrTwoDistance = centrOneDistance;
+                            centrOne = TrainingSet[i];
+                            centrOneDistance = lenght;
+                        }
+                        else if (lenght > centrTwoDistance)
+                        {
+                            centrTwo = TrainingSet[i];
+                            centrTwoDistance = lenght;
+                        }
+                    }
+                    newCodeBook[(cb + 1)*2 - 1] = centrOne;
+                    newCodeBook[(cb + 1)*2 - 2] = centrTwo;
+                }
+
                 iteration *= 2;
                 CodeBook = newCodeBook;
 
@@ -118,16 +123,20 @@ namespace HelpersLibrary.LearningAlgorithms
                         for (int j = 0; j < vectorLength; j++)
                         {
                             tmpCodeBook[codeBookIndex][j] += TrainingSet[i][j];
-                            vectorsCount[codeBookIndex]++;
                         }
-					}
+                        vectorsCount[codeBookIndex]++;
+                    }
 					for (int i = 0; i < tmpCodeBook.Length; i++)
                     {
                         if(tmpCodeBook[i] == null)
                             tmpCodeBook[i] = new double[CodeBook[i].Length];
-						for (int j = 0; j < tmpCodeBook[i].Length; j++)
-                            tmpCodeBook[i][j] /= vectorsCount[i];
+                        if (vectorsCount[i] > 0)
+                        {
+                            for (int j = 0; j < tmpCodeBook[i].Length; j++)
+                                tmpCodeBook[i][j] /= vectorsCount[i];
+                        }
                     }
+                    CodeBook = tmpCodeBook;
                     averageQuantErrorOld = averageQuantError;
                     averageQuantError = AverageQuantizationError();
                 }
