@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Drawing;
+using System.IO;
 using System.Windows.Forms;
 using HelpersLibrary.DspAlgorithms;
+using HelpersLibrary.LearningAlgorithms;
 using NAudio.Wave;
 using OxyPlot;
 using OxyPlot.Axes;
@@ -17,6 +19,7 @@ namespace SpeakerVerification
         public PlotView CodeBookPlotView;
         public PlotView FeaturesTrainDataPlotView;
         public PlotView FeatureTestDataPlotView;
+        private VectorQuantization _vq;
 
         /*--------------Параметры-анализа-----------------------*/
         private static double _intervalAnaliza = 0.09; //Интервал анализа, при расчёте КЛП
@@ -90,7 +93,7 @@ namespace SpeakerVerification
             FeatureTestDataPlotView.Dock = DockStyle.Fill;
             featureTestGroupBox.Controls.Add(FeatureTestDataPlotView);
 
-            for(var type = HelpersLibrary.DspAlgorithms.WindowFunctions.WindowType.Rectangular; type <= HelpersLibrary.DspAlgorithms.WindowFunctions.WindowType.Blackman; type++)
+            for(var type = WindowFunctions.WindowType.Rectangular; type <= WindowFunctions.WindowType.Blackman; type++)
             {
                 windowTypeComboBox.Items.Add(type.ToString());
             }
@@ -116,8 +119,8 @@ namespace SpeakerVerification
                     case "LPC":
                         var trainData = GetLpcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
                         PlotTrainFeatureMatrix(trainData);
-                        var vq = new HelpersLibrary.LearningAlgorithms.VectorQuantization(trainData, (int)lpcVectorLenghtUpDown.Value, 64);
-                        PlotCodeBook(vq.CodeBook);
+                        _vq = new VectorQuantization(trainData, (int)lpcVectorLenghtUpDown.Value, 64);
+                        PlotCodeBook(_vq.CodeBook);
                         break;
                     case "ARC":
                         break;
@@ -134,13 +137,13 @@ namespace SpeakerVerification
         private double[][] GetLpcImage(WaveFormat speechFileFormat, float[] speechFile, int speechStart, int speechStop)
         {
             double[][] featureMatrix;
-            var lpc = new HelpersLibrary.DspAlgorithms.LinearPredictCoefficient
+            var lpc = new LinearPredictCoefficient
             {
                 SamleFrequency = speechFileFormat.SampleRate,
                 UsedAcfWindowSizeTime = (float) analysisIntervalUpDown.Value,
                 UsedNumberOfCoeficients = (int) lpcVectorLenghtUpDown.Value
             };
-            HelpersLibrary.DspAlgorithms.WindowFunctions.WindowType windowType;
+            WindowFunctions.WindowType windowType;
             Enum.TryParse(
                 windowTypeComboBox.SelectedItem as string, out windowType);
             lpc.UsedWindowType = windowType;
@@ -220,6 +223,50 @@ namespace SpeakerVerification
                 }
             CodeBookPlotView.Model.Series.Add(heatMap);
             CodeBookPlotView.Model.InvalidatePlot(true);
+        }
+
+        private void testDataSelectButton_Click(object sender, EventArgs e)
+        {
+            if (wavFileOpenDialog.ShowDialog(this) == DialogResult.OK)
+            {
+                testDataFileNameLabel.Text = wavFileOpenDialog.FileName;
+
+                int speechStartPosition, speechStopPosition;
+                WaveFormat speechFileFormat;
+                float[] speechFile;
+                ReadWavFile(wavFileOpenDialog.FileName, out speechFileFormat, out speechFile);
+                var speechSearcher = new SpeechSearch((byte)histogrammBagsNumberUpDown.Value,
+                    (float)analysisIntervalUpDown.Value, ((float)overlappingUpDown.Value) / 100,
+                    speechFileFormat.SampleRate);
+                speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);
+                switch (featureSelectComboBox.SelectedItem as string)
+                {
+                    case "LPC":
+                        var testData = GetLpcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
+                        PlotTestFeatureMatrix(testData);
+                        var distortion = new double[testData.Length];
+                        for (int i = 0; i < testData.Length; i++)
+                        {
+                            distortion[i] = _vq.QuantizationError(_vq.Quantazation(testData[i]), testData[i]);
+                        }
+                        using (var writer = new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "distortion.txt")))
+                        {
+                            for (int i = 0; i < distortion.Length; i++)
+                            {
+                                writer.WriteLine(distortion[i]);
+                            }
+                        }
+                        break;
+                    case "ARC":
+                        break;
+                    case "MFCC":
+                        break;
+                    case "VTC":
+                        break;
+                    default:
+                        return;
+                }
+            }
         }
     }
 }

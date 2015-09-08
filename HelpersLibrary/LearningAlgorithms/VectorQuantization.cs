@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace HelpersLibrary.LearningAlgorithms
@@ -26,7 +27,7 @@ namespace HelpersLibrary.LearningAlgorithms
         /// <summary>
         /// Погрешность квантования
         /// </summary>
-        public double DistortionDelta { get; set; }
+        public const double DistortionDelta = 0.0005;
 
         public double AverageDistortionMeasure { get; set; }
 
@@ -58,6 +59,17 @@ namespace HelpersLibrary.LearningAlgorithms
             return msquare;
         }
 
+        private double[] GetNewCodeWord(int vectorLenght)
+        {
+            var res = new double[vectorLenght];
+            var rand = new Random();
+            for (int i = 0; i < vectorLenght; i++)
+            {
+                res[i] = rand.NextDouble()*2.0 - 1.0;
+            }
+            return res;
+        }
+
 		/// <summary>
 		/// Инициализирует кодовую книгу для заданного набора обучающих значений
 		/// </summary>
@@ -73,53 +85,71 @@ namespace HelpersLibrary.LearningAlgorithms
                     CodeBook[0][j] += TrainingSet[i][j];//добавляем значения из обучающей выборки
                 CodeBook[0][j] /= TrainingSet.Length;
             }
-            var averageQuantError = AverageQuantizationError();
-
+            var averageQuantError = 0.0;
 		    while (iteration < _codeBookSize)
             {
                 var newCodeBook = new double[iteration*2][];
-                var centrOne = new double[vectorLength];
-                var centrOneDistance = double.NegativeInfinity;
-                var centrTwo = new double[vectorLength];
-                var centrTwoDistance = double.NegativeInfinity;
-                for (int cb = 0; cb < CodeBook.Length; cb++)
+                var clusters = new List<double[]>[CodeBook.Length];
+                for (int i = 0; i < TrainingSet.Length; i++)
                 {
-                    for (int i = 0; i < TrainingSet.Length; i++)
+                    //get clusters
+                    var index = QuantazationIndex(TrainingSet[i]);
+                    if (clusters[index] == null)
                     {
-                        var lenght = QuantizationError(TrainingSet[i], CodeBook[cb]);
-                        if (lenght > centrOneDistance)
+                        clusters[index] = new List<double[]>();
+                    }
+                    clusters[index].Add(TrainingSet[i]);
+                }
+
+                var centrOne = GetNewCodeWord(vectorLength);
+                var centrTwo = GetNewCodeWord(vectorLength);
+
+                for(int cb = 0; cb < clusters.Length; cb++)
+                {
+                    if (clusters[cb] == null)
+                    {
+                        newCodeBook[(cb + 1) * 2 - 1] = new double[vectorLength];
+                        newCodeBook[(cb + 1) * 2 - 2] = new double[vectorLength];
+                        Array.Copy(centrOne, newCodeBook[(cb + 1) * 2 - 1], vectorLength);
+                        Array.Copy(centrTwo, newCodeBook[(cb + 1) * 2 - 2], vectorLength);
+                        continue;
+                    }
+                    var maxLenght = double.NegativeInfinity;
+                    for (int i = 0; i < clusters[cb].Count; i++)
+                    {
+                        for (int j = 0; j < clusters[cb].Count; j++)
                         {
-                            centrTwo = centrOne;
-                            centrTwoDistance = centrOneDistance;
-                            centrOne = TrainingSet[i];
-                            centrOneDistance = lenght;
-                        }
-                        else if (lenght > centrTwoDistance)
-                        {
-                            centrTwo = TrainingSet[i];
-                            centrTwoDistance = lenght;
+                            var lenght = QuantizationError(clusters[cb][i], clusters[cb][j]);
+                            if (lenght > maxLenght)
+                            {
+                                centrOne = clusters[cb][i];
+                                centrTwo = clusters[cb][j];
+                                maxLenght = lenght;
+                            }
                         }
                     }
-                    newCodeBook[(cb + 1)*2 - 1] = centrOne;
-                    newCodeBook[(cb + 1)*2 - 2] = centrTwo;
+
+                    newCodeBook[(cb + 1) * 2 - 1] = new double[vectorLength];
+                    newCodeBook[(cb + 1) * 2 - 2] = new double[vectorLength];
+                    Array.Copy(centrOne, newCodeBook[(cb + 1) * 2 - 1], vectorLength);
+                    Array.Copy(centrTwo, newCodeBook[(cb + 1) * 2 - 2], vectorLength);
                 }
 
                 iteration *= 2;
                 CodeBook = newCodeBook;
 
                 //D(m-1) - Dm > DistortionDelta?
-                var averageQuantErrorOld = averageQuantError;
+                var averageQuantErrorOld = double.PositiveInfinity;
                 averageQuantError = AverageQuantizationError();
                 while(Math.Abs(averageQuantErrorOld - averageQuantError) > DistortionDelta)//abs here
                 {
                     //yi = total_sum(xi)/N
-					var tmpCodeBook = new double[CodeBook.Length][];
+                    var tmpCodeBook = new double[CodeBook.Length][];
+                    Array.Copy(CodeBook, tmpCodeBook, CodeBook.Length);
                     var vectorsCount = new int[CodeBook.Length];
 					for (int i = 0; i < TrainingSet.Length; i++)
 					{
-						int codeBookIndex = QuantazationIndex (TrainingSet [i]);
-						if (tmpCodeBook [codeBookIndex] == null)
-                            tmpCodeBook[codeBookIndex] = new double[vectorLength];
+						int codeBookIndex = QuantazationIndex (TrainingSet[i]);
                         for (int j = 0; j < vectorLength; j++)
                         {
                             tmpCodeBook[codeBookIndex][j] += TrainingSet[i][j];
@@ -127,21 +157,16 @@ namespace HelpersLibrary.LearningAlgorithms
                         vectorsCount[codeBookIndex]++;
                     }
 					for (int i = 0; i < tmpCodeBook.Length; i++)
-                    {
-                        if(tmpCodeBook[i] == null)
-                            tmpCodeBook[i] = new double[CodeBook[i].Length];
-                        if (vectorsCount[i] > 0)
-                        {
-                            for (int j = 0; j < tmpCodeBook[i].Length; j++)
-                                tmpCodeBook[i][j] /= vectorsCount[i];
-                        }
-                    }
-                    CodeBook = tmpCodeBook;
+					{
+					    for (int j = 0; j < tmpCodeBook[i].Length; j++)
+					        tmpCodeBook[i][j] /= vectorsCount[i] + 1;
+					}
+                    Array.Copy(tmpCodeBook, CodeBook, tmpCodeBook.Length);
                     averageQuantErrorOld = averageQuantError;
                     averageQuantError = AverageQuantizationError();
                 }
             }
-            AverageDistortionMeasure = AverageQuantizationError();
+            AverageDistortionMeasure = averageQuantError;
         }
 
 		/// <summary>
@@ -190,10 +215,12 @@ namespace HelpersLibrary.LearningAlgorithms
 			{
 			    var error = QuantizationError(x, CodeBook[i]);
 
-			    if (!(error < minError)) continue;
+			    if (error < minError)
+			    {
 
-			    min = i;
-			    minError = error;
+			        min = i;
+			        minError = error;
+			    }
 			}
 		    return min;
 		}
@@ -207,9 +234,13 @@ namespace HelpersLibrary.LearningAlgorithms
         public double QuantizationError(double[] a, double[] b)
         {//d=total_sum(a^2-b^2)
 		    if (a.Length == b.Length)
-            {
-                double error = a.Select((t, i) => Math.Pow(t - b[i], 2)).Sum();
-                return error;
+		    {
+		        var error = 0.0;
+                for (int i = 0; i < a.Length; i++)
+                {
+                    error += Math.Pow(a[i] - b[i], 2);
+                }
+                return Math.Sqrt(error);
             }
 		    throw new Exception("Вектора разной длины!");
         }
@@ -255,9 +286,9 @@ namespace HelpersLibrary.LearningAlgorithms
                 throw new Exception("Вектора разной длины!");
         }
 
-        public double AverageCodeBookDistance(double[][] _cb1, double[][] _cb2)
+        public double AverageCodeBookDistance(double[][] cb1, double[][] cb2)
         {
-            return CodeBookDistances(_cb1, _cb2).Average();
+            return CodeBookDistances(cb1, cb2).Average();
         }
     }
 }
