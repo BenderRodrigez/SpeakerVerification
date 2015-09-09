@@ -118,6 +118,7 @@ namespace SpeakerVerification
                         PlotTrainFeatureMatrix(trainData);
                         var vq = new HelpersLibrary.LearningAlgorithms.VectorQuantization(trainData, (int)lpcVectorLenghtUpDown.Value, 64);
                         PlotCodeBook(vq.CodeBook);
+                        PlotTrainFeatureMatrix(vq.TrainingSet);
                         break;
                     case "ARC":
                         break;
