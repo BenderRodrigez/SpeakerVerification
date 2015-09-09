@@ -1,6 +1,7 @@
 ﻿using System;
 using System.CodeDom;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace HelpersLibrary.LearningAlgorithms
 {
@@ -80,7 +81,7 @@ namespace HelpersLibrary.LearningAlgorithms
 		    while (iteration < _codeBookSize)
             {
                 var newCodeBook = new double[iteration*2][];
-                for (int cb = 0; cb < CodeBook.Length; cb++)
+                Parallel.For(0, CodeBook.Length, cb =>
                 {
                     var maxDistance = double.NegativeInfinity;
                     var centrOne = new double[vectorLength];
@@ -90,7 +91,7 @@ namespace HelpersLibrary.LearningAlgorithms
                     {
                         if (QuantazationIndex(TrainingSet[i]) == cb)
                         {
-                            for (int j = TrainingSet.Length-1; j >= limit; j--)
+                            for (int j = TrainingSet.Length - 1; j >= limit; j--)
                             {
                                 if (QuantazationIndex(TrainingSet[j]) == cb)
                                 {
@@ -106,34 +107,34 @@ namespace HelpersLibrary.LearningAlgorithms
                         }
                     }
 
-                    newCodeBook[(cb + 1) * 2 - 1] = new double[vectorLength];
-                    newCodeBook[(cb + 1) * 2 - 2] = new double[vectorLength];
+                    newCodeBook[(cb + 1)*2 - 1] = new double[vectorLength];
+                    newCodeBook[(cb + 1)*2 - 2] = new double[vectorLength];
 
                     if (centrOne.Sum() == 0.0)
                     {
                         var rand = new Random();
                         for (int i = 0; i < vectorLength; i++)
                         {
-                            newCodeBook[(cb + 1) * 2 - 1][i] = CodeBook[cb][i] - CodeBook[cb][i]*rand.NextDouble()*0.1;
+                            newCodeBook[(cb + 1)*2 - 1][i] = CodeBook[cb][i] - CodeBook[cb][i]*rand.NextDouble()*0.1;
                         }
                     }
                     else
                     {
-                        Array.Copy(centrOne, newCodeBook[(cb + 1) * 2 - 1], vectorLength);
+                        Array.Copy(centrOne, newCodeBook[(cb + 1)*2 - 1], vectorLength);
                     }
                     if (centrTwo.Sum() == 0.0)
                     {
                         var rand = new Random();
                         for (int i = 0; i < vectorLength; i++)
                         {
-                            newCodeBook[(cb + 1) * 2 - 2][i] = CodeBook[cb][i] + CodeBook[cb][i]*rand.NextDouble()*0.1;
+                            newCodeBook[(cb + 1)*2 - 2][i] = CodeBook[cb][i] + CodeBook[cb][i]*rand.NextDouble()*0.1;
                         }
                     }
                     else
                     {
-                        Array.Copy(centrTwo, newCodeBook[(cb + 1) * 2 - 2], vectorLength);
+                        Array.Copy(centrTwo, newCodeBook[(cb + 1)*2 - 2], vectorLength);
                     }
-                }
+                });
 
                 iteration *= 2;
                 CodeBook = newCodeBook;
