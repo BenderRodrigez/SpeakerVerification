@@ -86,7 +86,6 @@ namespace HelpersLibrary.LearningAlgorithms
                     var maxDistance = double.NegativeInfinity;
                     var centrOne = new double[vectorLength];
                     var centrTwo = new double[vectorLength];
-                    //var limit = (int) Math.Round(TrainingSet.Length/2.0);
                     for (int i = 0; i < TrainingSet.Length-1; i++)
                     {
                         if (QuantazationIndex(TrainingSet[i]) == cb)
