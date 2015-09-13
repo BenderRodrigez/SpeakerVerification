@@ -33,7 +33,7 @@
             this.trainFeaturesGroupBox = new System.Windows.Forms.GroupBox();
             this.featureTestGroupBox = new System.Windows.Forms.GroupBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
-            this.testDataFaileNameLabel = new System.Windows.Forms.Label();
+            this.testDataFileNameLabel = new System.Windows.Forms.Label();
             this.trainDataFileNameLabel = new System.Windows.Forms.Label();
             this.testDataSelectButton = new System.Windows.Forms.Button();
             this.trainDataSelectButton = new System.Windows.Forms.Button();
@@ -110,7 +110,7 @@
             // 
             // groupBox4
             // 
-            this.groupBox4.Controls.Add(this.testDataFaileNameLabel);
+            this.groupBox4.Controls.Add(this.testDataFileNameLabel);
             this.groupBox4.Controls.Add(this.trainDataFileNameLabel);
             this.groupBox4.Controls.Add(this.testDataSelectButton);
             this.groupBox4.Controls.Add(this.trainDataSelectButton);
@@ -147,13 +147,13 @@
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Настройки анализа";
             // 
-            // testDataFaileNameLabel
+            // testDataFileNameLabel
             // 
-            this.testDataFaileNameLabel.AutoSize = true;
-            this.testDataFaileNameLabel.Location = new System.Drawing.Point(149, 465);
-            this.testDataFaileNameLabel.Name = "testDataFaileNameLabel";
-            this.testDataFaileNameLabel.Size = new System.Drawing.Size(0, 13);
-            this.testDataFaileNameLabel.TabIndex = 29;
+            this.testDataFileNameLabel.AutoSize = true;
+            this.testDataFileNameLabel.Location = new System.Drawing.Point(149, 465);
+            this.testDataFileNameLabel.Name = "testDataFileNameLabel";
+            this.testDataFileNameLabel.Size = new System.Drawing.Size(0, 13);
+            this.testDataFileNameLabel.TabIndex = 29;
             // 
             // trainDataFileNameLabel
             // 
@@ -171,6 +171,7 @@
             this.testDataSelectButton.TabIndex = 27;
             this.testDataSelectButton.Text = "Выбрать тест. данные";
             this.testDataSelectButton.UseVisualStyleBackColor = true;
+            this.testDataSelectButton.Click += new System.EventHandler(this.testDataSelectButton_Click);
             // 
             // trainDataSelectButton
             // 
@@ -566,7 +567,7 @@
         private System.Windows.Forms.Label label14;
         private System.Windows.Forms.NumericUpDown histogrammBagsNumberUpDown;
         private System.Windows.Forms.Label label17;
-        private System.Windows.Forms.Label testDataFaileNameLabel;
+        private System.Windows.Forms.Label testDataFileNameLabel;
         private System.Windows.Forms.Label trainDataFileNameLabel;
         private System.Windows.Forms.Button testDataSelectButton;
         private System.Windows.Forms.Button trainDataSelectButton;

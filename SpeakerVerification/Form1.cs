@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Drawing;
 using System.Windows.Forms;
 using HelpersLibrary.DspAlgorithms;
+using HelpersLibrary.LearningAlgorithms;
 using NAudio.Wave;
 using OxyPlot;
 using OxyPlot.Axes;
@@ -90,7 +90,7 @@ namespace SpeakerVerification
             FeatureTestDataPlotView.Dock = DockStyle.Fill;
             featureTestGroupBox.Controls.Add(FeatureTestDataPlotView);
 
-            for(var type = HelpersLibrary.DspAlgorithms.WindowFunctions.WindowType.Rectangular; type <= HelpersLibrary.DspAlgorithms.WindowFunctions.WindowType.Blackman; type++)
+            for(var type = WindowFunctions.WindowType.Rectangular; type <= WindowFunctions.WindowType.Blackman; type++)
             {
                 windowTypeComboBox.Items.Add(type.ToString());
             }
@@ -114,17 +114,32 @@ namespace SpeakerVerification
                 switch (featureSelectComboBox.SelectedItem as string)
                 {
                     case "LPC":
-                        var trainData = GetLpcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
-                        PlotTrainFeatureMatrix(trainData);
-                        var vq = new HelpersLibrary.LearningAlgorithms.VectorQuantization(trainData, (int)lpcVectorLenghtUpDown.Value, 64);
-                        PlotCodeBook(vq.CodeBook);
-                        PlotTrainFeatureMatrix(vq.TrainingSet);
+                        var trainDataLpc = GetLpcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
+                        PlotTrainFeatureMatrix(trainDataLpc);
+                        var vqLpc = new VectorQuantization(trainDataLpc, (int)lpcVectorLenghtUpDown.Value, 64);
+                        PlotCodeBook(vqLpc.CodeBook);
+                        PlotTrainFeatureMatrix(vqLpc.TrainingSet);
                         break;
                     case "ARC":
+                        var trainDataArc = GetArcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
+                        PlotTrainFeatureMatrix(trainDataArc);
+                        var vqArc = new VectorQuantization(trainDataArc, (int)arcVectorLenghtUpDown.Value, 64);
+                        PlotCodeBook(vqArc.CodeBook);
+                        PlotTrainFeatureMatrix(vqArc.TrainingSet);
                         break;
                     case "MFCC":
+                        var trainDataMfcc = GetMfccImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
+                        PlotTrainFeatureMatrix(trainDataMfcc);
+                        var vqMfcc = new VectorQuantization(trainDataMfcc, (int)mfccVectorLenghtUpDown.Value, 64);
+                        PlotCodeBook(vqMfcc.CodeBook);
+                        PlotTrainFeatureMatrix(vqMfcc.TrainingSet);
                         break;
                     case "VTC":
+                        var trainDataVtc = GetVtcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
+                        PlotTrainFeatureMatrix(trainDataVtc);
+                        var vqVtc = new VectorQuantization(trainDataVtc, (int)vtcVectorLenghtUpDown.Value, 64);
+                        PlotCodeBook(vqVtc.CodeBook);
+                        PlotTrainFeatureMatrix(vqVtc.TrainingSet);
                         break;
                     default:
                         return;
@@ -135,18 +150,65 @@ namespace SpeakerVerification
         private double[][] GetLpcImage(WaveFormat speechFileFormat, float[] speechFile, int speechStart, int speechStop)
         {
             double[][] featureMatrix;
-            var lpc = new HelpersLibrary.DspAlgorithms.LinearPredictCoefficient
+            var lpc = new LinearPredictCoefficient
             {
                 SamleFrequency = speechFileFormat.SampleRate,
                 UsedAcfWindowSizeTime = (float) analysisIntervalUpDown.Value,
                 UsedNumberOfCoeficients = (int) lpcVectorLenghtUpDown.Value
             };
-            HelpersLibrary.DspAlgorithms.WindowFunctions.WindowType windowType;
+            WindowFunctions.WindowType windowType;
             Enum.TryParse(
                 windowTypeComboBox.SelectedItem as string, out windowType);
             lpc.UsedWindowType = windowType;
             lpc.Overlapping = ((float)overlappingUpDown.Value) / 100;
             lpc.GetLpcImage(ref speechFile, out featureMatrix, speechStart, speechStop);
+            return featureMatrix;
+        }
+
+        private double[][] GetArcImage(WaveFormat speechFileFormat, float[] speechFile, int speechStart, int speechStop)
+        {
+            double[][] featureMatrix;
+            var lpc = new LinearPredictCoefficient
+            {
+                SamleFrequency = speechFileFormat.SampleRate,
+                UsedAcfWindowSizeTime = (float)analysisIntervalUpDown.Value,
+                UsedNumberOfCoeficients = (int)lpcVectorLenghtUpDown.Value
+            };
+            WindowFunctions.WindowType windowType;
+            Enum.TryParse(
+                windowTypeComboBox.SelectedItem as string, out windowType);
+            lpc.UsedWindowType = windowType;
+            lpc.Overlapping = ((float)overlappingUpDown.Value) / 100;
+            lpc.GetArcImage(ref speechFile, out featureMatrix, speechStart, speechStop, (int)arcVectorLenghtUpDown.Value);
+            return featureMatrix;
+        }
+
+        private double[][] GetVtcImage(WaveFormat speechFileFormat, float[] speechFile, int speechStart, int speechStop)
+        {
+            double[][] featureMatrix;
+            var lpc = new LinearPredictCoefficient
+            {
+                SamleFrequency = speechFileFormat.SampleRate,
+                UsedAcfWindowSizeTime = (float)analysisIntervalUpDown.Value,
+                UsedNumberOfCoeficients = (int)lpcVectorLenghtUpDown.Value
+            };
+            WindowFunctions.WindowType windowType;
+            Enum.TryParse(
+                windowTypeComboBox.SelectedItem as string, out windowType);
+            lpc.UsedWindowType = windowType;
+            lpc.Overlapping = ((float)overlappingUpDown.Value) / 100;
+            lpc.GetArcVocalTractImage(ref speechFile, speechFileFormat.SampleRate, (int)vtcVectorLenghtUpDown.Value, out featureMatrix, speechStart, speechStop);
+            return featureMatrix;
+        }
+
+        private double[][] GetMfccImage(WaveFormat speechFileFormat, float[] speechFile, int speechStart, int speechStop)
+        {
+            double[][] featureMatrix;
+            var mfcc = new Cepstrum((int)mfccVectorLenghtUpDown.Value, (double)analysisIntervalUpDown.Value, speechFileFormat.SampleRate, ((float)overlappingUpDown.Value)/100.0f);
+            WindowFunctions.WindowType windowType;
+            Enum.TryParse(
+                windowTypeComboBox.SelectedItem as string, out windowType);
+            mfcc.GetCepstrogram(ref speechFile,windowType, speechStart, speechStop, out featureMatrix);
             return featureMatrix;
         }
 
@@ -221,6 +283,44 @@ namespace SpeakerVerification
                 }
             CodeBookPlotView.Model.Series.Add(heatMap);
             CodeBookPlotView.Model.InvalidatePlot(true);
+        }
+
+        private void testDataSelectButton_Click(object sender, EventArgs e)
+        {
+            if (wavFileOpenDialog.ShowDialog(this) == DialogResult.OK)
+            {
+                testDataFileNameLabel.Text = wavFileOpenDialog.FileName;
+
+                int speechStartPosition, speechStopPosition;
+                WaveFormat speechFileFormat;
+                float[] speechFile;
+                ReadWavFile(wavFileOpenDialog.FileName, out speechFileFormat, out speechFile);
+                var speechSearcher = new SpeechSearch((byte)histogrammBagsNumberUpDown.Value,
+                    (float)analysisIntervalUpDown.Value, ((float)overlappingUpDown.Value) / 100,
+                    speechFileFormat.SampleRate);
+                speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);
+                switch (featureSelectComboBox.SelectedItem as string)
+                {
+                    case "LPC":
+                        var testDataLpc = GetLpcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
+                        PlotTestFeatureMatrix(testDataLpc);
+                        break;
+                    case "ARC":
+                        var testDataArc = GetArcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
+                        PlotTestFeatureMatrix(testDataArc);
+                        break;
+                    case "MFCC":
+                        var trainDataMfcc = GetMfccImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
+                        PlotTestFeatureMatrix(trainDataMfcc);
+                        break;
+                    case "VTC":
+                        var testDataVtc = GetVtcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
+                        PlotTestFeatureMatrix(testDataVtc);
+                        break;
+                    default:
+                        return;
+                }
+            }
         }
     }
 }

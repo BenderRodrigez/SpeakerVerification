@@ -72,8 +72,13 @@ namespace HelpersLibrary.LearningAlgorithms
             CodeBook[0] = new double[vectorLength];
             for (int j = 0; j < vectorLength; j++)
             {//идём по каждому элементу вектора
-                for (int i = 0; i < TrainingSet.Length; i++)
-                    CodeBook[0][j] += TrainingSet[i][j];//добавляем значения из обучающей выборки
+                var j1 = j;
+                var res = Parallel.For(0, TrainingSet.Length, i =>
+                    CodeBook[0][j1] += TrainingSet[i][j1]);//добавляем значения из обучающей выборки
+                while (!res.IsCompleted)
+                {
+                    
+                }
                 CodeBook[0][j] /= TrainingSet.Length;
             }
             var averageQuantError = AverageQuantizationError();
@@ -147,30 +152,39 @@ namespace HelpersLibrary.LearningAlgorithms
                     //yi = total_sum(xi)/N
 					var tmpCodeBook = new double[CodeBook.Length][];
                     var vectorsCount = new int[CodeBook.Length];
-					for (int i = 0; i < TrainingSet.Length; i++)
-					{
-						int codeBookIndex = QuantazationIndex (TrainingSet [i]);
-						if (tmpCodeBook [codeBookIndex] == null)
+                    var res = Parallel.For(0, TrainingSet.Length, i =>
+                    {
+                        int codeBookIndex = QuantazationIndex(TrainingSet[i]);
+                        if (tmpCodeBook[codeBookIndex] == null)
                             tmpCodeBook[codeBookIndex] = new double[vectorLength];
                         for (int j = 0; j < vectorLength; j++)
                         {
                             tmpCodeBook[codeBookIndex][j] += TrainingSet[i][j];
                         }
                         vectorsCount[codeBookIndex]++;
+                    });
+
+                    while (!res.IsCompleted)
+                    {
+                        
                     }
-					for (int i = 0; i < tmpCodeBook.Length; i++)
-					{
-					    if (tmpCodeBook[i] == null)
-					    {
-					        tmpCodeBook[i] = new double[vectorLength];
+
+                    var result = Parallel.For(0, tmpCodeBook.Length, i =>
+                    {
+                        if (tmpCodeBook[i] == null)
+                        {
+                            tmpCodeBook[i] = new double[vectorLength];
                             Array.Copy(CodeBook[i], tmpCodeBook[i], vectorLength);
-                            continue;
-					    }
-					    if (vectorsCount[i] > 0)
+                        }
+                        else if (vectorsCount[i] > 0)
                         {
                             for (int j = 0; j < tmpCodeBook[i].Length; j++)
                                 tmpCodeBook[i][j] /= vectorsCount[i];
                         }
+                    });
+                    while (!result.IsCompleted)
+                    {
+                        
                     }
                     CodeBook = tmpCodeBook;
                     averageQuantErrorOld = averageQuantError;
