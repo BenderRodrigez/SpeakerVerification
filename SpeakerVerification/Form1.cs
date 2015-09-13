@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Windows.Forms;
 using HelpersLibrary.DspAlgorithms;
 using HelpersLibrary.LearningAlgorithms;
@@ -17,16 +18,8 @@ namespace SpeakerVerification
         public PlotView CodeBookPlotView;
         public PlotView FeaturesTrainDataPlotView;
         public PlotView FeatureTestDataPlotView;
-
-        /*--------------Параметры-анализа-----------------------*/
-        private static double _intervalAnaliza = 0.09; //Интервал анализа, при расчёте КЛП
-        private static int _lpcNumber = 10; //Количество КЛП в одном векторе
-        private static int _cepNumber = 13;
-        private static int _furieSizePow = 7; //
-        private static int _lpcMatrixSize = 1024; //Общее количество векторов КЛП для одного файла
-        private static int _codeBookSize = 64; //Размер кодовой книги
         private const WindowFunctions.WindowType Window = WindowFunctions.WindowType.Blackman;//тип применяемой оконной функции
-        /*------------------------------------------------------*/
+        private VectorQuantization _vqCodeBook;
 
         public Form1()
         {
@@ -111,40 +104,42 @@ namespace SpeakerVerification
                     (float) analysisIntervalUpDown.Value, ((float) overlappingUpDown.Value)/100,
                     speechFileFormat.SampleRate);
                 speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);
+                var cbSize = (IsPowerOfTwo((uint)vqSizeNumericUpDown.Value)) ? (int)vqSizeNumericUpDown.Value : 64;
                 switch (featureSelectComboBox.SelectedItem as string)
                 {
                     case "LPC":
                         var trainDataLpc = GetLpcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
                         PlotTrainFeatureMatrix(trainDataLpc);
-                        var vqLpc = new VectorQuantization(trainDataLpc, (int)lpcVectorLenghtUpDown.Value, 64);
-                        PlotCodeBook(vqLpc.CodeBook);
-                        PlotTrainFeatureMatrix(vqLpc.TrainingSet);
+                        _vqCodeBook = new VectorQuantization(trainDataLpc, (int)lpcVectorLenghtUpDown.Value, cbSize);
+                        PlotCodeBook(_vqCodeBook.CodeBook);
                         break;
                     case "ARC":
                         var trainDataArc = GetArcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
                         PlotTrainFeatureMatrix(trainDataArc);
-                        var vqArc = new VectorQuantization(trainDataArc, (int)arcVectorLenghtUpDown.Value, 64);
-                        PlotCodeBook(vqArc.CodeBook);
-                        PlotTrainFeatureMatrix(vqArc.TrainingSet);
+                        _vqCodeBook = new VectorQuantization(trainDataArc, (int)arcVectorLenghtUpDown.Value, cbSize);
+                        PlotCodeBook(_vqCodeBook.CodeBook);
                         break;
                     case "MFCC":
                         var trainDataMfcc = GetMfccImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
                         PlotTrainFeatureMatrix(trainDataMfcc);
-                        var vqMfcc = new VectorQuantization(trainDataMfcc, (int)mfccVectorLenghtUpDown.Value, 64);
-                        PlotCodeBook(vqMfcc.CodeBook);
-                        PlotTrainFeatureMatrix(vqMfcc.TrainingSet);
+                        _vqCodeBook = new VectorQuantization(trainDataMfcc, (int)mfccVectorLenghtUpDown.Value, cbSize);
+                        PlotCodeBook(_vqCodeBook.CodeBook);
                         break;
                     case "VTC":
                         var trainDataVtc = GetVtcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
                         PlotTrainFeatureMatrix(trainDataVtc);
-                        var vqVtc = new VectorQuantization(trainDataVtc, (int)vtcVectorLenghtUpDown.Value, 64);
-                        PlotCodeBook(vqVtc.CodeBook);
-                        PlotTrainFeatureMatrix(vqVtc.TrainingSet);
+                        _vqCodeBook = new VectorQuantization(trainDataVtc, (int)vtcVectorLenghtUpDown.Value, cbSize);
+                        PlotCodeBook(_vqCodeBook.CodeBook);
                         break;
                     default:
                         return;
                 }
             }
+        }
+
+        private bool IsPowerOfTwo(uint val)
+        {
+            return val != 0 && (val & (val - 1)) == 0;
         }
 
         private double[][] GetLpcImage(WaveFormat speechFileFormat, float[] speechFile, int speechStart, int speechStop)
@@ -241,6 +236,7 @@ namespace SpeakerVerification
                 {
                     heatMap.Data[i, j] = featureSet[i][j];
                 }
+            FeatureTestDataPlotView.Model.Series.Clear();
             FeatureTestDataPlotView.Model.Series.Add(heatMap);
             FeatureTestDataPlotView.Model.InvalidatePlot(true);
         }
@@ -261,6 +257,7 @@ namespace SpeakerVerification
                 {
                     heatMap.Data[i, j] = featureSet[i][j];
                 }
+            FeaturesTrainDataPlotView.Model.Series.Clear();
             FeaturesTrainDataPlotView.Model.Series.Add(heatMap);
             FeaturesTrainDataPlotView.Model.InvalidatePlot(true);
         }
@@ -285,6 +282,18 @@ namespace SpeakerVerification
             CodeBookPlotView.Model.InvalidatePlot(true);
         }
 
+        private void SaveDistortionEnergyToFile(string fileName, double[][] testData)
+        {
+            using (var writer = new StreamWriter(fileName))
+            {
+                for (int i = 0; i < testData.Length; i++)
+                {
+                    var distortion = _vqCodeBook.QuantizationError(_vqCodeBook.Quantazation(testData[i]), testData[i]);
+                    writer.WriteLine(distortion);
+                }
+            }
+        }
+
         private void testDataSelectButton_Click(object sender, EventArgs e)
         {
             if (wavFileOpenDialog.ShowDialog(this) == DialogResult.OK)
@@ -304,18 +313,30 @@ namespace SpeakerVerification
                     case "LPC":
                         var testDataLpc = GetLpcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
                         PlotTestFeatureMatrix(testDataLpc);
+                        SaveDistortionEnergyToFile(
+                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                                "distortionMeasure.txt"), testDataLpc);
                         break;
                     case "ARC":
                         var testDataArc = GetArcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
                         PlotTestFeatureMatrix(testDataArc);
+                        SaveDistortionEnergyToFile(
+                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                                "distortionMeasure.txt"), testDataArc);
                         break;
                     case "MFCC":
                         var trainDataMfcc = GetMfccImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
                         PlotTestFeatureMatrix(trainDataMfcc);
+                        SaveDistortionEnergyToFile(
+                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                                "distortionMeasure.txt"), trainDataMfcc);
                         break;
                     case "VTC":
                         var testDataVtc = GetVtcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
                         PlotTestFeatureMatrix(testDataVtc);
+                        SaveDistortionEnergyToFile(
+                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                                "distortionMeasure.txt"), testDataVtc);
                         break;
                     default:
                         return;

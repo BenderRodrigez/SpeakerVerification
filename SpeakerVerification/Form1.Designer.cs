@@ -33,6 +33,8 @@
             this.trainFeaturesGroupBox = new System.Windows.Forms.GroupBox();
             this.featureTestGroupBox = new System.Windows.Forms.GroupBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.vqSizeNumericUpDown = new System.Windows.Forms.NumericUpDown();
+            this.label18 = new System.Windows.Forms.Label();
             this.testDataFileNameLabel = new System.Windows.Forms.Label();
             this.trainDataFileNameLabel = new System.Windows.Forms.Label();
             this.testDataSelectButton = new System.Windows.Forms.Button();
@@ -65,6 +67,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
             this.groupBox4.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.vqSizeNumericUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.histogrammBagsNumberUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.vtcVectorLenghtUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.mfccVectorLenghtUpDown)).BeginInit();
@@ -110,6 +113,8 @@
             // 
             // groupBox4
             // 
+            this.groupBox4.Controls.Add(this.vqSizeNumericUpDown);
+            this.groupBox4.Controls.Add(this.label18);
             this.groupBox4.Controls.Add(this.testDataFileNameLabel);
             this.groupBox4.Controls.Add(this.trainDataFileNameLabel);
             this.groupBox4.Controls.Add(this.testDataSelectButton);
@@ -147,10 +152,41 @@
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Настройки анализа";
             // 
+            // vqSizeNumericUpDown
+            // 
+            this.vqSizeNumericUpDown.Location = new System.Drawing.Point(158, 149);
+            this.vqSizeNumericUpDown.Maximum = new decimal(new int[] {
+            128,
+            0,
+            0,
+            0});
+            this.vqSizeNumericUpDown.Minimum = new decimal(new int[] {
+            8,
+            0,
+            0,
+            0});
+            this.vqSizeNumericUpDown.Name = "vqSizeNumericUpDown";
+            this.vqSizeNumericUpDown.Size = new System.Drawing.Size(53, 20);
+            this.vqSizeNumericUpDown.TabIndex = 31;
+            this.vqSizeNumericUpDown.Value = new decimal(new int[] {
+            64,
+            0,
+            0,
+            0});
+            // 
+            // label18
+            // 
+            this.label18.AutoSize = true;
+            this.label18.Location = new System.Drawing.Point(26, 151);
+            this.label18.Name = "label18";
+            this.label18.Size = new System.Drawing.Size(126, 13);
+            this.label18.TabIndex = 30;
+            this.label18.Text = "Размер кодовой книги:";
+            // 
             // testDataFileNameLabel
             // 
             this.testDataFileNameLabel.AutoSize = true;
-            this.testDataFileNameLabel.Location = new System.Drawing.Point(149, 465);
+            this.testDataFileNameLabel.Location = new System.Drawing.Point(149, 498);
             this.testDataFileNameLabel.Name = "testDataFileNameLabel";
             this.testDataFileNameLabel.Size = new System.Drawing.Size(0, 13);
             this.testDataFileNameLabel.TabIndex = 29;
@@ -158,14 +194,14 @@
             // trainDataFileNameLabel
             // 
             this.trainDataFileNameLabel.AutoSize = true;
-            this.trainDataFileNameLabel.Location = new System.Drawing.Point(149, 436);
+            this.trainDataFileNameLabel.Location = new System.Drawing.Point(149, 469);
             this.trainDataFileNameLabel.Name = "trainDataFileNameLabel";
             this.trainDataFileNameLabel.Size = new System.Drawing.Size(0, 13);
             this.trainDataFileNameLabel.TabIndex = 28;
             // 
             // testDataSelectButton
             // 
-            this.testDataSelectButton.Location = new System.Drawing.Point(9, 460);
+            this.testDataSelectButton.Location = new System.Drawing.Point(9, 493);
             this.testDataSelectButton.Name = "testDataSelectButton";
             this.testDataSelectButton.Size = new System.Drawing.Size(137, 23);
             this.testDataSelectButton.TabIndex = 27;
@@ -175,7 +211,7 @@
             // 
             // trainDataSelectButton
             // 
-            this.trainDataSelectButton.Location = new System.Drawing.Point(9, 431);
+            this.trainDataSelectButton.Location = new System.Drawing.Point(9, 464);
             this.trainDataSelectButton.Name = "trainDataSelectButton";
             this.trainDataSelectButton.Size = new System.Drawing.Size(137, 23);
             this.trainDataSelectButton.TabIndex = 26;
@@ -185,7 +221,7 @@
             // 
             // histogrammBagsNumberUpDown
             // 
-            this.histogrammBagsNumberUpDown.Location = new System.Drawing.Point(211, 378);
+            this.histogrammBagsNumberUpDown.Location = new System.Drawing.Point(211, 411);
             this.histogrammBagsNumberUpDown.Minimum = new decimal(new int[] {
             1,
             0,
@@ -203,7 +239,7 @@
             // label17
             // 
             this.label17.AutoSize = true;
-            this.label17.Location = new System.Drawing.Point(26, 380);
+            this.label17.Location = new System.Drawing.Point(26, 413);
             this.label17.Name = "label17";
             this.label17.Size = new System.Drawing.Size(179, 13);
             this.label17.TabIndex = 24;
@@ -212,7 +248,7 @@
             // label16
             // 
             this.label16.AutoSize = true;
-            this.label16.Location = new System.Drawing.Point(6, 356);
+            this.label16.Location = new System.Drawing.Point(6, 389);
             this.label16.Name = "label16";
             this.label16.Size = new System.Drawing.Size(154, 13);
             this.label16.TabIndex = 23;
@@ -220,7 +256,7 @@
             // 
             // vtcVectorLenghtUpDown
             // 
-            this.vtcVectorLenghtUpDown.Location = new System.Drawing.Point(113, 324);
+            this.vtcVectorLenghtUpDown.Location = new System.Drawing.Point(113, 357);
             this.vtcVectorLenghtUpDown.Maximum = new decimal(new int[] {
             512,
             0,
@@ -243,7 +279,7 @@
             // label15
             // 
             this.label15.AutoSize = true;
-            this.label15.Location = new System.Drawing.Point(26, 326);
+            this.label15.Location = new System.Drawing.Point(26, 359);
             this.label15.Name = "label15";
             this.label15.Size = new System.Drawing.Size(87, 13);
             this.label15.TabIndex = 21;
@@ -252,7 +288,7 @@
             // label14
             // 
             this.label14.AutoSize = true;
-            this.label14.Location = new System.Drawing.Point(6, 304);
+            this.label14.Location = new System.Drawing.Point(6, 337);
             this.label14.Name = "label14";
             this.label14.Size = new System.Drawing.Size(31, 13);
             this.label14.TabIndex = 20;
@@ -260,7 +296,7 @@
             // 
             // mfccVectorLenghtUpDown
             // 
-            this.mfccVectorLenghtUpDown.Location = new System.Drawing.Point(113, 274);
+            this.mfccVectorLenghtUpDown.Location = new System.Drawing.Point(113, 307);
             this.mfccVectorLenghtUpDown.Maximum = new decimal(new int[] {
             30,
             0,
@@ -283,7 +319,7 @@
             // label13
             // 
             this.label13.AutoSize = true;
-            this.label13.Location = new System.Drawing.Point(26, 276);
+            this.label13.Location = new System.Drawing.Point(26, 309);
             this.label13.Name = "label13";
             this.label13.Size = new System.Drawing.Size(81, 13);
             this.label13.TabIndex = 18;
@@ -292,7 +328,7 @@
             // label12
             // 
             this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(6, 253);
+            this.label12.Location = new System.Drawing.Point(6, 286);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(39, 13);
             this.label12.TabIndex = 17;
@@ -335,7 +371,7 @@
             // 
             // arcVectorLenghtUpDown
             // 
-            this.arcVectorLenghtUpDown.Location = new System.Drawing.Point(113, 223);
+            this.arcVectorLenghtUpDown.Location = new System.Drawing.Point(113, 256);
             this.arcVectorLenghtUpDown.Maximum = new decimal(new int[] {
             512,
             0,
@@ -358,7 +394,7 @@
             // label9
             // 
             this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(26, 225);
+            this.label9.Location = new System.Drawing.Point(26, 258);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(87, 13);
             this.label9.TabIndex = 12;
@@ -367,7 +403,7 @@
             // label8
             // 
             this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(6, 202);
+            this.label8.Location = new System.Drawing.Point(6, 235);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(32, 13);
             this.label8.TabIndex = 11;
@@ -375,7 +411,7 @@
             // 
             // lpcVectorLenghtUpDown
             // 
-            this.lpcVectorLenghtUpDown.Location = new System.Drawing.Point(113, 176);
+            this.lpcVectorLenghtUpDown.Location = new System.Drawing.Point(113, 209);
             this.lpcVectorLenghtUpDown.Maximum = new decimal(new int[] {
             30,
             0,
@@ -398,7 +434,7 @@
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(26, 178);
+            this.label7.Location = new System.Drawing.Point(26, 211);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(81, 13);
             this.label7.TabIndex = 9;
@@ -407,7 +443,7 @@
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(6, 156);
+            this.label6.Location = new System.Drawing.Point(6, 189);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(30, 13);
             this.label6.TabIndex = 8;
@@ -523,6 +559,7 @@
             this.Text = "SpeakerVerifiaction";
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.vqSizeNumericUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.histogrammBagsNumberUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.vtcVectorLenghtUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.mfccVectorLenghtUpDown)).EndInit();
@@ -572,6 +609,8 @@
         private System.Windows.Forms.Button testDataSelectButton;
         private System.Windows.Forms.Button trainDataSelectButton;
         private System.Windows.Forms.ProgressBar progressBar1;
+        private System.Windows.Forms.NumericUpDown vqSizeNumericUpDown;
+        private System.Windows.Forms.Label label18;
     }
 }
 
