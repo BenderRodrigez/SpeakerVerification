@@ -95,15 +95,12 @@ namespace HelpersLibrary.LearningAlgorithms
                     for (int i = 0; i < vectorLength; i++)
                     {
                         newCodeBook[(cb + 1)*2 - 1][i] = CodeBook[cb][i] - CodeBook[cb][i]*rand.NextDouble()*0.1;
-                    }
-                    for (int i = 0; i < vectorLength; i++)
-                    {
                         newCodeBook[(cb + 1)*2 - 2][i] = CodeBook[cb][i] + CodeBook[cb][i]*rand.NextDouble()*0.1;
                     }
                 });
                 while (!results.IsCompleted)
                 {
-                    
+
                 }
 
                 iteration *= 2;
@@ -118,7 +115,7 @@ namespace HelpersLibrary.LearningAlgorithms
                     //yi = total_sum(xi)/N
 					var tmpCodeBook = new double[CodeBook.Length][];
                     var vectorsCount = new int[CodeBook.Length];
-                    var res = Parallel.For(0, TrainingSet.Length, i =>
+                    for(int i = 0; i < tmpCodeBook.Length; i++)
                     {
                         int codeBookIndex = QuantazationIndex(TrainingSet[i]);
                         if (tmpCodeBook[codeBookIndex] == null)
@@ -128,14 +125,9 @@ namespace HelpersLibrary.LearningAlgorithms
                             tmpCodeBook[codeBookIndex][j] += TrainingSet[i][j];
                         }
                         vectorsCount[codeBookIndex]++;
-                    });
-
-                    while (!res.IsCompleted)
-                    {
-                        
                     }
 
-                    var result = Parallel.For(0, tmpCodeBook.Length, i =>
+                    for(int i = 0; i < tmpCodeBook.Length; i++)
                     {
                         if (tmpCodeBook[i] == null)
                         {
@@ -147,11 +139,8 @@ namespace HelpersLibrary.LearningAlgorithms
                             for (int j = 0; j < tmpCodeBook[i].Length; j++)
                                 tmpCodeBook[i][j] /= vectorsCount[i];
                         }
-                    });
-                    while (!result.IsCompleted)
-                    {
-                        
                     }
+
                     CodeBook = tmpCodeBook;
                     averageQuantErrorOld = averageQuantError;
                     averageQuantError = AverageQuantizationError();

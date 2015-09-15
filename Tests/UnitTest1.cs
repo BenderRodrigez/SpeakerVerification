@@ -14,6 +14,20 @@ namespace Tests
     [TestClass]
     public class UnitTest1
     {
+        private double[][] VqTrain2;
+
+        [TestInitialize]
+        public void Set()
+        {
+            VqTrain2 = new double[100][];
+            var pos = 0;
+            for (int i = 0; i < VqTrain2.Length; i++)
+            {
+                VqTrain2[i] = new double[10];
+                VqTrain2[i][pos] = 1;
+                pos = pos < 9 ? pos + 1 : 0;
+            }
+        }
         private static readonly double[][] VqTrain =
         {
             new[] {0.10880178044658201, 0.0333602908202742},
@@ -59,6 +73,17 @@ namespace Tests
                 foreach (var d in vq.CodeBook)
                 {
                     writer.WriteLine(d.Select(x=> x.ToString(CultureInfo.InvariantCulture)).Aggregate((accumulate, d1) => accumulate + " "+d1.ToString()));
+                }
+            }
+
+            var vq2 = new VectorQuantization(VqTrain2, 10, 8);
+            using (var writer = new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "vq_codebook2.txt")))
+            {
+                foreach (var d in vq2.CodeBook)
+                {
+                    foreach (var t in d)
+                        writer.Write(t+" ");
+                    writer.WriteLine();
                 }
             }
         }
