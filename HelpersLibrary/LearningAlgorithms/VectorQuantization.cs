@@ -1,5 +1,4 @@
 ﻿using System;
-using System.CodeDom;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -86,59 +85,26 @@ namespace HelpersLibrary.LearningAlgorithms
 		    while (iteration < _codeBookSize)
             {
                 var newCodeBook = new double[iteration*2][];
-                Parallel.For(0, CodeBook.Length, cb =>
+                var results = Parallel.For(0, CodeBook.Length, cb =>
                 {
-                    var maxDistance = double.NegativeInfinity;
-                    var centrOne = new double[vectorLength];
-                    var centrTwo = new double[vectorLength];
-                    for (int i = 0; i < TrainingSet.Length-1; i++)
-                    {
-                        if (QuantazationIndex(TrainingSet[i]) == cb)
-                        {
-                            for (int j = i+1; j < TrainingSet.Length; j++)
-                            {
-                                if (QuantazationIndex(TrainingSet[j]) == cb)
-                                {
-                                    var distance = QuantizationError(TrainingSet[i], TrainingSet[j]);
-                                    if (distance > maxDistance)
-                                    {
-                                        centrOne = TrainingSet[i];
-                                        centrTwo = TrainingSet[j];
-                                        maxDistance = distance;
-                                    }
-                                }
-                            }
-                        }
-                    }
 
                     newCodeBook[(cb + 1)*2 - 1] = new double[vectorLength];
                     newCodeBook[(cb + 1)*2 - 2] = new double[vectorLength];
 
-                    if (centrOne.Sum() == 0.0)
+                    var rand = new Random();
+                    for (int i = 0; i < vectorLength; i++)
                     {
-                        var rand = new Random();
-                        for (int i = 0; i < vectorLength; i++)
-                        {
-                            newCodeBook[(cb + 1)*2 - 1][i] = CodeBook[cb][i] - CodeBook[cb][i]*rand.NextDouble()*0.1;
-                        }
+                        newCodeBook[(cb + 1)*2 - 1][i] = CodeBook[cb][i] - CodeBook[cb][i]*rand.NextDouble()*0.1;
                     }
-                    else
+                    for (int i = 0; i < vectorLength; i++)
                     {
-                        Array.Copy(centrOne, newCodeBook[(cb + 1)*2 - 1], vectorLength);
-                    }
-                    if (centrTwo.Sum() == 0.0)
-                    {
-                        var rand = new Random();
-                        for (int i = 0; i < vectorLength; i++)
-                        {
-                            newCodeBook[(cb + 1)*2 - 2][i] = CodeBook[cb][i] + CodeBook[cb][i]*rand.NextDouble()*0.1;
-                        }
-                    }
-                    else
-                    {
-                        Array.Copy(centrTwo, newCodeBook[(cb + 1)*2 - 2], vectorLength);
+                        newCodeBook[(cb + 1)*2 - 2][i] = CodeBook[cb][i] + CodeBook[cb][i]*rand.NextDouble()*0.1;
                     }
                 });
+                while (!results.IsCompleted)
+                {
+                    
+                }
 
                 iteration *= 2;
                 CodeBook = newCodeBook;
@@ -306,9 +272,9 @@ namespace HelpersLibrary.LearningAlgorithms
                 throw new Exception("Вектора разной длины!");
         }
 
-        public double AverageCodeBookDistance(double[][] _cb1, double[][] _cb2)
+        public double AverageCodeBookDistance(double[][] cb1, double[][] cb2)
         {
-            return CodeBookDistances(_cb1, _cb2).Average();
+            return CodeBookDistances(cb1, cb2).Average();
         }
     }
 }
