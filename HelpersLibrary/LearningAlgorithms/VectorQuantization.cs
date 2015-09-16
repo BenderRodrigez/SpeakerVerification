@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -85,23 +86,59 @@ namespace HelpersLibrary.LearningAlgorithms
 		    while (iteration < _codeBookSize)
             {
                 var newCodeBook = new double[iteration*2][];
-                var results = Parallel.For(0, CodeBook.Length, cb =>
+                Parallel.For(0, CodeBook.Length, cb =>
                 {
+                    var maxDistance = double.NegativeInfinity;
+                    var centrOne = new double[vectorLength];
+                    var centrTwo = new double[vectorLength];
+                    for (int i = 0; i < TrainingSet.Length-1; i++)
+                    {
+                        if (QuantazationIndex(TrainingSet[i]) == cb)
+                        {
+                            for (int j = i+1; j < TrainingSet.Length; j++)
+                            {
+                                if (QuantazationIndex(TrainingSet[j]) == cb)
+                                {
+                                    var distance = QuantizationError(TrainingSet[i], TrainingSet[j]);
+                                    if (distance > maxDistance)
+                                    {
+                                        centrOne = TrainingSet[i];
+                                        centrTwo = TrainingSet[j];
+                                        maxDistance = distance;
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     newCodeBook[(cb + 1)*2 - 1] = new double[vectorLength];
                     newCodeBook[(cb + 1)*2 - 2] = new double[vectorLength];
 
-                    var rand = new Random();
-                    for (int i = 0; i < vectorLength; i++)
+                    if (centrOne.Sum() == 0.0)
                     {
-                        newCodeBook[(cb + 1)*2 - 1][i] = CodeBook[cb][i] - CodeBook[cb][i]*rand.NextDouble()*0.1;
-                        newCodeBook[(cb + 1)*2 - 2][i] = CodeBook[cb][i] + CodeBook[cb][i]*rand.NextDouble()*0.1;
+                        var rand = new Random();
+                        for (int i = 0; i < vectorLength; i++)
+                        {
+                            newCodeBook[(cb + 1)*2 - 1][i] = CodeBook[cb][i] - CodeBook[cb][i]*rand.NextDouble()*0.1;
+                        }
+                    }
+                    else
+                    {
+                        Array.Copy(centrOne, newCodeBook[(cb + 1)*2 - 1], vectorLength);
+                    }
+                    if (centrTwo.Sum() == 0.0)
+                    {
+                        var rand = new Random();
+                        for (int i = 0; i < vectorLength; i++)
+                        {
+                            newCodeBook[(cb + 1)*2 - 2][i] = CodeBook[cb][i] + CodeBook[cb][i]*rand.NextDouble()*0.1;
+                        }
+                    }
+                    else
+                    {
+                        Array.Copy(centrTwo, newCodeBook[(cb + 1)*2 - 2], vectorLength);
                     }
                 });
-                while (!results.IsCompleted)
-                {
-
-                }
 
                 iteration *= 2;
                 CodeBook = newCodeBook;
@@ -115,7 +152,7 @@ namespace HelpersLibrary.LearningAlgorithms
                     //yi = total_sum(xi)/N
 					var tmpCodeBook = new double[CodeBook.Length][];
                     var vectorsCount = new int[CodeBook.Length];
-                    for(int i = 0; i < tmpCodeBook.Length; i++)
+                    var res = Parallel.For(0, TrainingSet.Length, i =>
                     {
                         int codeBookIndex = QuantazationIndex(TrainingSet[i]);
                         if (tmpCodeBook[codeBookIndex] == null)
@@ -125,9 +162,14 @@ namespace HelpersLibrary.LearningAlgorithms
                             tmpCodeBook[codeBookIndex][j] += TrainingSet[i][j];
                         }
                         vectorsCount[codeBookIndex]++;
+                    });
+
+                    while (!res.IsCompleted)
+                    {
+                        
                     }
 
-                    for(int i = 0; i < tmpCodeBook.Length; i++)
+                    var result = Parallel.For(0, tmpCodeBook.Length, i =>
                     {
                         if (tmpCodeBook[i] == null)
                         {
@@ -139,8 +181,11 @@ namespace HelpersLibrary.LearningAlgorithms
                             for (int j = 0; j < tmpCodeBook[i].Length; j++)
                                 tmpCodeBook[i][j] /= vectorsCount[i];
                         }
+                    });
+                    while (!result.IsCompleted)
+                    {
+                        
                     }
-
                     CodeBook = tmpCodeBook;
                     averageQuantErrorOld = averageQuantError;
                     averageQuantError = AverageQuantizationError();
@@ -261,9 +306,9 @@ namespace HelpersLibrary.LearningAlgorithms
                 throw new Exception("Вектора разной длины!");
         }
 
-        public double AverageCodeBookDistance(double[][] cb1, double[][] cb2)
+        public double AverageCodeBookDistance(double[][] _cb1, double[][] _cb2)
         {
-            return CodeBookDistances(cb1, cb2).Average();
+            return CodeBookDistances(_cb1, _cb2).Average();
         }
     }
 }
