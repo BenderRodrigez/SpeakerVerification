@@ -154,6 +154,10 @@
       <Project>{b9ed183a-5d62-4d85-99ec-42303d08f50a}</Project>
       <Name>HelpersLibrary</Name>
     </ProjectReference>
+    <ProjectReference Include="..\NeuronDotNet\Core\Core.csproj">
+      <Project>{D5B56684-0C33-4195-B3D6-D1576B739E42}</Project>
+      <Name>Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.CodeDom;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -306,9 +305,9 @@ namespace HelpersLibrary.LearningAlgorithms
                 throw new Exception("Вектора разной длины!");
         }
 
-        public double AverageCodeBookDistance(double[][] _cb1, double[][] _cb2)
+        public double AverageCodeBookDistance(double[][] cb1, double[][] cb2)
         {
-            return CodeBookDistances(_cb1, _cb2).Average();
+            return CodeBookDistances(cb1, cb2).Average();
         }
     }
 }

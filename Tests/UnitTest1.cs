@@ -86,17 +86,6 @@ namespace Tests
                     writer.WriteLine();
                 }
             }
-
-            var vq2 = new VectorQuantization(VqTrain2, 10, 8);
-            using (var writer = new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "vq_codebook2.txt")))
-            {
-                foreach (var d in vq2.CodeBook)
-                {
-                    foreach (var t in d)
-                        writer.Write(t+" ");
-                    writer.WriteLine();
-                }
-            }
         }
 
         private static void DrawLpcMatrix(ref double[][] lpc, ref Image graphic)
