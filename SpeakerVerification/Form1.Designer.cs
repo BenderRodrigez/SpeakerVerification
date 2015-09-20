@@ -66,6 +66,7 @@
             this.analysisIntervalUpDown = new System.Windows.Forms.NumericUpDown();
             this.label1 = new System.Windows.Forms.Label();
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
+            this.useNeuronNetworkCeckBox = new System.Windows.Forms.CheckBox();
             this.groupBox4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.vqSizeNumericUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.histogrammBagsNumberUpDown)).BeginInit();
@@ -113,6 +114,7 @@
             // 
             // groupBox4
             // 
+            this.groupBox4.Controls.Add(this.useNeuronNetworkCeckBox);
             this.groupBox4.Controls.Add(this.vqSizeNumericUpDown);
             this.groupBox4.Controls.Add(this.label18);
             this.groupBox4.Controls.Add(this.testDataFileNameLabel);
@@ -186,7 +188,7 @@
             // testDataFileNameLabel
             // 
             this.testDataFileNameLabel.AutoSize = true;
-            this.testDataFileNameLabel.Location = new System.Drawing.Point(149, 498);
+            this.testDataFileNameLabel.Location = new System.Drawing.Point(149, 513);
             this.testDataFileNameLabel.Name = "testDataFileNameLabel";
             this.testDataFileNameLabel.Size = new System.Drawing.Size(0, 13);
             this.testDataFileNameLabel.TabIndex = 29;
@@ -194,14 +196,14 @@
             // trainDataFileNameLabel
             // 
             this.trainDataFileNameLabel.AutoSize = true;
-            this.trainDataFileNameLabel.Location = new System.Drawing.Point(149, 469);
+            this.trainDataFileNameLabel.Location = new System.Drawing.Point(149, 484);
             this.trainDataFileNameLabel.Name = "trainDataFileNameLabel";
             this.trainDataFileNameLabel.Size = new System.Drawing.Size(0, 13);
             this.trainDataFileNameLabel.TabIndex = 28;
             // 
             // testDataSelectButton
             // 
-            this.testDataSelectButton.Location = new System.Drawing.Point(9, 493);
+            this.testDataSelectButton.Location = new System.Drawing.Point(9, 508);
             this.testDataSelectButton.Name = "testDataSelectButton";
             this.testDataSelectButton.Size = new System.Drawing.Size(137, 23);
             this.testDataSelectButton.TabIndex = 27;
@@ -211,7 +213,7 @@
             // 
             // trainDataSelectButton
             // 
-            this.trainDataSelectButton.Location = new System.Drawing.Point(9, 464);
+            this.trainDataSelectButton.Location = new System.Drawing.Point(9, 479);
             this.trainDataSelectButton.Name = "trainDataSelectButton";
             this.trainDataSelectButton.Size = new System.Drawing.Size(137, 23);
             this.trainDataSelectButton.TabIndex = 26;
@@ -221,7 +223,7 @@
             // 
             // histogrammBagsNumberUpDown
             // 
-            this.histogrammBagsNumberUpDown.Location = new System.Drawing.Point(211, 411);
+            this.histogrammBagsNumberUpDown.Location = new System.Drawing.Point(211, 444);
             this.histogrammBagsNumberUpDown.Minimum = new decimal(new int[] {
             1,
             0,
@@ -239,7 +241,7 @@
             // label17
             // 
             this.label17.AutoSize = true;
-            this.label17.Location = new System.Drawing.Point(26, 413);
+            this.label17.Location = new System.Drawing.Point(26, 446);
             this.label17.Name = "label17";
             this.label17.Size = new System.Drawing.Size(179, 13);
             this.label17.TabIndex = 24;
@@ -248,7 +250,7 @@
             // label16
             // 
             this.label16.AutoSize = true;
-            this.label16.Location = new System.Drawing.Point(6, 389);
+            this.label16.Location = new System.Drawing.Point(6, 422);
             this.label16.Name = "label16";
             this.label16.Size = new System.Drawing.Size(154, 13);
             this.label16.TabIndex = 23;
@@ -256,7 +258,7 @@
             // 
             // vtcVectorLenghtUpDown
             // 
-            this.vtcVectorLenghtUpDown.Location = new System.Drawing.Point(113, 357);
+            this.vtcVectorLenghtUpDown.Location = new System.Drawing.Point(113, 390);
             this.vtcVectorLenghtUpDown.Maximum = new decimal(new int[] {
             512,
             0,
@@ -279,7 +281,7 @@
             // label15
             // 
             this.label15.AutoSize = true;
-            this.label15.Location = new System.Drawing.Point(26, 359);
+            this.label15.Location = new System.Drawing.Point(26, 392);
             this.label15.Name = "label15";
             this.label15.Size = new System.Drawing.Size(87, 13);
             this.label15.TabIndex = 21;
@@ -288,7 +290,7 @@
             // label14
             // 
             this.label14.AutoSize = true;
-            this.label14.Location = new System.Drawing.Point(6, 337);
+            this.label14.Location = new System.Drawing.Point(6, 370);
             this.label14.Name = "label14";
             this.label14.Size = new System.Drawing.Size(31, 13);
             this.label14.TabIndex = 20;
@@ -296,7 +298,7 @@
             // 
             // mfccVectorLenghtUpDown
             // 
-            this.mfccVectorLenghtUpDown.Location = new System.Drawing.Point(113, 307);
+            this.mfccVectorLenghtUpDown.Location = new System.Drawing.Point(113, 340);
             this.mfccVectorLenghtUpDown.Maximum = new decimal(new int[] {
             30,
             0,
@@ -319,7 +321,7 @@
             // label13
             // 
             this.label13.AutoSize = true;
-            this.label13.Location = new System.Drawing.Point(26, 309);
+            this.label13.Location = new System.Drawing.Point(26, 342);
             this.label13.Name = "label13";
             this.label13.Size = new System.Drawing.Size(81, 13);
             this.label13.TabIndex = 18;
@@ -328,7 +330,7 @@
             // label12
             // 
             this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(6, 286);
+            this.label12.Location = new System.Drawing.Point(6, 319);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(39, 13);
             this.label12.TabIndex = 17;
@@ -371,7 +373,7 @@
             // 
             // arcVectorLenghtUpDown
             // 
-            this.arcVectorLenghtUpDown.Location = new System.Drawing.Point(113, 256);
+            this.arcVectorLenghtUpDown.Location = new System.Drawing.Point(113, 289);
             this.arcVectorLenghtUpDown.Maximum = new decimal(new int[] {
             512,
             0,
@@ -394,7 +396,7 @@
             // label9
             // 
             this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(26, 258);
+            this.label9.Location = new System.Drawing.Point(26, 291);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(87, 13);
             this.label9.TabIndex = 12;
@@ -403,7 +405,7 @@
             // label8
             // 
             this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(6, 235);
+            this.label8.Location = new System.Drawing.Point(6, 268);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(32, 13);
             this.label8.TabIndex = 11;
@@ -411,7 +413,7 @@
             // 
             // lpcVectorLenghtUpDown
             // 
-            this.lpcVectorLenghtUpDown.Location = new System.Drawing.Point(113, 209);
+            this.lpcVectorLenghtUpDown.Location = new System.Drawing.Point(113, 242);
             this.lpcVectorLenghtUpDown.Maximum = new decimal(new int[] {
             30,
             0,
@@ -434,7 +436,7 @@
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(26, 211);
+            this.label7.Location = new System.Drawing.Point(26, 244);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(81, 13);
             this.label7.TabIndex = 9;
@@ -443,7 +445,7 @@
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(6, 189);
+            this.label6.Location = new System.Drawing.Point(6, 222);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(30, 13);
             this.label6.TabIndex = 8;
@@ -542,6 +544,16 @@
             this.progressBar1.Size = new System.Drawing.Size(786, 23);
             this.progressBar1.TabIndex = 4;
             // 
+            // useNeuronNetworkCeckBox
+            // 
+            this.useNeuronNetworkCeckBox.AutoSize = true;
+            this.useNeuronNetworkCeckBox.Location = new System.Drawing.Point(29, 175);
+            this.useNeuronNetworkCeckBox.Name = "useNeuronNetworkCeckBox";
+            this.useNeuronNetworkCeckBox.Size = new System.Drawing.Size(176, 17);
+            this.useNeuronNetworkCeckBox.TabIndex = 32;
+            this.useNeuronNetworkCeckBox.Text = "Использовать сеть Кохонена";
+            this.useNeuronNetworkCeckBox.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -611,6 +623,7 @@
         private System.Windows.Forms.ProgressBar progressBar1;
         private System.Windows.Forms.NumericUpDown vqSizeNumericUpDown;
         private System.Windows.Forms.Label label18;
+        private System.Windows.Forms.CheckBox useNeuronNetworkCeckBox;
     }
 }
 

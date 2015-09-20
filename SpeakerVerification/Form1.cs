@@ -25,6 +25,7 @@ namespace SpeakerVerification
         public PlotView FeatureTestDataPlotView;
         private const WindowFunctions.WindowType Window = WindowFunctions.WindowType.Blackman;//тип применяемой оконной функции
         private VectorQuantization _vqCodeBook;
+        private KohonenNetwork network;
 
         public Form1()
         {
@@ -95,22 +96,23 @@ namespace SpeakerVerification
             windowTypeComboBox.SelectedItem = Window.ToString();
         }
 
-        private void ProvideKohonenCom(TrainingSet trainingSet, bool[,] isWinner)
+        private bool[,] ProvideKohonenCom(double[][] trainingSet)
         {
+            var isWinner = new bool[64, 10];
             var learningRadius = Math.Max(64, 10)/2;
             var neigborhoodFunction = new GaussianFunction(learningRadius);
             const LatticeTopology topology = LatticeTopology.Hexagonal;
 
             var inputLayer = new KohonenLayer(10);
-            var outputLayer = new KohonenLayer(new Size(64, 10), neigborhoodFunction, topology);
+            var outputLayer = new KohonenLayer(new Size(1, 10), neigborhoodFunction, topology);
             var connector = new KohonenConnector(inputLayer, outputLayer) {Initializer = new RandomFunction(0, 100)};
             outputLayer.SetLearningRate(0.2, 0.05d);
             outputLayer.IsRowCircular = false;
             outputLayer.IsColumnCircular = false;
-            var network = new KohonenNetwork(inputLayer, outputLayer);
+            network = new KohonenNetwork(inputLayer, outputLayer);
 
             var progress = 1;
-            network.BeginEpochEvent += (senderNetwork, args) => Array.Clear(isWinner, 0, 64*10);
+            network.BeginEpochEvent += (senderNetwork, args) => Array.Clear(isWinner, 0, isWinner.Length);
 
             network.EndSampleEvent += delegate
             {
@@ -123,8 +125,13 @@ namespace SpeakerVerification
                 progressBar1.Value = ((progress++) * 100) / 500;
                 Application.DoEvents();
             };
-
-            network.Learn(trainingSet, 500);
+            var trSet = new TrainingSet(trainingSet[0].Length);
+            foreach (var x in trainingSet)
+            {
+                trSet.Add(new TrainingSample(x));
+            }
+            network.Learn(trSet, 500);
+            return isWinner;
         }
         
         private void trainDataSelectButton_Click(object sender, EventArgs e)
@@ -147,26 +154,54 @@ namespace SpeakerVerification
                     case "LPC":
                         var trainDataLpc = GetLpcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
                         PlotTrainFeatureMatrix(trainDataLpc);
-                        _vqCodeBook = new VectorQuantization(trainDataLpc, (int)lpcVectorLenghtUpDown.Value, cbSize);
-                        PlotCodeBook(_vqCodeBook.CodeBook);
+                        if (!useNeuronNetworkCeckBox.Checked)
+                        {
+                            _vqCodeBook = new VectorQuantization(trainDataLpc, (int) lpcVectorLenghtUpDown.Value, cbSize);
+                            PlotCodeBook(_vqCodeBook.CodeBook);
+                        }
+                        else
+                        {
+                            var winners = ProvideKohonenCom(trainDataLpc);
+                        }
                         break;
                     case "ARC":
                         var trainDataArc = GetArcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
                         PlotTrainFeatureMatrix(trainDataArc);
-                        _vqCodeBook = new VectorQuantization(trainDataArc, (int)arcVectorLenghtUpDown.Value, cbSize);
-                        PlotCodeBook(_vqCodeBook.CodeBook);
+                        if (!useNeuronNetworkCeckBox.Checked)
+                        {
+                            _vqCodeBook = new VectorQuantization(trainDataArc, (int)lpcVectorLenghtUpDown.Value, cbSize);
+                            PlotCodeBook(_vqCodeBook.CodeBook);
+                        }
+                        else
+                        {
+                            var winners = ProvideKohonenCom(trainDataArc);
+                        }
                         break;
                     case "MFCC":
                         var trainDataMfcc = GetMfccImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
                         PlotTrainFeatureMatrix(trainDataMfcc);
-                        _vqCodeBook = new VectorQuantization(trainDataMfcc, (int)mfccVectorLenghtUpDown.Value, cbSize);
-                        PlotCodeBook(_vqCodeBook.CodeBook);
+                        if (!useNeuronNetworkCeckBox.Checked)
+                        {
+                            _vqCodeBook = new VectorQuantization(trainDataMfcc, (int)lpcVectorLenghtUpDown.Value, cbSize);
+                            PlotCodeBook(_vqCodeBook.CodeBook);
+                        }
+                        else
+                        {
+                            var winners = ProvideKohonenCom(trainDataMfcc);
+                        }
                         break;
                     case "VTC":
                         var trainDataVtc = GetVtcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
                         PlotTrainFeatureMatrix(trainDataVtc);
-                        _vqCodeBook = new VectorQuantization(trainDataVtc, (int)vtcVectorLenghtUpDown.Value, cbSize);
-                        PlotCodeBook(_vqCodeBook.CodeBook);
+                        if (!useNeuronNetworkCeckBox.Checked)
+                        {
+                            _vqCodeBook = new VectorQuantization(trainDataVtc, (int)lpcVectorLenghtUpDown.Value, cbSize);
+                            PlotCodeBook(_vqCodeBook.CodeBook);
+                        }
+                        else
+                        {
+                            var winners = ProvideKohonenCom(trainDataVtc);
+                        }
                         break;
                     default:
                         return;
@@ -325,8 +360,17 @@ namespace SpeakerVerification
             {
                 for (int i = 0; i < testData.Length; i++)
                 {
-                    var distortion = _vqCodeBook.QuantizationError(_vqCodeBook.Quantazation(testData[i]), testData[i]);
-                    writer.WriteLine(distortion);
+                    if (!useNeuronNetworkCeckBox.Checked)
+                    {
+                        var distortion = VectorQuantization.QuantizationError(_vqCodeBook.Quantazation(testData[i]),
+                            testData[i]);
+                        writer.WriteLine(distortion);
+                    }
+                    else
+                    {
+                        var distortion = VectorQuantization.QuantizationError(network.Run(testData[i]), testData[i]);
+                        writer.WriteLine(distortion);
+                    }
                 }
             }
         }

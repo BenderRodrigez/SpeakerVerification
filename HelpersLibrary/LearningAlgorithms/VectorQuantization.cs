@@ -254,7 +254,7 @@ namespace HelpersLibrary.LearningAlgorithms
 		/// <returns>The error.</returns>
 		/// <param name="a">The alpha component.</param>
 		/// <param name="b">The blue component.</param>
-        public double QuantizationError(double[] a, double[] b)
+        public static double QuantizationError(double[] a, double[] b)
         {//d=total_sum(a^2-b^2)
 		    if (a.Length == b.Length)
             {
