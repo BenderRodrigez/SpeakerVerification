@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using HelpersLibrary.DspAlgorithms;
 using HelpersLibrary.LearningAlgorithms;
@@ -98,13 +99,13 @@ namespace SpeakerVerification
 
         private bool[,] ProvideKohonenCom(double[][] trainingSet)
         {
-            var isWinner = new bool[64, 10];
-            var learningRadius = Math.Max(64, 10)/2;
+            var isWinner = new bool[8, 8];
+            var learningRadius = 8/2;
             var neigborhoodFunction = new GaussianFunction(learningRadius);
             const LatticeTopology topology = LatticeTopology.Hexagonal;
 
             var inputLayer = new KohonenLayer(10);
-            var outputLayer = new KohonenLayer(new Size(1, 10), neigborhoodFunction, topology);
+            var outputLayer = new KohonenLayer(new Size(8, 8), neigborhoodFunction, topology);
             var connector = new KohonenConnector(inputLayer, outputLayer) {Initializer = new RandomFunction(0, 100)};
             outputLayer.SetLearningRate(0.2, 0.05d);
             outputLayer.IsRowCircular = false;
@@ -368,7 +369,13 @@ namespace SpeakerVerification
                     }
                     else
                     {
-                        var distortion = VectorQuantization.QuantizationError(network.Run(testData[i]), testData[i]);
+                        var win = network.Run(testData[i]);
+                        var place = new double[testData[0].Length];
+                        for (int j = 0; j < network.Winner.SourceSynapses.Count; j++)
+                        {
+                            place[j] = network.Winner.SourceSynapses[j].Weight;
+                        }
+                        var distortion = VectorQuantization.QuantizationError(place, testData[i]);
                         writer.WriteLine(distortion);
                     }
                 }
