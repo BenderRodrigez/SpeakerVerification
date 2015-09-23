@@ -88,8 +88,7 @@ namespace HelpersLibrary.DspAlgorithms
                 double[] acf;
                 correl.AutoCorrelationVectorDurbin(ref inputAudio, i, out acf);
                 DurbinAlgLpcCoefficients(ref acf, out lpc);
-                for(int j = 0; j < step; j++)
-                    lpcImageList.Add(lpc);
+                lpcImageList.Add(lpc);
             }
             lpcImage = lpcImageList.ToArray();
         }
@@ -171,8 +170,7 @@ namespace HelpersLibrary.DspAlgorithms
                 DurbinAlgLpcCoefficients(ref acf, out lpc);
                 double[] arc;
                 GetArc(lpc, out arc, vectorSize);
-                for (int j = 0; j < step; j++)
-                    arcImageList.Add(arc);
+                arcImageList.Add(arc);
             }
             arcImage = arcImageList.ToArray();
         }
@@ -209,8 +207,7 @@ namespace HelpersLibrary.DspAlgorithms
                 for (int j = 0; j < spectrum.Length; j++)
                     spectrum[j] /= arc[j];
 
-                for (int j = 0; j < step; j++)
-                    vocalTractImageList.Add(spectrum);
+                vocalTractImageList.Add(spectrum);
             }
             vtcImage = vocalTractImageList.ToArray();
         }

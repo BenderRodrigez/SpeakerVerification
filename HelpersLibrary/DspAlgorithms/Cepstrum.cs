@@ -134,8 +134,7 @@ namespace HelpersLibrary.DspAlgorithms
                     input => Math.Pow(input.Magnitude, 2)); //Go to Magnitude
 
                 var mfcc = GetMelScaledCepstrum(doubleSpectrum); //find cepstrums
-                for (int j = 0; j < step; j++)
-                    mfccImageList.Add(mfcc);
+                mfccImageList.Add(mfcc);
             }
             mfccCepstrogram = mfccImageList.ToArray();
         }

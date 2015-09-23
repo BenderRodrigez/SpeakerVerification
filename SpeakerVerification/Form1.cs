@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using HelpersLibrary.DspAlgorithms;
 using HelpersLibrary.LearningAlgorithms;
@@ -155,6 +156,7 @@ namespace SpeakerVerification
                 {
                     case "LPC":
                         var trainDataLpc = GetLpcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
+//                        trainDataLpc = Normalize(trainDataLpc);
                         PlotTrainFeatureMatrix(trainDataLpc);
                         if (!useNeuronNetworkCeckBox.Checked)
                         {
@@ -169,6 +171,7 @@ namespace SpeakerVerification
                         break;
                     case "ARC":
                         var trainDataArc = GetArcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
+//                        trainDataArc = Normalize(trainDataArc);
                         PlotTrainFeatureMatrix(trainDataArc);
                         if (!useNeuronNetworkCeckBox.Checked)
                         {
@@ -183,6 +186,7 @@ namespace SpeakerVerification
                         break;
                     case "MFCC":
                         var trainDataMfcc = GetMfccImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
+//                        trainDataMfcc = Normalize(trainDataMfcc);
                         PlotTrainFeatureMatrix(trainDataMfcc);
                         if (!useNeuronNetworkCeckBox.Checked)
                         {
@@ -197,6 +201,7 @@ namespace SpeakerVerification
                         break;
                     case "VTC":
                         var trainDataVtc = GetVtcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
+//                        trainDataVtc = Normalize(trainDataVtc);
                         PlotTrainFeatureMatrix(trainDataVtc);
                         if (!useNeuronNetworkCeckBox.Checked)
                         {
@@ -213,6 +218,20 @@ namespace SpeakerVerification
                         return;
                 }
             }
+        }
+
+        private double[][] Normalize(double[][] image)
+        {
+            var max = image.Max(x => x.Max());
+            var min = image.Min(x => x.Min());
+            for (int i = 0; i < image.Length; i++)
+            {
+                for (int j = 0; j < image[i].Length; j++)
+                {
+                    image[i][j] = ((image[i][j] - min)/(max - min))*2.0 - 1.0;
+                }
+            }
+            return image;
         }
 
         private bool IsPowerOfTwo(uint val)
