@@ -33,6 +33,7 @@
             this.trainFeaturesGroupBox = new System.Windows.Forms.GroupBox();
             this.featureTestGroupBox = new System.Windows.Forms.GroupBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.useNeuronNetworkCeckBox = new System.Windows.Forms.CheckBox();
             this.vqSizeNumericUpDown = new System.Windows.Forms.NumericUpDown();
             this.label18 = new System.Windows.Forms.Label();
             this.testDataFileNameLabel = new System.Windows.Forms.Label();
@@ -66,7 +67,7 @@
             this.analysisIntervalUpDown = new System.Windows.Forms.NumericUpDown();
             this.label1 = new System.Windows.Forms.Label();
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
-            this.useNeuronNetworkCeckBox = new System.Windows.Forms.CheckBox();
+            this.button1 = new System.Windows.Forms.Button();
             this.groupBox4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.vqSizeNumericUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.histogrammBagsNumberUpDown)).BeginInit();
@@ -153,6 +154,16 @@
             this.groupBox4.TabIndex = 3;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Настройки анализа";
+            // 
+            // useNeuronNetworkCeckBox
+            // 
+            this.useNeuronNetworkCeckBox.AutoSize = true;
+            this.useNeuronNetworkCeckBox.Location = new System.Drawing.Point(29, 175);
+            this.useNeuronNetworkCeckBox.Name = "useNeuronNetworkCeckBox";
+            this.useNeuronNetworkCeckBox.Size = new System.Drawing.Size(176, 17);
+            this.useNeuronNetworkCeckBox.TabIndex = 32;
+            this.useNeuronNetworkCeckBox.Text = "Использовать сеть Кохонена";
+            this.useNeuronNetworkCeckBox.UseVisualStyleBackColor = true;
             // 
             // vqSizeNumericUpDown
             // 
@@ -544,15 +555,15 @@
             this.progressBar1.Size = new System.Drawing.Size(786, 23);
             this.progressBar1.TabIndex = 4;
             // 
-            // useNeuronNetworkCeckBox
+            // button1
             // 
-            this.useNeuronNetworkCeckBox.AutoSize = true;
-            this.useNeuronNetworkCeckBox.Location = new System.Drawing.Point(29, 175);
-            this.useNeuronNetworkCeckBox.Name = "useNeuronNetworkCeckBox";
-            this.useNeuronNetworkCeckBox.Size = new System.Drawing.Size(176, 17);
-            this.useNeuronNetworkCeckBox.TabIndex = 32;
-            this.useNeuronNetworkCeckBox.Text = "Использовать сеть Кохонена";
-            this.useNeuronNetworkCeckBox.UseVisualStyleBackColor = true;
+            this.button1.Location = new System.Drawing.Point(530, 274);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 5;
+            this.button1.Text = "button1";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // Form1
             // 
@@ -560,6 +571,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ActiveCaption;
             this.ClientSize = new System.Drawing.Size(1201, 568);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.progressBar1);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.featureTestGroupBox);
@@ -624,6 +636,7 @@
         private System.Windows.Forms.NumericUpDown vqSizeNumericUpDown;
         private System.Windows.Forms.Label label18;
         private System.Windows.Forms.CheckBox useNeuronNetworkCeckBox;
+        private System.Windows.Forms.Button button1;
     }
 }
 

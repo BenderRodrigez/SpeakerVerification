@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -104,10 +105,11 @@ namespace SpeakerVerification
             var learningRadius = outputLayerSize / 2;
             var neigborhoodFunction = new GaussianFunction(learningRadius);
             const LatticeTopology topology = LatticeTopology.Hexagonal;
-
-            var inputLayer = new KohonenLayer(10);
+            var max = trainingSet.Max(x => x.Max());
+            var min = trainingSet.Min(x => x.Min());
+            var inputLayer = new KohonenLayer(trainingSet[0].Length);
             var outputLayer = new KohonenLayer(new Size(outputLayerSize, outputLayerSize), neigborhoodFunction, topology);
-            var connector = new KohonenConnector(inputLayer, outputLayer) {Initializer = new RandomFunction(0, 100)};
+            new KohonenConnector(inputLayer, outputLayer) {Initializer = new RandomFunction(min, max)};
             outputLayer.SetLearningRate(0.2, 0.05d);
             outputLayer.IsRowCircular = false;
             outputLayer.IsColumnCircular = false;
@@ -156,7 +158,6 @@ namespace SpeakerVerification
                 {
                     case "LPC":
                         var trainDataLpc = GetLpcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
-//                        trainDataLpc = Normalize(trainDataLpc);
                         PlotTrainFeatureMatrix(trainDataLpc);
                         if (!useNeuronNetworkCeckBox.Checked)
                         {
@@ -171,11 +172,10 @@ namespace SpeakerVerification
                         break;
                     case "ARC":
                         var trainDataArc = GetArcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
-//                        trainDataArc = Normalize(trainDataArc);
                         PlotTrainFeatureMatrix(trainDataArc);
                         if (!useNeuronNetworkCeckBox.Checked)
                         {
-                            _vqCodeBook = new VectorQuantization(trainDataArc, (int)lpcVectorLenghtUpDown.Value, cbSize);
+                            _vqCodeBook = new VectorQuantization(trainDataArc, (int)arcVectorLenghtUpDown.Value, cbSize);
                             PlotCodeBook(_vqCodeBook.CodeBook);
                         }
                         else
@@ -186,11 +186,10 @@ namespace SpeakerVerification
                         break;
                     case "MFCC":
                         var trainDataMfcc = GetMfccImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
-//                        trainDataMfcc = Normalize(trainDataMfcc);
                         PlotTrainFeatureMatrix(trainDataMfcc);
                         if (!useNeuronNetworkCeckBox.Checked)
                         {
-                            _vqCodeBook = new VectorQuantization(trainDataMfcc, (int)lpcVectorLenghtUpDown.Value, cbSize);
+                            _vqCodeBook = new VectorQuantization(trainDataMfcc, (int)mfccVectorLenghtUpDown.Value, cbSize);
                             PlotCodeBook(_vqCodeBook.CodeBook);
                         }
                         else
@@ -201,11 +200,11 @@ namespace SpeakerVerification
                         break;
                     case "VTC":
                         var trainDataVtc = GetVtcImage(speechFileFormat, speechFile, speechStartPosition, speechStopPosition);
-//                        trainDataVtc = Normalize(trainDataVtc);
                         PlotTrainFeatureMatrix(trainDataVtc);
                         if (!useNeuronNetworkCeckBox.Checked)
                         {
-                            _vqCodeBook = new VectorQuantization(trainDataVtc, (int)lpcVectorLenghtUpDown.Value, cbSize);
+                            _vqCodeBook = new VectorQuantization(trainDataVtc, (int) vtcVectorLenghtUpDown.Value - 1,
+                                cbSize);
                             PlotCodeBook(_vqCodeBook.CodeBook);
                         }
                         else
@@ -218,20 +217,6 @@ namespace SpeakerVerification
                         return;
                 }
             }
-        }
-
-        private double[][] Normalize(double[][] image)
-        {
-            var max = image.Max(x => x.Max());
-            var min = image.Min(x => x.Min());
-            for (int i = 0; i < image.Length; i++)
-            {
-                for (int j = 0; j < image[i].Length; j++)
-                {
-                    image[i][j] = ((image[i][j] - min)/(max - min))*2.0 - 1.0;
-                }
-            }
-            return image;
         }
 
         private bool IsPowerOfTwo(uint val)
@@ -375,6 +360,7 @@ namespace SpeakerVerification
                 {
                     heatMap.Data[i, j] = codeBook[i][j];
                 }
+            _codeBookPlotView.Model.Series.Clear();
             _codeBookPlotView.Model.Series.Add(heatMap);
             _codeBookPlotView.Model.InvalidatePlot(true);
         }
@@ -396,6 +382,7 @@ namespace SpeakerVerification
                 {
                     heatMap.Data[i, j] = winners[i, j] ? 1.0 : 0.0;
                 }
+            _codeBookPlotView.Model.Series.Clear();
             _codeBookPlotView.Model.Series.Add(heatMap);
             _codeBookPlotView.Model.InvalidatePlot(true);
         }
@@ -404,15 +391,21 @@ namespace SpeakerVerification
         {
             using (var writer = new StreamWriter(fileName))
             {
-                for (int i = 0; i < testData.Length; i++)
+                if (!useNeuronNetworkCeckBox.Checked)
                 {
-                    if (!useNeuronNetworkCeckBox.Checked)
+                    for (int i = 0; i < testData.Length; i++)
                     {
                         var distortion = VectorQuantization.QuantizationError(_vqCodeBook.Quantazation(testData[i]),
                             testData[i]);
                         writer.WriteLine(distortion);
                     }
-                    else
+                    writer.WriteLine("---------------");
+                    writer.WriteLine(_vqCodeBook.DistortionMeasureEnergy(ref testData));
+                }
+                else
+                {
+                    var energy = 0.0;
+                    for (int i = 0; i < testData.Length; i++)
                     {
                         _network.Run(testData[i]);
                         var place = new double[testData[0].Length];
@@ -422,7 +415,11 @@ namespace SpeakerVerification
                         }
                         var distortion = VectorQuantization.QuantizationError(place, testData[i]);
                         writer.WriteLine(distortion);
+                        energy += Math.Pow(distortion, 2);
                     }
+                    energy /= testData.Length;
+                    writer.WriteLine("---------------");
+                    writer.WriteLine(energy);
                 }
             }
         }
@@ -475,6 +472,89 @@ namespace SpeakerVerification
                         return;
                 }
             }
+        }
+
+        private void TestPraatLpc()
+        {
+            var _praatSamplesFolderPath = "C:\\Users\\Bender\\Desktop\\LPC_temp_records";
+            var _praatTrainingSet = "ГРР1_lpc.mat.txt";
+            var samples = Directory.GetFiles(_praatSamplesFolderPath, "*.txt");
+            var images = new Dictionary<string, double[][]>();
+            VectorQuantization vq = null;
+            KohonenNetwork network = null;
+            KohonenConnector connector;
+            var inputLayer = new KohonenLayer(10);
+            var outputLayer = new KohonenLayer(new Size(8, 8), new GaussianFunction(4), LatticeTopology.Hexagonal);
+            outputLayer.SetLearningRate(0.2, 0.05d);
+            outputLayer.IsRowCircular = false;
+            outputLayer.IsColumnCircular = false;
+            foreach (var sample in samples)
+            {
+                var featureMatrix = new List<double[]>();
+                using (var reader = new StreamReader(sample))
+                {
+                    var lines = reader.ReadToEnd().Split('\n');
+                    for (int i = 0; i < lines.Length; i++)
+                    {
+                        var values = lines[i].Split(' ');
+                        for (int j = 0; j < values.Length && i == 0; j++)
+                        {
+                            featureMatrix.Add(new double[10]);
+                        }
+                        for (int j = 0; j < values.Length; j++)
+                        {
+                            featureMatrix[j][i] = Convert.ToDouble(values[j].Replace('.', ','));
+                        }
+                    }
+                }
+
+                images[sample] = featureMatrix.ToArray();
+
+                if (sample.IndexOf(_praatTrainingSet) > -1)
+                {
+                    vq = new VectorQuantization(images[sample], 10, 64);
+                    var max = images[sample].Max(x => x.Max());
+                    var min = images[sample].Min(x => x.Min());
+                    new KohonenConnector(inputLayer, outputLayer) { Initializer = new RandomFunction(min, max) };
+                    network = new KohonenNetwork(inputLayer, outputLayer);
+                    var trainSet = new TrainingSet(10);
+                    foreach (var d in images[sample])
+                    {
+                        trainSet.Add(new TrainingSample(d));
+                    }
+                    network.Learn(trainSet, 500);
+                }
+            }
+            foreach (var sample in samples)
+            {
+                using (var writer = new StreamWriter(sample + ".vq_dst.txt"))
+                {
+                    foreach (var d in images[sample])
+                    {
+                        writer.WriteLine(VectorQuantization.QuantizationError(vq.Quantazation(d), d));
+                    }
+                }
+
+                using (var writer = new StreamWriter(sample + ".neuron_dst.txt"))
+                {
+                    foreach (var d in images[sample])
+                    {
+                        network.Run(d);
+                        var place = new double[10];
+                        for (int j = 0; j < network.Winner.SourceSynapses.Count; j++)
+                        {
+                            place[j] = network.Winner.SourceSynapses[j].Weight;
+                        }
+                        var distortion = VectorQuantization.QuantizationError(place, d);
+                        writer.WriteLine(distortion);
+                    }
+                }
+            }
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            TestPraatLpc();
         }
     }
 }

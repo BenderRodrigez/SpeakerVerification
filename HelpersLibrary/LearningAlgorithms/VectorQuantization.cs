@@ -92,20 +92,18 @@ namespace HelpersLibrary.LearningAlgorithms
                     var centrTwo = new double[vectorLength];
                     for (int i = 0; i < TrainingSet.Length-1; i++)
                     {
-                        if (QuantazationIndex(TrainingSet[i]) == cb)
+                        if (QuantazationIndex(TrainingSet[i]) != cb) continue;
+
+                        for (int j = i+1; j < TrainingSet.Length; j++)
                         {
-                            for (int j = i+1; j < TrainingSet.Length; j++)
+                            if (QuantazationIndex(TrainingSet[j]) != cb) continue;
+
+                            var distance = QuantizationError(TrainingSet[i], TrainingSet[j]);
+                            if (distance > maxDistance)
                             {
-                                if (QuantazationIndex(TrainingSet[j]) == cb)
-                                {
-                                    var distance = QuantizationError(TrainingSet[i], TrainingSet[j]);
-                                    if (distance > maxDistance)
-                                    {
-                                        centrOne = TrainingSet[i];
-                                        centrTwo = TrainingSet[j];
-                                        maxDistance = distance;
-                                    }
-                                }
+                                centrOne = TrainingSet[i];
+                                centrTwo = TrainingSet[j];
+                                maxDistance = distance;
                             }
                         }
                     }

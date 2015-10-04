@@ -63,6 +63,7 @@
     <Compile Include="DspAlgorithms\LinearPredictCoefficient.cs" />
     <Compile Include="DspAlgorithms\SpeechSearch.cs" />
     <Compile Include="DspAlgorithms\WindowFunctions.cs" />
+    <Compile Include="Experiment\PhraseCube.cs" />
     <Compile Include="LearningAlgorithms\VectorQuantization.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -37,6 +37,9 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <Choose>
     <When Condition="('$(VisualStudioVersion)' == '10.0' or '$(VisualStudioVersion)' == '') and '$(TargetFrameworkVersion)' == 'v3.5'">
@@ -58,6 +61,10 @@
     <ProjectReference Include="..\HelpersLibrary\HelpersLibrary.csproj">
       <Project>{b9ed183a-5d62-4d85-99ec-42303d08f50a}</Project>
       <Name>HelpersLibrary</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NeuronDotNet\Core\Core.csproj">
+      <Project>{D5B56684-0C33-4195-B3D6-D1576B739E42}</Project>
+      <Name>Core</Name>
     </ProjectReference>
   </ItemGroup>
   <Choose>
