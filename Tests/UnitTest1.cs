@@ -182,80 +182,25 @@ namespace Tests
         }
 
         [TestMethod]
-        public void PraatLpcTest()
+        public void TestAcf()
         {
-            var samples = Directory.GetFiles(_praatSamplesFolderPath, "*.txt");
-            var images = new Dictionary<string, double[][]>();
-            VectorQuantization vq = null;
-            KohonenNetwork network = null;
-            KohonenConnector connector;
-            var inputLayer = new KohonenLayer(10);
-            var outputLayer = new KohonenLayer(new Size(8,8), new GaussianFunction(4), LatticeTopology.Hexagonal);
-            outputLayer.SetLearningRate(0.2, 0.05d);
-            outputLayer.IsRowCircular = false;
-            outputLayer.IsColumnCircular = false;
-            foreach (var sample in samples)
+            var testData = new float[440];
+            for (int i = 0; i < 440; i++)
             {
-                var featureMatrix = new List<double[]>();
-                using (var reader = new StreamReader(sample))
-                {
-                    var lines = reader.ReadToEnd().Split('\n');
-                    for (int i = 0; i < lines.Length; i++)
-                    {
-                        var values = lines[i].Split(' ');
-                        for (int j = 0; j < values.Length; j++)
-                        {
-                            featureMatrix.Add(new double[10]);
-                        }
-                        for (int j = 0; j < values.Length; j++)
-                        {
-                            featureMatrix[j][i] = Convert.ToDouble(values[j].Replace('.', ','));
-                        }
-                    }
-                }
-
-                images[sample] = featureMatrix.ToArray();
-
-                if (sample.IndexOf(_praatTrainingSet) > -1)
-                {
-                    //vq = new VectorQuantization(images[sample], 10, 64);
-                    var max = images[sample].Max(x => x.Max());
-                    var min = images[sample].Min(x => x.Min());
-                    new KohonenConnector(inputLayer, outputLayer){Initializer = new RandomFunction(min, max)};
-                    network = new KohonenNetwork(inputLayer, outputLayer);
-                    var trainSet = new TrainingSet(10);
-                    foreach (var d in images[sample])
-                    {
-                        trainSet.Add(new TrainingSample(d));
-                    }
-                    network.Learn(trainSet, 500);
-                }
+                testData[i] = (float)Math.Sin((i/440.0)*Math.PI*8);
             }
-            foreach (var sample in samples)
+
+            var corellation = new Corellation
             {
-                using (var writer = new StreamWriter(sample+".vq_dst.txt"))
-                {
-                    foreach (var d in images[sample])
-                    {
-                        writer.WriteLine(VectorQuantization.QuantizationError(vq.Quantazation(d), d));
-                    }
-                }
-
-                using (var writer = new StreamWriter(sample+".neuron_dst.txt"))
-                {
-                    foreach (var d in images[sample])
-                    {
-                        network.Run(d);
-                        var place = new double[10];
-                        for (int j = 0; j < network.Winner.SourceSynapses.Count; j++)
-                        {
-                            place[j] = network.Winner.SourceSynapses[j].Weight;
-                        }
-                        var distortion = VectorQuantization.QuantizationError(place, d);
-                        writer.WriteLine(distortion);
-                    }
-                }
+                UsedWindowSize = 440,
+                UsedWindowType = WindowFunctions.WindowType.Blackman
+            };
+            var res = new List<double>();
+            for (int i = 0; i < 440; i++)
+            {
+                res.Add(corellation.Autocorrelation(ref testData, 0, i + 1));
             }
+            Assert.IsTrue(res.Where(double.IsNaN).Select(x => x).Any());
         }
 
         private static void DrawLpcMatrix(ref double[][] lpc, ref Image graphic)

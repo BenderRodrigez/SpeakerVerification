@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace HelpersLibrary.DspAlgorithms
 {
@@ -63,6 +64,27 @@ namespace HelpersLibrary.DspAlgorithms
             return autoCorrelation/energy;
         }
 
+        public double Autocorrelation(ref float[] inputSignal, int offset, int k)
+        {
+            var autoCorrelation = 0.0;
+            var tmp = new float[UsedWindowSize];
+
+            Array.Copy(inputSignal, offset, tmp, 0, UsedWindowSize);
+            var windows = new WindowFunctions();
+            tmp = windows.PlaceWindow(tmp, UsedWindowType);
+
+            for (int j = 0; j < tmp.Length; j++)
+            {
+                if (j + k < tmp.Length)
+                {
+                    autoCorrelation += tmp[j] * tmp[j + k];
+                }
+                else
+                    autoCorrelation += 0.0;
+            }
+            return autoCorrelation;
+        }
+
         /// <summary>
         /// Вычисляет квадратную матрицу для последующего вычисления Коэффициентов линейного предсказания
         /// </summary>
@@ -113,6 +135,25 @@ namespace HelpersLibrary.DspAlgorithms
             }
         }
 
+        public void AutCorrelationImage(ref float[] inputSignal, int size, float offset, out double[][] image,
+            WindowFunctions.WindowType windowFunction, int sampleFrequency, int spechStart, int speechStop)
+        {
+            UsedWindowSize = size;
+            UsedWindowType = windowFunction;
+            var jump = (int) Math.Round(size*offset);
+            var img = new List<double[]>();
+            for (int samples = spechStart; samples < inputSignal.Length && samples < speechStop; samples+= jump)
+            {
+                var func = new double[size];
+                for (int i = 0; i < size; i++)
+                {
+                    func[i] = Autocorrelation(ref inputSignal, samples, i + 1);
+                }
+                img.Add(func);
+            }
+            image = img.ToArray();
+        }
+
         public void AutoCorrelationVectorDurbin(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowFunctions.WindowType useWindow)
         {
             UsedWindowType = useWindow;
@@ -130,7 +171,7 @@ namespace HelpersLibrary.DspAlgorithms
             vector = new double[UsedVectorSize];
             for (int i = 0; i < UsedVectorSize; i++)
             {
-                vector[i] = AutoCorrelationPerSample(ref inputSignal, offset, i);
+                vector[i] = Autocorrelation(ref inputSignal, offset, i);
             }
         }
 

@@ -213,6 +213,18 @@ namespace SpeakerVerification
                             PlotWinnersNeurons(winners);
                         }
                         break;
+                    case "ACF":
+                        var corellation = new Corellation();
+                        double[][] trainDataAcf;
+                        WindowFunctions.WindowType windowType;
+                        Enum.TryParse(
+                            windowTypeComboBox.SelectedItem as string, out windowType);
+                        corellation.AutCorrelationImage(ref speechFile,
+                            (int) Math.Round(analysisIntervalUpDown.Value*speechFileFormat.SampleRate),
+                            (float) overlappingUpDown.Value/100, out trainDataAcf, windowType,
+                            speechFileFormat.SampleRate, speechStartPosition, speechStopPosition);
+                        PlotTrainFeatureMatrix(trainDataAcf);
+                        break;
                     default:
                         return;
                 }
@@ -476,14 +488,14 @@ namespace SpeakerVerification
 
         private void TestPraatLpc()
         {
-            var _praatSamplesFolderPath = "C:\\Users\\Bender\\Desktop\\LPC_temp_records";
-            var _praatTrainingSet = "ГРР1_lpc.mat.txt";
+            var _praatSamplesFolderPath = "C:\\Users\\Bender\\Desktop\\Pitch";
+            var _praatTrainingSet = "ГРР1.mat.txt";
             var samples = Directory.GetFiles(_praatSamplesFolderPath, "*.txt");
             var images = new Dictionary<string, double[][]>();
             VectorQuantization vq = null;
             KohonenNetwork network = null;
             KohonenConnector connector;
-            var inputLayer = new KohonenLayer(10);
+            var inputLayer = new KohonenLayer(1);
             var outputLayer = new KohonenLayer(new Size(8, 8), new GaussianFunction(4), LatticeTopology.Hexagonal);
             outputLayer.SetLearningRate(0.2, 0.05d);
             outputLayer.IsRowCircular = false;
@@ -496,10 +508,10 @@ namespace SpeakerVerification
                     var lines = reader.ReadToEnd().Split('\n');
                     for (int i = 0; i < lines.Length; i++)
                     {
-                        var values = lines[i].Split(' ');
+                        var values = lines[i].Split(' ').Where(x=> x != "0").Select(x=> x).ToArray();
                         for (int j = 0; j < values.Length && i == 0; j++)
                         {
-                            featureMatrix.Add(new double[10]);
+                            featureMatrix.Add(new double[1]);
                         }
                         for (int j = 0; j < values.Length; j++)
                         {
@@ -512,12 +524,12 @@ namespace SpeakerVerification
 
                 if (sample.IndexOf(_praatTrainingSet) > -1)
                 {
-                    vq = new VectorQuantization(images[sample], 10, 64);
+                    vq = new VectorQuantization(images[sample], 1, 64);
                     var max = images[sample].Max(x => x.Max());
                     var min = images[sample].Min(x => x.Min());
                     new KohonenConnector(inputLayer, outputLayer) { Initializer = new RandomFunction(min, max) };
                     network = new KohonenNetwork(inputLayer, outputLayer);
-                    var trainSet = new TrainingSet(10);
+                    var trainSet = new TrainingSet(1);
                     foreach (var d in images[sample])
                     {
                         trainSet.Add(new TrainingSample(d));
@@ -540,7 +552,7 @@ namespace SpeakerVerification
                     foreach (var d in images[sample])
                     {
                         network.Run(d);
-                        var place = new double[10];
+                        var place = new double[1];
                         for (int j = 0; j < network.Winner.SourceSynapses.Count; j++)
                         {
                             place[j] = network.Winner.SourceSynapses[j].Weight;

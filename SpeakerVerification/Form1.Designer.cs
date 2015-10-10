@@ -470,7 +470,8 @@
             "LPC",
             "MFCC",
             "ARC",
-            "VTC"});
+            "VTC",
+            "ACF"});
             this.featureSelectComboBox.Location = new System.Drawing.Point(217, 94);
             this.featureSelectComboBox.Name = "featureSelectComboBox";
             this.featureSelectComboBox.Size = new System.Drawing.Size(121, 21);
