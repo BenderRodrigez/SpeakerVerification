@@ -33,6 +33,9 @@
             this.trainFeaturesGroupBox = new System.Windows.Forms.GroupBox();
             this.featureTestGroupBox = new System.Windows.Forms.GroupBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.acfVectorLengthUpDown = new System.Windows.Forms.NumericUpDown();
+            this.label20 = new System.Windows.Forms.Label();
+            this.label19 = new System.Windows.Forms.Label();
             this.useNeuronNetworkCeckBox = new System.Windows.Forms.CheckBox();
             this.vqSizeNumericUpDown = new System.Windows.Forms.NumericUpDown();
             this.label18 = new System.Windows.Forms.Label();
@@ -69,6 +72,7 @@
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
             this.button1 = new System.Windows.Forms.Button();
             this.groupBox4.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.acfVectorLengthUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.vqSizeNumericUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.histogrammBagsNumberUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.vtcVectorLenghtUpDown)).BeginInit();
@@ -115,6 +119,9 @@
             // 
             // groupBox4
             // 
+            this.groupBox4.Controls.Add(this.acfVectorLengthUpDown);
+            this.groupBox4.Controls.Add(this.label20);
+            this.groupBox4.Controls.Add(this.label19);
             this.groupBox4.Controls.Add(this.useNeuronNetworkCeckBox);
             this.groupBox4.Controls.Add(this.vqSizeNumericUpDown);
             this.groupBox4.Controls.Add(this.label18);
@@ -155,6 +162,46 @@
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Настройки анализа";
             // 
+            // acfVectorLengthUpDown
+            // 
+            this.acfVectorLengthUpDown.Location = new System.Drawing.Point(264, 242);
+            this.acfVectorLengthUpDown.Maximum = new decimal(new int[] {
+            512,
+            0,
+            0,
+            0});
+            this.acfVectorLengthUpDown.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.acfVectorLengthUpDown.Name = "acfVectorLengthUpDown";
+            this.acfVectorLengthUpDown.Size = new System.Drawing.Size(41, 20);
+            this.acfVectorLengthUpDown.TabIndex = 35;
+            this.acfVectorLengthUpDown.Value = new decimal(new int[] {
+            128,
+            0,
+            0,
+            0});
+            // 
+            // label20
+            // 
+            this.label20.AutoSize = true;
+            this.label20.Location = new System.Drawing.Point(177, 244);
+            this.label20.Name = "label20";
+            this.label20.Size = new System.Drawing.Size(81, 13);
+            this.label20.TabIndex = 34;
+            this.label20.Text = "Дина вектора:";
+            // 
+            // label19
+            // 
+            this.label19.AutoSize = true;
+            this.label19.Location = new System.Drawing.Point(164, 222);
+            this.label19.Name = "label19";
+            this.label19.Size = new System.Drawing.Size(30, 13);
+            this.label19.TabIndex = 33;
+            this.label19.Text = "ACF:";
+            // 
             // useNeuronNetworkCeckBox
             // 
             this.useNeuronNetworkCeckBox.AutoSize = true;
@@ -169,7 +216,7 @@
             // 
             this.vqSizeNumericUpDown.Location = new System.Drawing.Point(158, 149);
             this.vqSizeNumericUpDown.Maximum = new decimal(new int[] {
-            128,
+            2048,
             0,
             0,
             0});
@@ -431,7 +478,7 @@
             0,
             0});
             this.lpcVectorLenghtUpDown.Minimum = new decimal(new int[] {
-            4,
+            1,
             0,
             0,
             0});
@@ -584,6 +631,7 @@
             this.Text = "SpeakerVerifiaction";
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.acfVectorLengthUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.vqSizeNumericUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.histogrammBagsNumberUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.vtcVectorLenghtUpDown)).EndInit();
@@ -638,6 +686,9 @@
         private System.Windows.Forms.Label label18;
         private System.Windows.Forms.CheckBox useNeuronNetworkCeckBox;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.NumericUpDown acfVectorLengthUpDown;
+        private System.Windows.Forms.Label label20;
+        private System.Windows.Forms.Label label19;
     }
 }
 

@@ -214,21 +214,38 @@ namespace SpeakerVerification
                         }
                         break;
                     case "ACF":
-                        var corellation = new Corellation();
-                        double[][] trainDataAcf;
-                        WindowFunctions.WindowType windowType;
-                        Enum.TryParse(
-                            windowTypeComboBox.SelectedItem as string, out windowType);
-                        corellation.AutCorrelationImage(ref speechFile,
-                            (int) Math.Round(analysisIntervalUpDown.Value*speechFileFormat.SampleRate),
-                            (float) overlappingUpDown.Value/100, out trainDataAcf, windowType,
-                            speechFileFormat.SampleRate, speechStartPosition, speechStopPosition);
+                        var trainDataAcf = GetAcfImage(speechFile, speechFileFormat, speechStartPosition, speechStopPosition);
                         PlotTrainFeatureMatrix(trainDataAcf);
+                        if (!useNeuronNetworkCeckBox.Checked)
+                        {
+                            _vqCodeBook = new VectorQuantization(trainDataAcf, (int)Math.Round(analysisIntervalUpDown.Value * speechFileFormat.SampleRate),
+                                cbSize);
+                            PlotCodeBook(_vqCodeBook.CodeBook);
+                        }
+                        else
+                        {
+                            var winners = ProvideKohonenCom(trainDataAcf);
+                            PlotWinnersNeurons(winners);
+                        }
                         break;
                     default:
                         return;
                 }
             }
+        }
+
+        private double[][] GetAcfImage(float[] speechFile, WaveFormat speechFileFormat, int speechStartPosition,
+            int speechStopPosition)
+        {
+            double[][] trainDataAcf;
+            var corellation = new Corellation();
+            WindowFunctions.WindowType windowType;
+            Enum.TryParse(windowTypeComboBox.SelectedItem as string, out windowType);
+            corellation.AutCorrelationImage(ref speechFile,
+                (int) acfVectorLengthUpDown.Value,
+                (1.0f - (float) overlappingUpDown.Value/100.0f), out trainDataAcf, windowType,
+                speechFileFormat.SampleRate, speechStartPosition, speechStopPosition);
+            return trainDataAcf;
         }
 
         private bool IsPowerOfTwo(uint val)
@@ -407,7 +424,7 @@ namespace SpeakerVerification
                 {
                     for (int i = 0; i < testData.Length; i++)
                     {
-                        var distortion = VectorQuantization.QuantizationError(_vqCodeBook.Quantazation(testData[i]),
+                        var distortion = _vqCodeBook.QuantizationErrorNormal(_vqCodeBook.Quantazation(testData[i]),
                             testData[i]);
                         writer.WriteLine(distortion);
                     }
@@ -479,6 +496,13 @@ namespace SpeakerVerification
                         SaveDistortionEnergyToFile(
                             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                                 "distortionMeasure.txt"), testDataVtc);
+                        break;
+                    case "ACF":
+                        var testDataAcf = GetAcfImage(speechFile, speechFileFormat, speechStartPosition, speechStopPosition);
+                        PlotTestFeatureMatrix(testDataAcf);
+                        SaveDistortionEnergyToFile(
+                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                                "distortionMeasure.txt"), testDataAcf);
                         break;
                     default:
                         return;

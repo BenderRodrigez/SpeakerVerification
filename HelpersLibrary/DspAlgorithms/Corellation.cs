@@ -47,7 +47,6 @@ namespace HelpersLibrary.DspAlgorithms
             var tmp = new float[UsedWindowSize];
 
             Array.Copy(inputSignal, offset, tmp, 0, UsedWindowSize);
-            //double[] temp = HammingWindow(tmp, tmp.Length);
             var windows = new WindowFunctions();
             tmp = windows.PlaceWindow(tmp, UsedWindowType);
 
@@ -171,7 +170,7 @@ namespace HelpersLibrary.DspAlgorithms
             vector = new double[UsedVectorSize];
             for (int i = 0; i < UsedVectorSize; i++)
             {
-                vector[i] = Autocorrelation(ref inputSignal, offset, i);
+                vector[i] = AutoCorrelationPerSample(ref inputSignal, offset, i);
             }
         }
 

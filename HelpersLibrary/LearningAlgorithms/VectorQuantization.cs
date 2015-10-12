@@ -256,7 +256,7 @@ namespace HelpersLibrary.LearningAlgorithms
         {//d=total_sum(a^2-b^2)
 		    if (a.Length == b.Length)
             {
-                double error = a.Select((t, i) => Math.Pow(t - b[i], 2)).Sum();
+                var error = a.Select((t, i) => Math.Pow(t - b[i], 2)).Sum();
                 return error;
             }
 		    throw new Exception("Вектора разной длины!");
