@@ -218,8 +218,7 @@ namespace SpeakerVerification
                         PlotTrainFeatureMatrix(trainDataAcf);
                         if (!useNeuronNetworkCeckBox.Checked)
                         {
-                            _vqCodeBook = new VectorQuantization(trainDataAcf, (int)Math.Round(analysisIntervalUpDown.Value * speechFileFormat.SampleRate),
-                                cbSize);
+                            _vqCodeBook = new VectorQuantization(trainDataAcf, 1, cbSize);
                             PlotCodeBook(_vqCodeBook.CodeBook);
                         }
                         else
@@ -242,7 +241,7 @@ namespace SpeakerVerification
             WindowFunctions.WindowType windowType;
             Enum.TryParse(windowTypeComboBox.SelectedItem as string, out windowType);
             corellation.AutCorrelationImage(ref speechFile,
-                (int) acfVectorLengthUpDown.Value,
+                (int) Math.Round(analysisIntervalUpDown.Value*speechFileFormat.SampleRate),
                 (1.0f - (float) overlappingUpDown.Value/100.0f), out trainDataAcf, windowType,
                 speechFileFormat.SampleRate, speechStartPosition, speechStopPosition);
             return trainDataAcf;

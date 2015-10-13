@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using HelpersLibrary.DspAlgorithms.Filters;
 
 namespace HelpersLibrary.DspAlgorithms
 {
@@ -139,16 +140,40 @@ namespace HelpersLibrary.DspAlgorithms
         {
             UsedWindowSize = size;
             UsedWindowType = windowFunction;
+
+            var hpf = new Hpf(60.0f, sampleFrequency);
+            inputSignal = hpf.Filter(inputSignal);
+            var lpf = new Lpf(600.0f, sampleFrequency);
+            inputSignal = lpf.StartFilter(inputSignal);
             var jump = (int) Math.Round(size*offset);
             var img = new List<double[]>();
+            var prevMax = 0.0;
             for (int samples = spechStart; samples < inputSignal.Length && samples < speechStop; samples+= jump)
             {
-                var func = new double[size];
-                for (int i = 0; i < size; i++)
+                var max = double.NegativeInfinity;
+                var prev = Autocorrelation(ref inputSignal, samples, 2);
+                var prev2 = Autocorrelation(ref inputSignal, samples, 1);
+                var maxValue = 0.0;
+                for (int i = 2; i < size; i++)
                 {
-                    func[i] = Autocorrelation(ref inputSignal, samples, i + 1);
+                    var func = Autocorrelation(ref inputSignal, samples, i + 1);
+                    if (prev > prev2 && prev > func && prev > maxValue)
+                    {
+                        maxValue = prev;
+                        max = i-1;
+                    }
+                    prev2 = prev;
+                    prev = func;
                 }
-                img.Add(func);
+//                var delta = max - prevMax;
+//                if (delta > 20 && samples != spechStart)
+//                {
+//                    max = prevMax;
+//                    delta = 0;
+//                }
+                prevMax = max;
+//                img.Add(new []{max, delta});
+                img.Add(new []{max});
             }
             image = img.ToArray();
         }
