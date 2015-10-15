@@ -165,6 +165,9 @@ namespace HelpersLibrary.DspAlgorithms
                     prev2 = prev;
                     prev = func;
                 }
+
+                max = max*sampleFrequency/size;
+
 //                var delta = max - prevMax;
 //                if (delta > 20 && samples != spechStart)
 //                {

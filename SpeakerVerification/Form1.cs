@@ -215,7 +215,7 @@ namespace SpeakerVerification
                         break;
                     case "ACF":
                         var trainDataAcf = GetAcfImage(speechFile, speechFileFormat, speechStartPosition, speechStopPosition);
-                        PlotTrainFeatureMatrix(trainDataAcf);
+                        PlotTrainFeatureAsPointPlot(trainDataAcf);
                         if (!useNeuronNetworkCeckBox.Checked)
                         {
                             _vqCodeBook = new VectorQuantization(trainDataAcf, 1, cbSize);
@@ -367,6 +367,14 @@ namespace SpeakerVerification
                 {
                     heatMap.Data[i, j] = featureSet[i][j];
                 }
+            _featuresTrainDataPlotView.Model.Series.Clear();
+            _featuresTrainDataPlotView.Model.Series.Add(heatMap);
+            _featuresTrainDataPlotView.Model.InvalidatePlot(true);
+        }
+
+        private void PlotTrainFeatureAsPointPlot(double[][] featureSet)
+        {
+            var heatMap = new LineSeries {ItemsSource = featureSet.Select(x => x[0])};
             _featuresTrainDataPlotView.Model.Series.Clear();
             _featuresTrainDataPlotView.Model.Series.Add(heatMap);
             _featuresTrainDataPlotView.Model.InvalidatePlot(true);
