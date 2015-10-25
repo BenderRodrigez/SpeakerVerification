@@ -154,6 +154,8 @@ namespace SpeakerVerification
                     speechFileFormat.SampleRate);
                 speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);
                 var cbSize = (IsPowerOfTwo((uint)vqSizeNumericUpDown.Value)) ? (int)vqSizeNumericUpDown.Value : 64;
+                var max = speechFile.Max(x => Math.Abs(x));
+                speechFile = speechFile.Select(x => x/max).ToArray();
                 switch (featureSelectComboBox.SelectedItem as string)
                 {
                     case "LPC":
@@ -496,6 +498,8 @@ namespace SpeakerVerification
                     (float)analysisIntervalUpDown.Value, ((float)overlappingUpDown.Value) / 100,
                     speechFileFormat.SampleRate);
                 speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);
+                var max = speechFile.Max(x => Math.Abs(x));
+                speechFile = speechFile.Select(x => x / max).ToArray();
                 switch (featureSelectComboBox.SelectedItem as string)
                 {
                     case "LPC":
