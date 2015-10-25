@@ -63,6 +63,7 @@
     <Compile Include="DspAlgorithms\FurieTransform.cs" />
     <Compile Include="DspAlgorithms\LinearPredictCoefficient.cs" />
     <Compile Include="DspAlgorithms\SpeechSearch.cs" />
+    <Compile Include="DspAlgorithms\TonalSpeechSelector.cs" />
     <Compile Include="DspAlgorithms\WindowFunctions.cs" />
     <Compile Include="Experiment\PhraseCube.cs" />
     <Compile Include="LearningAlgorithms\VectorQuantization.cs" />

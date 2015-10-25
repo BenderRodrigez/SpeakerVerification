@@ -7,6 +7,7 @@ using System.Linq;
 using HelpersLibrary.DspAlgorithms;
 using HelpersLibrary.LearningAlgorithms;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NAudio.Wave;
 using NeuronDotNet.Core;
 using NeuronDotNet.Core.Initializers;
 using NeuronDotNet.Core.SOM;
@@ -20,10 +21,15 @@ namespace Tests
         private double[][] _vqTrain2;
         private string _praatSamplesFolderPath;
         private string _praatTrainingSet;
+        private string fullTonalSpeechFileName;
+        private string partlyTonalSpeechFileName;
 
         [TestInitialize]
         public void Set()
         {
+            fullTonalSpeechFileName = "C:\\Users\\box12_000\\YandexDisk\\Documents\\Проекты записей голоса\\Экспорт\\Мама мыла Маню\\ГРР2.wav";
+            partlyTonalSpeechFileName =
+                "C:\\Users\\box12_000\\YandexDisk\\Documents\\Проекты записей голоса\\Экспорт\\Жирные сазаны ушли под палубу\\ГРР2.wav";
             _vqTrain2 = new double[100][];
             var pos = 0;
             for (int i = 0; i < _vqTrain2.Length; i++)
@@ -203,6 +209,31 @@ namespace Tests
             Assert.IsTrue(res.Where(double.IsNaN).Select(x => x).Any());
         }
 
+        [TestMethod]
+        public void TestTonalSelector()
+        {
+            WaveFormat partlyTonalFormat;
+            var partlyTonalSpeech = ReadWavFile(partlyTonalSpeechFileName, out partlyTonalFormat);
+
+            var selector = new TonalSpeechSelector(partlyTonalSpeech, 0.09f, 0.95f, partlyTonalFormat.SampleRate);
+            var cleanedSpeech = selector.CleanUnvoicedSpeech();
+            using (var writer = new WaveFileWriter(partlyTonalSpeechFileName + "cleaned.wav", partlyTonalFormat))
+            {
+                writer.WriteSamples(cleanedSpeech, 0, cleanedSpeech.Length);
+            }
+
+
+            WaveFormat fullTonalFormat;
+            var fullTonalSpeech = ReadWavFile(fullTonalSpeechFileName, out fullTonalFormat);
+
+            selector = new TonalSpeechSelector(fullTonalSpeech, 0.09f, 0.95f, fullTonalFormat.SampleRate);
+            cleanedSpeech = selector.CleanUnvoicedSpeech();
+            using (var writer = new WaveFileWriter(fullTonalSpeechFileName + "cleaned.wav", fullTonalFormat))
+            {
+                writer.WriteSamples(cleanedSpeech, 0, cleanedSpeech.Length);
+            }
+        }
+
         private static void DrawLpcMatrix(ref double[][] lpc, ref Image graphic)
         {
             using (Graphics.FromImage(graphic))
@@ -250,5 +281,20 @@ namespace Tests
                 blue = 0;
             return Color.FromArgb(0xff, red, green, blue);
         }
+
+        private float[] ReadWavFile(string fileName, out WaveFormat fileFormat)
+        {
+            using (var reader = new WaveFileReader(fileName))
+            {
+                var speechFile = new float[reader.SampleCount];
+                for (int i = 0; i < reader.SampleCount; i++)
+                {
+                    speechFile[i] = reader.ReadNextSampleFrame()[0];
+                }
+                fileFormat = reader.WaveFormat;
+                return speechFile;
+            }
+        }
+
     }
 }

@@ -149,10 +149,15 @@ namespace SpeakerVerification
                 WaveFormat speechFileFormat;
                 float[] speechFile;
                 ReadWavFile(wavFileOpenDialog.FileName, out speechFileFormat, out speechFile);
-                var speechSearcher = new SpeechSearch((byte) histogrammBagsNumberUpDown.Value,
+/*                var speechSearcher = new SpeechSearch((byte) histogrammBagsNumberUpDown.Value,
                     (float) analysisIntervalUpDown.Value, ((float) overlappingUpDown.Value)/100,
                     speechFileFormat.SampleRate);
-                speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);
+                speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);*/
+                var tonalSpeechSelector = new TonalSpeechSelector(speechFile, (float) analysisIntervalUpDown.Value*2.0f,
+                    (float) overlappingUpDown.Value/100.0f, speechFileFormat.SampleRate);
+                speechFile = tonalSpeechSelector.CleanUnvoicedSpeech();
+                speechStartPosition = 0;
+                speechStopPosition = (int) (speechFile.Length - analysisIntervalUpDown.Value*speechFileFormat.SampleRate);
                 var cbSize = (IsPowerOfTwo((uint)vqSizeNumericUpDown.Value)) ? (int)vqSizeNumericUpDown.Value : 64;
                 switch (featureSelectComboBox.SelectedItem as string)
                 {
@@ -462,10 +467,15 @@ namespace SpeakerVerification
                 WaveFormat speechFileFormat;
                 float[] speechFile;
                 ReadWavFile(wavFileOpenDialog.FileName, out speechFileFormat, out speechFile);
-                var speechSearcher = new SpeechSearch((byte)histogrammBagsNumberUpDown.Value,
+                /*var speechSearcher = new SpeechSearch((byte)histogrammBagsNumberUpDown.Value,
                     (float)analysisIntervalUpDown.Value, ((float)overlappingUpDown.Value) / 100,
                     speechFileFormat.SampleRate);
-                speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);
+                speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);*/
+                var tonalSpeechSelector = new TonalSpeechSelector(speechFile, (float)analysisIntervalUpDown.Value * 2.0f,
+                    (float)overlappingUpDown.Value / 100.0f, speechFileFormat.SampleRate);
+                speechFile = tonalSpeechSelector.CleanUnvoicedSpeech();
+                speechStartPosition = 0;
+                speechStopPosition = (int)(speechFile.Length - analysisIntervalUpDown.Value * speechFileFormat.SampleRate);
                 switch (featureSelectComboBox.SelectedItem as string)
                 {
                     case "LPC":
