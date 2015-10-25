@@ -159,6 +159,8 @@ namespace SpeakerVerification
                 speechStartPosition = 0;
                 speechStopPosition = (int) (speechFile.Length - analysisIntervalUpDown.Value*speechFileFormat.SampleRate);
                 var cbSize = (IsPowerOfTwo((uint)vqSizeNumericUpDown.Value)) ? (int)vqSizeNumericUpDown.Value : 64;
+                var max = speechFile.Max(x => Math.Abs(x));
+                speechFile = speechFile.Select(x => x/max).ToArray();
                 switch (featureSelectComboBox.SelectedItem as string)
                 {
                     case "LPC":
@@ -220,11 +222,11 @@ namespace SpeakerVerification
                         break;
                     case "ACF":
                         var trainDataAcf = GetAcfImage(speechFile, speechFileFormat, speechStartPosition, speechStopPosition);
-                        PlotTrainFeatureMatrix(trainDataAcf);
+                        PlotTrainFeatureAsPointPlot(trainDataAcf);
                         if (!useNeuronNetworkCeckBox.Checked)
                         {
                             _vqCodeBook = new VectorQuantization(trainDataAcf, 1, cbSize);
-                            PlotCodeBook(_vqCodeBook.CodeBook);
+                            PlotCodeBookAsPointPlot(_vqCodeBook.CodeBook);
                         }
                         else
                         {
@@ -356,6 +358,16 @@ namespace SpeakerVerification
             _featureTestDataPlotView.Model.InvalidatePlot(true);
         }
 
+        private void PlotTestFeatureMatrixAsPointPlot(double[][] featureSet)
+        {
+            var heatMap = new LineSeries();
+            for (int i = 0; i < featureSet.Length; i++)
+                heatMap.Points.Add(new DataPoint(i, featureSet[i][0]));
+            _featureTestDataPlotView.Model.Series.Clear();
+            _featureTestDataPlotView.Model.Series.Add(heatMap);
+            _featureTestDataPlotView.Model.InvalidatePlot(true);
+        }
+
         private void PlotTrainFeatureMatrix(double[][] featureSet)
         {
             var heatMap = new HeatMapSeries
@@ -377,6 +389,16 @@ namespace SpeakerVerification
             _featuresTrainDataPlotView.Model.InvalidatePlot(true);
         }
 
+        private void PlotTrainFeatureAsPointPlot(double[][] featureSet)
+        {
+            var heatMap = new LineSeries();
+            for(int i = 0; i < featureSet.Length; i++)
+                heatMap.Points.Add(new DataPoint(i, featureSet[i][0]));
+            _featuresTrainDataPlotView.Model.Series.Clear();
+            _featuresTrainDataPlotView.Model.Series.Add(heatMap);
+            _featuresTrainDataPlotView.Model.InvalidatePlot(true);
+        }
+
         private void PlotCodeBook(double[][] codeBook)
         {
             var heatMap = new HeatMapSeries
@@ -393,6 +415,16 @@ namespace SpeakerVerification
                 {
                     heatMap.Data[i, j] = codeBook[i][j];
                 }
+            _codeBookPlotView.Model.Series.Clear();
+            _codeBookPlotView.Model.Series.Add(heatMap);
+            _codeBookPlotView.Model.InvalidatePlot(true);
+        }
+
+        private void PlotCodeBookAsPointPlot(double[][] codeBook)
+        {
+            var heatMap = new LineSeries();
+            for (int i = 0; i < codeBook.Length; i++)
+                heatMap.Points.Add(new DataPoint(i, codeBook[i][0]));
             _codeBookPlotView.Model.Series.Clear();
             _codeBookPlotView.Model.Series.Add(heatMap);
             _codeBookPlotView.Model.InvalidatePlot(true);
@@ -476,6 +508,9 @@ namespace SpeakerVerification
                 speechFile = tonalSpeechSelector.CleanUnvoicedSpeech();
                 speechStartPosition = 0;
                 speechStopPosition = (int)(speechFile.Length - analysisIntervalUpDown.Value * speechFileFormat.SampleRate);
+                speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);
+                var max = speechFile.Max(x => Math.Abs(x));
+                speechFile = speechFile.Select(x => x / max).ToArray();
                 switch (featureSelectComboBox.SelectedItem as string)
                 {
                     case "LPC":
@@ -508,7 +543,7 @@ namespace SpeakerVerification
                         break;
                     case "ACF":
                         var testDataAcf = GetAcfImage(speechFile, speechFileFormat, speechStartPosition, speechStopPosition);
-                        PlotTestFeatureMatrix(testDataAcf);
+                        PlotTestFeatureMatrixAsPointPlot(testDataAcf);
                         SaveDistortionEnergyToFile(
                             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                                 "distortionMeasure.txt"), testDataAcf);
