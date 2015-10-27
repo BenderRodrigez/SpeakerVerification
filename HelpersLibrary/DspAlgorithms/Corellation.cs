@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
+using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using HelpersLibrary.DspAlgorithms.Filters;
 
 namespace HelpersLibrary.DspAlgorithms
@@ -135,6 +137,34 @@ namespace HelpersLibrary.DspAlgorithms
             }
         }
 
+        private int AproximatedPitchPosition(ref float[] inputSignal, int size, int offset,
+            WindowFunctions.WindowType windowType)
+        {
+            var furieSize = (int)Math.Pow(2, Math.Ceiling(Math.Log(size, 2)));
+            var currentSample = new float[furieSize];
+            Array.Copy(inputSignal, offset, currentSample, 0, size);
+            var window = new WindowFunctions();
+            window.PlaceWindow(currentSample, windowType);
+            var complexSample = Array.ConvertAll(currentSample, input => (Complex) input);
+            var transform = new FurieTransform();
+            var furieSample = transform.FastFurieTransform(complexSample);
+            var acf = new List<double>(furieSample.Length/4);
+            for (int i = 0; i < furieSample.Length/4; i++)
+            {
+                acf.Add(AutoCorrelationPerSample(ref inputSignal, offset, i + 1));
+            }
+            for (int i = 2; i < acf.Count; i++)
+            {
+                acf[i - 1] = (acf[i] + acf[i - 1] + acf[i - 2])/3;
+            }
+            for (int i = 2; i < acf.Count; i++)
+            {
+                if (acf[i - 1] > acf[i - 2] && acf[i - 1] > acf[i])
+                    return i - 1;
+            }
+            return -1;
+        }
+
         public void AutCorrelationImage(ref float[] inputSignal, int size, float offset, out double[][] image,
             WindowFunctions.WindowType windowFunction, int sampleFrequency, int spechStart, int speechStop)
         {
@@ -148,19 +178,25 @@ namespace HelpersLibrary.DspAlgorithms
             var jump = (int) Math.Round(size*offset);
             var img = new List<double[]>();
             var prevMax = 0.0;
+            var furieSize = Math.Pow(2, Math.Ceiling(Math.Log(size, 2)));
+            var frequencyResolution = sampleFrequency/furieSize;
             for (int samples = spechStart; samples < inputSignal.Length && samples < speechStop; samples+= jump)
             {
                 var max = double.NegativeInfinity;
                 var prev = Autocorrelation(ref inputSignal, samples, 2);
                 var prev2 = Autocorrelation(ref inputSignal, samples, 1);
                 var maxValue = 0.0;
+                var aproximatedValue = AproximatedPitchPosition(ref inputSignal, size, samples, windowFunction);
+                var positionInAcf = (aproximatedValue*sampleFrequency)/(2.0*furieSize);//aproximatedValue*frequencyResolution/size;
                 for (int i = 2; i < size; i++)
                 {
                     var func = Autocorrelation(ref inputSignal, samples, i + 1);
-                    if (prev > prev2 && prev > func && prev > maxValue)
+                    if (prev > prev2 && prev > func && prev > maxValue &&
+                        (i - 1 > sampleFrequency/(positionInAcf + frequencyResolution*1.1) ||
+                         i - 1 < sampleFrequency/(positionInAcf - frequencyResolution*1.1)))
                     {
                         maxValue = prev;
-                        max = i-1;
+                        max = i - 1;
                     }
                     prev2 = prev;
                     prev = func;

@@ -508,7 +508,6 @@ namespace SpeakerVerification
                 speechFile = tonalSpeechSelector.CleanUnvoicedSpeech();
                 speechStartPosition = 0;
                 speechStopPosition = (int)(speechFile.Length - analysisIntervalUpDown.Value * speechFileFormat.SampleRate);
-                speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);
                 var max = speechFile.Max(x => Math.Abs(x));
                 speechFile = speechFile.Select(x => x / max).ToArray();
                 switch (featureSelectComboBox.SelectedItem as string)
