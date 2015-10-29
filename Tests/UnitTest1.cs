@@ -27,9 +27,9 @@ namespace Tests
         [TestInitialize]
         public void Set()
         {
-            fullTonalSpeechFileName = "C:\\Users\\box12_000\\YandexDisk\\Documents\\Проекты записей голоса\\Экспорт\\Мама мыла Маню\\ГРР2.wav";
+            fullTonalSpeechFileName = "C:\\Users\\Bender\\YandexDisk\\Documents\\Проекты записей голоса\\Экспорт\\Мама мыла Маню\\ГРР1.wav";
             partlyTonalSpeechFileName =
-                "C:\\Users\\box12_000\\YandexDisk\\Documents\\Проекты записей голоса\\Экспорт\\Жирные сазаны ушли под палубу\\ГРР2.wav";
+                "C:\\Users\\Bender\\YandexDisk\\Documents\\Проекты записей голоса\\Экспорт\\Жирные сазаны ушли под палубу\\ГРР1.wav";
             _vqTrain2 = new double[100][];
             var pos = 0;
             for (int i = 0; i < _vqTrain2.Length; i++)
@@ -212,23 +212,22 @@ namespace Tests
         [TestMethod]
         public void TestTonalSelector()
         {
-            WaveFormat partlyTonalFormat;
-            var partlyTonalSpeech = ReadWavFile(partlyTonalSpeechFileName, out partlyTonalFormat);
 
-            var selector = new TonalSpeechSelector(partlyTonalSpeech, 0.09f, 0.95f, partlyTonalFormat.SampleRate);
+            WaveFormat fullTonalFormat;
+            var fullTonalSpeech = ReadWavFile(fullTonalSpeechFileName, out fullTonalFormat);
+            var selector = new TonalSpeechSelector(fullTonalSpeech, 0.09f, 0.95f, fullTonalFormat.SampleRate);
             var cleanedSpeech = selector.CleanUnvoicedSpeech();
-            using (var writer = new WaveFileWriter(partlyTonalSpeechFileName + "cleaned.wav", partlyTonalFormat))
+            using (var writer = new WaveFileWriter(fullTonalSpeechFileName + "cleaned.wav", fullTonalFormat))
             {
                 writer.WriteSamples(cleanedSpeech, 0, cleanedSpeech.Length);
             }
 
+            WaveFormat partlyTonalFormat;
+            var partlyTonalSpeech = ReadWavFile(partlyTonalSpeechFileName, out partlyTonalFormat);
 
-            WaveFormat fullTonalFormat;
-            var fullTonalSpeech = ReadWavFile(fullTonalSpeechFileName, out fullTonalFormat);
-
-            selector = new TonalSpeechSelector(fullTonalSpeech, 0.09f, 0.95f, fullTonalFormat.SampleRate);
+            selector = new TonalSpeechSelector(partlyTonalSpeech, 0.09f, 0.95f, partlyTonalFormat.SampleRate);
             cleanedSpeech = selector.CleanUnvoicedSpeech();
-            using (var writer = new WaveFileWriter(fullTonalSpeechFileName + "cleaned.wav", fullTonalFormat))
+            using (var writer = new WaveFileWriter(partlyTonalSpeechFileName + "cleaned.wav", partlyTonalFormat))
             {
                 writer.WriteSamples(cleanedSpeech, 0, cleanedSpeech.Length);
             }

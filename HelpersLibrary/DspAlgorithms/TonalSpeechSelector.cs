@@ -39,15 +39,14 @@ namespace HelpersLibrary.DspAlgorithms
         {
             var voicedSpeech = new List<float>(_signal.Length);
             var start = -1;
-
             using (//TODO: remove this debug feature after it
                 var writer =
-                    new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                        "generalFeature.txt")))
+                    new BinaryWriter(File.Create(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                        "generalFeature.txt"))))
             {
                 for (int i = 0; i < _generalFeature.Length; i++)
                 {
-                    writer.WriteLine(_generalFeature[i]);
+                    writer.Write((short)Math.Round(_generalFeature[i] * 10000000));
                     if (_generalFeature[i] > _border && start < 0)
                     {
                         start = i;

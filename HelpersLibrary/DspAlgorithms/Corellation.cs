@@ -141,17 +141,20 @@ namespace HelpersLibrary.DspAlgorithms
             WindowFunctions.WindowType windowType)
         {
             var furieSize = (int)Math.Pow(2, Math.Ceiling(Math.Log(size, 2)));
+            var windowedPart = new float[size];
             var currentSample = new float[furieSize];
-            Array.Copy(inputSignal, offset, currentSample, 0, size);
+            Array.Copy(inputSignal, offset, windowedPart, 0, size);
             var window = new WindowFunctions();
-            window.PlaceWindow(currentSample, windowType);
+            windowedPart = window.PlaceWindow(windowedPart, windowType);
+            Array.Copy(windowedPart, 0, currentSample, 0, size);
             var complexSample = Array.ConvertAll(currentSample, input => (Complex) input);
             var transform = new FurieTransform();
             var furieSample = transform.FastFurieTransform(complexSample);
+            currentSample = Array.ConvertAll(furieSample, input => (float)input.Magnitude);
             var acf = new List<double>(furieSample.Length/4);
             for (int i = 0; i < furieSample.Length/4; i++)
             {
-                acf.Add(AutoCorrelationPerSample(ref inputSignal, offset, i + 1));
+                acf.Add(AutoCorrelationPerSample(ref currentSample, 0, i + 1));
             }
             for (int i = 2; i < acf.Count; i++)
             {
@@ -187,11 +190,11 @@ namespace HelpersLibrary.DspAlgorithms
                 var prev2 = Autocorrelation(ref inputSignal, samples, 1);
                 var maxValue = 0.0;
                 var aproximatedValue = AproximatedPitchPosition(ref inputSignal, size, samples, windowFunction);
-                var positionInAcf = (aproximatedValue*sampleFrequency)/(2.0*furieSize);//aproximatedValue*frequencyResolution/size;
+                var positionInAcf = (aproximatedValue*sampleFrequency)/(2.0*furieSize);
                 for (int i = 2; i < size; i++)
                 {
                     var func = Autocorrelation(ref inputSignal, samples, i + 1);
-                    if (prev > prev2 && prev > func && prev > maxValue &&
+                    if (prev > prev2 && prev > func && prev > maxValue/*maximum*/ &&
                         (i - 1 > sampleFrequency/(positionInAcf + frequencyResolution*1.1) ||
                          i - 1 < sampleFrequency/(positionInAcf - frequencyResolution*1.1)))
                     {
