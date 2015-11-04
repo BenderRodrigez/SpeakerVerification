@@ -31,7 +31,7 @@ namespace HelpersLibrary.DspAlgorithms
             GetZeroCrossings(windowSizeSamples, jumpSize);
             GetEnergy(windowSizeSamples, jumpSize, sampleRate);
             GetCorellation(windowSizeSamples, jumpSize);
-            GenerateGeneralFeature();
+            GenerateGeneralFeature(windowSizeSamples);
             CalcHistogramm(out _border);
         }
 
@@ -64,6 +64,30 @@ namespace HelpersLibrary.DspAlgorithms
                 }
             }
             return voicedSpeech.ToArray();
+        }
+
+        public Tuple<int, int>[] GetTonalSpeechMarks()
+        {
+            var marks = new List<Tuple<int,int>>();
+            var start = -1;
+            for (int i = 0; i < _generalFeature.Length; i++)
+            {
+                if (_generalFeature[i] > _border && start < 0)
+                {
+                    start = i;
+                }
+                else
+                {
+                    if (start > -1 && _generalFeature[i] < _border)
+                    {
+                        marks.Add(new Tuple<int,int>(start, i));
+                        start = -1;
+                    }
+                }
+            }
+            if(start > -1)
+                marks.Add(new Tuple<int, int>(start, _generalFeature.Length-1));
+            return marks.ToArray();
         }
 
         private float[] CalcHistogramm(out double tonalBorder)
@@ -162,13 +186,15 @@ namespace HelpersLibrary.DspAlgorithms
             _zeroCrossings = tmp;
         }
 
-        private void GenerateGeneralFeature()
+        private void GenerateGeneralFeature(int windowSize)
         {
-            _generalFeature = new float[_energy.Length];
-            for (int i = 0; i < _generalFeature.Length; i++)
+            var tmp = new List<float>(_energy.Length + windowSize / 2);
+            tmp.AddRange(new float[windowSize/2]);
+            for (int i = 0; i < _energy.Length; i++)
             {
-                _generalFeature[i] = _corellation[i] * _energy[i] / _zeroCrossings[i];
+                tmp.Add(_corellation[i] * _energy[i] / _zeroCrossings[i]);
             }
+            _generalFeature = tmp.ToArray();
         }
     }
 }

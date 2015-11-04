@@ -212,7 +212,6 @@ namespace Tests
         [TestMethod]
         public void TestTonalSelector()
         {
-
             WaveFormat fullTonalFormat;
             var fullTonalSpeech = ReadWavFile(fullTonalSpeechFileName, out fullTonalFormat);
             var selector = new TonalSpeechSelector(fullTonalSpeech, 0.09f, 0.95f, fullTonalFormat.SampleRate);

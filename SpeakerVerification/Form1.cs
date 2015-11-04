@@ -155,7 +155,7 @@ namespace SpeakerVerification
                 speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);*/
                 var tonalSpeechSelector = new TonalSpeechSelector(speechFile, (float) analysisIntervalUpDown.Value*2.0f,
                     (float) overlappingUpDown.Value/100.0f, speechFileFormat.SampleRate);
-                speechFile = tonalSpeechSelector.CleanUnvoicedSpeech();
+                var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
                 speechStartPosition = 0;
                 speechStopPosition = (int) (speechFile.Length - analysisIntervalUpDown.Value*speechFileFormat.SampleRate);
                 var cbSize = (IsPowerOfTwo((uint)vqSizeNumericUpDown.Value)) ? (int)vqSizeNumericUpDown.Value : 64;
@@ -221,7 +221,14 @@ namespace SpeakerVerification
                         }
                         break;
                     case "ACF":
-                        var trainDataAcf = GetAcfImage(speechFile, speechFileFormat, speechStartPosition, speechStopPosition);
+                        var trainDataAcf = GetAcfImage(speechFile, speechFileFormat, speechMarks);
+                        using (var writer = new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "pitch.txt")))
+                        {
+                            foreach (var s in trainDataAcf.Select(d => d.Aggregate(string.Empty, (current, d1) => current + (d1 + " "))))
+                            {
+                                writer.WriteLine(s);
+                            }
+                        }
                         PlotTrainFeatureAsPointPlot(trainDataAcf);
                         if (!useNeuronNetworkCeckBox.Checked)
                         {
@@ -240,8 +247,7 @@ namespace SpeakerVerification
             }
         }
 
-        private double[][] GetAcfImage(float[] speechFile, WaveFormat speechFileFormat, int speechStartPosition,
-            int speechStopPosition)
+        private double[][] GetAcfImage(float[] speechFile, WaveFormat speechFileFormat, Tuple<int,int>[] speechMarks)
         {
             double[][] trainDataAcf;
             var corellation = new Corellation();
@@ -250,7 +256,7 @@ namespace SpeakerVerification
             corellation.AutCorrelationImage(ref speechFile,
                 (int) Math.Round(analysisIntervalUpDown.Value*speechFileFormat.SampleRate),
                 (1.0f - (float) overlappingUpDown.Value/100.0f), out trainDataAcf, windowType,
-                speechFileFormat.SampleRate, speechStartPosition, speechStopPosition);
+                speechFileFormat.SampleRate, speechMarks);
             return trainDataAcf;
         }
 
@@ -505,7 +511,7 @@ namespace SpeakerVerification
                 speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);*/
                 var tonalSpeechSelector = new TonalSpeechSelector(speechFile, (float)analysisIntervalUpDown.Value * 2.0f,
                     (float)overlappingUpDown.Value / 100.0f, speechFileFormat.SampleRate);
-                speechFile = tonalSpeechSelector.CleanUnvoicedSpeech();
+                var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
                 speechStartPosition = 0;
                 speechStopPosition = (int)(speechFile.Length - analysisIntervalUpDown.Value * speechFileFormat.SampleRate);
                 var max = speechFile.Max(x => Math.Abs(x));
@@ -541,7 +547,7 @@ namespace SpeakerVerification
                                 "distortionMeasure.txt"), testDataVtc);
                         break;
                     case "ACF":
-                        var testDataAcf = GetAcfImage(speechFile, speechFileFormat, speechStartPosition, speechStopPosition);
+                        var testDataAcf = GetAcfImage(speechFile, speechFileFormat, speechMarks);
                         PlotTestFeatureMatrixAsPointPlot(testDataAcf);
                         SaveDistortionEnergyToFile(
                             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
