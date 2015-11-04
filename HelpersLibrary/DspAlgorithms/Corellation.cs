@@ -189,91 +189,96 @@ namespace HelpersLibrary.DspAlgorithms
             var acfs = new List<double[]>();
             var furieSize = Math.Pow(2, Math.Ceiling(Math.Log(size, 2)));
             var frequencyResolution = sampleFrequency/furieSize;
-            var acf = new List<double[]>();
+            var prevSpeechStop = 0;
+            var globalCandidates = new List<List<Tuple<int, double>>>();
             foreach (var curentMark in speechMarks)
             {
+                /*for(int i = prevSpeechStop; i < curentMark.Item1; i++)
+                    globalCandidates.Add(new List<Tuple<int, double>>{new Tuple<int, double>(-1, double.NegativeInfinity)});
+                prevSpeechStop = curentMark.Item2;*/
+
                 var prevMax = 0.0;
                 for (int samples = curentMark.Item1;
                     samples < inputSignal.Length && samples < curentMark.Item2;
                     samples += jump)
                 {
-                    //main loop
-                    var max = double.NegativeInfinity;
-                    var acfsSample = new double[(int)furieSize/4];
-                    var aproximatedValue = AproximatedPitchPosition(ref inputSignal, size, samples, windowFunction, out acfsSample);
-                    acfs.Add(acfsSample);
-                    var positionInAcf = aproximatedValue > -1
-                        ? aproximatedValue*sampleFrequency/(2.0*furieSize)
-                        : sampleFrequency/prevMax;
-                    var start = (int)Math.Round((positionInAcf - frequencyResolution * 1.1) + 2);
-                    var stop = (positionInAcf + frequencyResolution * 1.1) + 1;
-                    if (start < 1 || stop < 1)
+                    var candidates = new List<Tuple<int, double>>();//int = position, double = amplitude
+                    //extract candidates
+                    var acf = new double[size];
+                    acf[1] = Autocorrelation(ref inputSignal, samples, 1);
+                    acf[0] = Autocorrelation(ref inputSignal, samples, 0);
+                    for (var i = 2; i < size; i++)
                     {
-                        start = 2;
-                        stop = size;
+                        acf[i] = Autocorrelation(ref inputSignal, samples, i);
                     }
-                    var prev = Autocorrelation(ref inputSignal, samples, start - 2);
-                    var prev2 = Autocorrelation(ref inputSignal, samples, start - 1);
-                    var maxValue = 0.0;
-                    var currentAcf = new List<double>();
-                    currentAcf.Add(prev2);
-                    currentAcf.Add(prev);
-                    for (var i = start; i < size && i < stop; i++)
+
+                    var max = acf.Max()*0.5;//get central cut
+
+                    for (int i = 0; i < acf.Length; i++)
+                    {//cut unreliable data
+                        acf[i] = Math.Abs(acf[i]) > max ? acf[i] > 0?acf[i] - max:acf[i]+max : 0.0;
+                    }
+
+                    for (int i = 2; i < acf.Length; i++)
                     {
-                        var func = Autocorrelation(ref inputSignal, samples, i);
-                        currentAcf.Add(func);
-                        if (prev > prev2 && prev > func && prev > maxValue /*maximum*/&&
-                            (Math.Abs(prevMax - sampleFrequency/(i - 1.0)) < 50.0 || prevMax == 0.0))
+                        if (acf[i - 1] > acf[i - 2] && acf[i - 1] > acf[i])
                         {
-                            maxValue = prev;
-                            max = i - 1;
+                            candidates.Add(new Tuple<int, double>(i - 1, acf[i - 1]));//add each maximum of function
                         }
-                        prev2 = prev;
-                        prev = func;
                     }
-                    acf.Add(currentAcf.ToArray());
+                    globalCandidates.Add(candidates);
+                }
+            }
 
-                    if (double.IsNegativeInfinity(max) || sampleFrequency/max > 600 || sampleFrequency/max < 60)
+            //now we should process candidates to select one of them on each sample
+            foreach (var currentSample in globalCandidates)
+            {
+                if (currentSample.Count < 1 || currentSample[0].Item1 < 0)
+                {
+                    //no pitch in this sample
+                    img.Add(new []{0.0});
+                    continue;
+                }
+                var maxVal = currentSample.Max(x => x.Item2);
+                img.Add(new[] {(double) currentSample.FirstOrDefault(x => x.Item2 == maxVal).Item1});
+            }
+
+            for (int i = 2; i < img.Count; i++)
+            {
+                /*if (Math.Abs(img[i - 1][0] - img[i - 2][0]) > 2 && Math.Abs(img[i - 1][0] - img[i][0]) > 2 && img[i][0] > 0.0 && img[i-2][0]>0.0)
+                    img[i - 1][0] = (img[i - 2][0] + img[i][0])/2;*/
+
+                if (Math.Abs(img[i][0] - img[i - 1][0]) > 5 && img[i][0] > 0.0 && img[i-1][0] > 0.0)
+                {
+                    var candidate =
+                        globalCandidates[i].Where(x => x.Item1 != img[i][0])
+                            .OrderByDescending(x => Math.Abs(x.Item1 - img[i][0]))
+                            .FirstOrDefault();
+                    if (candidate != null) img[i][0] = candidate.Item1;
+                    else
                     {
-                        max = aproximatedValue < 0 || aproximatedValue*sampleFrequency/furieSize > 600 ||
-                              aproximatedValue*sampleFrequency/furieSize < 60
-                            ? img[img.Count - 1][0]
-                            : positionInAcf;
+                        img[i][0] = 0.0;
                     }
-                    max = sampleFrequency/max;
+                }
+            }
 
-//                var delta = max - prevMax;
-//                if (delta > 20 && samples != spechStart)
-//                {
-//                    max = prevMax;
-//                    delta = 0;
-//                }
-                    prevMax = max;
-//                img.Add(new []{max, delta});
-                    img.Add(new[] {max});
-                }
-            }
-            using (
-                var writer =
-                    new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                        "ACF.txt")))
+            image = img.Select(x => new []{x[0]> 0.0?sampleFrequency/x[0]:0.0}).ToArray();
+        }
+
+        private void SaveTmpImage(double[][] img)
+        {
+            using (var writer = new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "tmp.txt")))
             {
-                foreach (var s in acf.Select(d => d.Aggregate(string.Empty, (current, d1) => current + (d1 + " "))))
+                foreach (var s in img.Select(d => d.Aggregate(string.Empty, (current, d1) => current + (d1 + " "))))
                 {
                     writer.WriteLine(s);
                 }
             }
-            using (
-                var writer =
-                    new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                        "ACFS.txt")))
-            {
-                foreach (var s in acfs.Select(d => d.Aggregate(string.Empty, (current, d1) => current + (d1 + " "))))
-                {
-                    writer.WriteLine(s);
-                }
-            }
-            image = img.ToArray();
+        }
+
+        private double FunctionBetwenTwoPoints(int t1, int t2, double x1, double x2, int pos)
+        {
+            return -((x1 - x2)*pos + (t1*x2 - t2*x1))/(t2 - t1);
         }
 
         public void AutoCorrelationVectorDurbin(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowFunctions.WindowType useWindow)
