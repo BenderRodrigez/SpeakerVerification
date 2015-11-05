@@ -243,21 +243,41 @@ namespace HelpersLibrary.DspAlgorithms
                 img.Add(new[] {(double) currentSample.FirstOrDefault(x => x.Item2 == maxVal).Item1});
             }
 
-            for (int i = 2; i < img.Count; i++)
+            for (int iteration = 0; iteration < 2; iteration++)
             {
-                /*if (Math.Abs(img[i - 1][0] - img[i - 2][0]) > 2 && Math.Abs(img[i - 1][0] - img[i][0]) > 2 && img[i][0] > 0.0 && img[i-2][0]>0.0)
-                    img[i - 1][0] = (img[i - 2][0] + img[i][0])/2;*/
-
-                if (Math.Abs(img[i][0] - img[i - 1][0]) > 5 && img[i][0] > 0.0 && img[i-1][0] > 0.0)
+                for (int i = 2; i < img.Count; i++)
                 {
-                    var candidate =
-                        globalCandidates[i].Where(x => x.Item1 != img[i][0])
-                            .OrderByDescending(x => Math.Abs(x.Item1 - img[i][0]))
-                            .FirstOrDefault();
-                    if (candidate != null) img[i][0] = candidate.Item1;
-                    else
+                    if (Math.Abs(img[i - 1][0] - img[i - 2][0]) > 2 && Math.Abs(img[i - 1][0] - img[i][0]) > 2 &&
+                        img[i][0] > 0.0 && img[i - 2][0] > 0.0)
                     {
-                        img[i][0] = 0.0;
+                        img[i - 1][0] = (img[i - 2][0] + img[i][0])/2;
+                    }
+                    else if (img[i - 1][0] <= 0.0 && img[i - 2][0] > 0.0 && Math.Abs(img[i - 1][0] - img[i - 2][0]) < 5)
+                    {
+                        var pos = 1;
+                        for (int j = 1; j < img.Count - i - 1 && img[i - 1 + j][0] <= 0.0; j++)
+                        {
+                            pos = j;
+                        }
+                        if (pos < 6)
+                        {
+                            img[i - 1][0] = FunctionBetwenTwoPoints(i - 2, i + pos, img[i - 2][0], img[i + pos][0],
+                                i - 1);
+                        }
+                    }
+
+                    if (Math.Abs(img[i - 1][0] - img[i - 2][0]) > 5 && img[i - 1][0] > 0.0 && img[i - 2][0] > 0.0)
+                    {
+                        var candidate =
+                            globalCandidates[i].Where(x => x.Item1 != img[i - 1][0])
+                                .OrderByDescending(x => Math.Abs(x.Item1 - img[i - 1][0]))
+                                .FirstOrDefault();
+                        if (candidate != null) img[i - 1][0] = candidate.Item1;
+                        else
+                        {
+                            //try approximation
+                            img[i - 1][0] = FunctionBetwenTwoPoints(i - 2, i, img[i - 2][0], img[i][0], i - 1);
+                        }
                     }
                 }
             }
