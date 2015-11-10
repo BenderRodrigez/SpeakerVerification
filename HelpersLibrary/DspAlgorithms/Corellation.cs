@@ -186,6 +186,9 @@ namespace HelpersLibrary.DspAlgorithms
             //analysis variables
             var jump = (int) Math.Round(size*offset);
             var img = new List<double[]>();
+#if DEBUG
+            var acfImg = new List<double[]>();
+#endif
             var furieSize = Math.Pow(2, Math.Ceiling(Math.Log(size, 2)));
             var globalCandidates = new List<List<Tuple<int, double>>>();
             foreach (var curentMark in speechMarks)
@@ -203,7 +206,9 @@ namespace HelpersLibrary.DspAlgorithms
                     {
                         acf[i] = Autocorrelation(ref inputSignal, samples, i);
                     }
-
+#if DEBUG
+                    acfImg.Add(acf);
+#endif
                     var max = acf.Max()*0.2;//get central cut
 
                     for (int i = 0; i < acf.Length; i++)
@@ -283,8 +288,27 @@ namespace HelpersLibrary.DspAlgorithms
 
                     if (Math.Abs(img[i - 1][0] - img[i - 2][0]) > 5 && img[i - 1][0] > 0.0 && img[i - 2][0] > 0.0)
                     {
+                        //search candidate that will be closer to img[i-2][0] than img[i-1][0]
                         var candidate =
-                            globalCandidates[i].Where(x => x.Item1 != img[i - 1][0] && Math.Abs(x.Item1 - img[i - 2][0]) <= 5)
+                            globalCandidates[i - 1].Where(
+                                x => x.Item1 != img[i - 1][0] && Math.Abs(x.Item1 - img[i - 2][0]) <= 5)
+                                .OrderByDescending(x => Math.Abs(x.Item1 - img[i - 1][0]))
+                                .FirstOrDefault();
+
+                        if (candidate != null)
+                            img[i - 1][0] = candidate.Item1;
+                        else
+                        {
+                            //try approximation
+                            img[i - 1][0] = FunctionBetwenTwoPoints(i - 2, i, img[i - 2][0], img[i][0], i - 1);
+                        }
+                    }
+
+                    if (img[i - 2][0] > 0.0 && img[i - 1][0] <= 0.0 && img[i][0] > 0.0)
+                    {
+                        var candidate =
+                            globalCandidates[i - 1].Where(
+                                x => x.Item1 != img[i - 1][0] && Math.Abs(x.Item1 - img[i - 2][0]) <= 5)
                                 .OrderByDescending(x => Math.Abs(x.Item1 - img[i - 1][0]))
                                 .FirstOrDefault();
 
