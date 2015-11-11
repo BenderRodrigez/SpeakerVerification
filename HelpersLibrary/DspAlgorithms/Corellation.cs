@@ -62,10 +62,8 @@ namespace HelpersLibrary.DspAlgorithms
                     autoCorrelation += tmp[j]*tmp[j + k];
                     energy += tmp[j]*tmp[j];
                 }
-                else
-                    autoCorrelation += 0.0;
             }
-            return autoCorrelation/energy;
+            return energy > 0.0 ? autoCorrelation/energy : 0.0;
         }
 
         public double Autocorrelation(ref float[] inputSignal, int offset, int k)
@@ -153,6 +151,7 @@ namespace HelpersLibrary.DspAlgorithms
             var transform = new FurieTransform();
             var furieSample = transform.FastFurieTransform(complexSample);
             currentSample = Array.ConvertAll(furieSample, input => (float)input.Magnitude);
+
             var acf = new List<double>(furieSample.Length/4);
             for (int i = 0; i < furieSample.Length/4; i++)
             {
@@ -200,8 +199,8 @@ namespace HelpersLibrary.DspAlgorithms
                     var candidates = new List<Tuple<int, double>>();//int = position, double = amplitude
                     //extract candidates
                     var acf = new double[size];
-                    acf[1] = Autocorrelation(ref inputSignal, samples, 1);
                     acf[0] = Autocorrelation(ref inputSignal, samples, 0);
+                    acf[1] = Autocorrelation(ref inputSignal, samples, 1);
                     for (var i = 2; i < size; i++)
                     {
                         acf[i] = Autocorrelation(ref inputSignal, samples, i);
@@ -213,14 +212,14 @@ namespace HelpersLibrary.DspAlgorithms
 
                     for (int i = 0; i < acf.Length; i++)
                     {//cut unreliable data
-                        acf[i] = Math.Abs(acf[i]) > max ? acf[i] > 0?acf[i] - max:acf[i]+max : 0.0;
+                        acf[i] = acf[i] > max ? acf[i] - max: 0.0;
                     }
 
                     for (int i = 2; i < acf.Length; i++)
                     {
                         if ((acf[i - 1] > acf[i - 2] && acf[i - 1] > acf[i]))
                         {
-                            candidates.Add(new Tuple<int, double>(i - 1, acf[i - 1]));//add each maximum of function
+                            candidates.Add(new Tuple<int, double>(i - 1, acf[i - 1])); //add each maximum of function
                         }
                     }
                     
@@ -235,6 +234,10 @@ namespace HelpersLibrary.DspAlgorithms
                             if (sampleFrequency/acfPosition > 60 && sampleFrequency/acfPosition < 600)
                                 candidates.Add(new Tuple<int, double>((int) Math.Round(acfPosition),
                                     double.NegativeInfinity));
+                            else
+                            {
+                                candidates.Add(new Tuple<int, double>(0, Double.NegativeInfinity));
+                            }
                         }
                     }
                     globalCandidates.Add(candidates);
@@ -244,7 +247,7 @@ namespace HelpersLibrary.DspAlgorithms
             //now we should process candidates to select one of them on each sample
             foreach (var currentSample in globalCandidates)
             {
-                if (currentSample.Count < 1 || currentSample[0].Item1 < 0)
+                if (currentSample.Count < 1 || currentSample[0].Item1 <= 0.0)
                 {
                     //no pitch in this sample
                     img.Add(new []{0.0});
@@ -323,7 +326,8 @@ namespace HelpersLibrary.DspAlgorithms
                 }
             }
 
-            image = img.Select(x => new []{x[0]> 0.0?sampleFrequency/x[0]:0.0}).ToArray();
+//            image = img.Select(x => new []{x[0]> 0.0?sampleFrequency/x[0]:0.0}).ToArray();
+            image = img.ToArray();
         }
 
         private void SaveTmpImage(double[][] img)

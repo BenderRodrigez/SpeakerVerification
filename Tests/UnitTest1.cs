@@ -23,10 +23,14 @@ namespace Tests
         private string _praatTrainingSet;
         private string fullTonalSpeechFileName;
         private string partlyTonalSpeechFileName;
+        private float[] _signal1;
+        private float[] _signal2;
 
         [TestInitialize]
         public void Set()
         {
+            _signal1 = new[] {0.0f, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1};
+            _signal2 = new[] {-1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0.0f};
             fullTonalSpeechFileName = "C:\\Users\\Bender\\YandexDisk\\Documents\\Проекты записей голоса\\Экспорт\\Мама мыла Маню\\ГРР1.wav";
             partlyTonalSpeechFileName =
                 "C:\\Users\\Bender\\YandexDisk\\Documents\\Проекты записей голоса\\Экспорт\\Жирные сазаны ушли под палубу\\ГРР1.wav";
@@ -80,6 +84,24 @@ namespace Tests
         }
 
         private double[][] _vqTrain;
+
+        [TestMethod]
+        public void TestAcfFunction()
+        {
+            var corellation = new Corellation
+            {
+                UsedVectorSize = 16,
+                UsedWindowSize = 16,
+                UsedWindowType = WindowFunctions.WindowType.Rectangular
+            };
+            var corr1 = new List<double>();
+            for (int i = 0; i < _signal1.Length; i++)
+                corr1.Add(corellation.AutoCorrelationPerSample(ref _signal1, 0, i));
+            var corr2 = new List<double>();
+            for (int i = 0; i < _signal2.Length; i++)
+                corr2.Add(corellation.AutoCorrelationPerSample(ref _signal2, 0, i));
+            Assert.IsTrue(corr1.Any() && corr2.Any());
+        }
 
         [TestMethod]
         public void TestVqMethod()
