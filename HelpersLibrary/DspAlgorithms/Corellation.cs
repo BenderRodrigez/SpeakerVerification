@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using HelpersLibrary.DspAlgorithms.Filters;
 
 namespace HelpersLibrary.DspAlgorithms
