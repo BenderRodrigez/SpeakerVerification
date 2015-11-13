@@ -154,7 +154,7 @@ namespace SpeakerVerification
                     speechFileFormat.SampleRate);
                 speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);*/
                 var tonalSpeechSelector = new TonalSpeechSelector(speechFile, (float) analysisIntervalUpDown.Value*2.0f,
-                    (float) overlappingUpDown.Value/100.0f, speechFileFormat.SampleRate);
+                    (float) overlappingUpDown.Value/100.0f, speechFileFormat.SampleRate, TonalSpeechSelector.Algorithm.Acfs);
                 var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
                 speechStartPosition = 0;
                 speechStopPosition = (int) (speechFile.Length - analysisIntervalUpDown.Value*speechFileFormat.SampleRate);

@@ -62,7 +62,7 @@ namespace HelpersLibrary.DspAlgorithms
                     energy += tmp[j]*tmp[j];
                 }
             }
-            return energy > 0.0 ? autoCorrelation/energy : 0.0;
+            return energy != 0.0 ? autoCorrelation/energy : 0.0;
         }
 
         public double Autocorrelation(ref float[] inputSignal, int offset, int k)
@@ -134,6 +134,33 @@ namespace HelpersLibrary.DspAlgorithms
             {
                 vector[i] = AutoCorrelationPerSample(ref inputSignal, offset, i + 1);
             }
+        }
+
+        public double[] SpectrumAutocorellationFunction(ref float[] inputSignal, int size, int offset,
+            WindowFunctions.WindowType windowType)
+        {
+            var furieSize = (int)Math.Pow(2, Math.Ceiling(Math.Log(size, 2)));
+            var windowedPart = new float[size];
+            var currentSample = new float[furieSize];
+            Array.Copy(inputSignal, offset, windowedPart, 0, size);
+            var window = new WindowFunctions();
+            windowedPart = window.PlaceWindow(windowedPart, windowType);
+            Array.Copy(windowedPart, 0, currentSample, 0, size);
+            var complexSample = Array.ConvertAll(currentSample, input => (Complex)input);
+            var transform = new FurieTransform();
+            var furieSample = transform.FastFurieTransform(complexSample);
+            currentSample = Array.ConvertAll(furieSample, input => (float)input.Magnitude);
+
+            var acf = new List<double>(furieSample.Length / 4);
+            for (int i = 0; i < furieSample.Length / 4; i++)
+            {
+                acf.Add(AutoCorrelationPerSample(ref currentSample, 0, i + 1));
+            }
+            for (int i = 2; i < acf.Count; i++)
+            {
+                acf[i - 1] = (acf[i] + acf[i - 1] + acf[i - 2]) / 3;
+            }
+            return acf.ToArray();
         }
 
         private int AproximatedPitchPosition(ref float[] inputSignal, int size, int offset,
