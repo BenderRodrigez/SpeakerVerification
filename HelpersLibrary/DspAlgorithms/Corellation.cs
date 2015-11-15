@@ -16,6 +16,8 @@ namespace HelpersLibrary.DspAlgorithms
         public WindowFunctions.WindowType UsedWindowType { private get; set; }
         public int UsedWindowSize { private get; set; }
         public int UsedVectorSize { private get; set; }
+        public double[][] Acfs { get; private set; }
+        public double[][] Acf { get; private set; }
 
         /// <summary>
         /// Вычисляет автокорелляционную функцию на заданном участке сигнала
@@ -197,7 +199,7 @@ namespace HelpersLibrary.DspAlgorithms
         }
 
         public void AutCorrelationImage(ref float[] inputSignal, int size, float offset, out double[][] image,
-            WindowFunctions.WindowType windowFunction, int sampleFrequency, Tuple<int,int>[] speechMarks)
+            WindowFunctions.WindowType windowFunction, int sampleFrequency, Tuple<int,int>[] speechMarks, bool debug = false)
         {
             UsedWindowSize = size;
             UsedWindowType = windowFunction;
@@ -211,9 +213,8 @@ namespace HelpersLibrary.DspAlgorithms
             //analysis variables
             var jump = (int) Math.Round(size*offset);
             var img = new List<double[]>();
-#if DEBUG
             var acfImg = new List<double[]>();
-#endif
+            var acfsImg = new List<double[]>();
             var furieSize = Math.Pow(2, Math.Ceiling(Math.Log(size, 2)));
             var globalCandidates = new List<List<Tuple<int, double>>>();
             foreach (var curentMark in speechMarks)
@@ -225,15 +226,21 @@ namespace HelpersLibrary.DspAlgorithms
                     var candidates = new List<Tuple<int, double>>();//int = position, double = amplitude
                     //extract candidates
                     var acf = new double[size];
+                    if (debug)
+                    {
+                        double[] acfsSample;
+                        AproximatedPitchPosition(ref inputSignal, size, samples, windowFunction, out acfsSample);
+                        acfsImg.Add(acfsSample);
+                    }
                     acf[0] = Autocorrelation(ref inputSignal, samples, 0);
                     acf[1] = Autocorrelation(ref inputSignal, samples, 1);
                     for (var i = 2; i < size; i++)
                     {
                         acf[i] = Autocorrelation(ref inputSignal, samples, i);
                     }
-#if DEBUG
-                    acfImg.Add(acf);
-#endif
+
+                    if (debug) acfImg.Add(acf);
+
                     var max = acf.Max()*0.2;//get central cut
 
                     for (int i = 0; i < acf.Length; i++)
@@ -270,6 +277,11 @@ namespace HelpersLibrary.DspAlgorithms
                 }
             }
 
+            if (debug)
+            {
+                Acf = acfImg.ToArray();
+                Acfs = acfsImg.ToArray();
+            }
             //now we should process candidates to select one of them on each sample
             foreach (var currentSample in globalCandidates)
             {

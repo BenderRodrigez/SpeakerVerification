@@ -1,8 +1,21 @@
 ﻿<Window x:Class="ExperimentalProcessing.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:oxy="http://oxyplot.org/wpf"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="350" Width="525">
+        Title="MainWindow" Height="669.896" Width="984.526"
+        x:Name="MainWind" Background="Aquamarine" Cursor="{Binding WindowCursor, ElementName=MainWind}" ForceCursor="True" KeyDown="MainWindow_OnKeyDown">
     <Grid>
-        
+        <oxy:PlotView Model="{Binding AcfsPlotModel, ElementName=MainWind}" Width="384" Height="192" Margin="10,235,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+        <oxy:PlotView Model="{Binding AcfPlotModel, ElementName=MainWind}" Width="384" Height="192" Margin="404,235,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"></oxy:PlotView>
+        <oxy:PlotView Model="{Binding PitchPlotModel, ElementName=MainWind}" Width="778" Margin="10,10,0,0" HorizontalAlignment="Left" Height="192" VerticalAlignment="Top"/>
+        <Button Content="&lt;&lt;" HorizontalAlignment="Left" Margin="10,207,0,0" VerticalAlignment="Top" Width="45" Click="ToStart_OnClick"/>
+        <Button Content="&gt;&gt;" HorizontalAlignment="Left" Margin="743,207,0,0" VerticalAlignment="Top" Width="45" Click="ToEnd_OnClick"/>
+        <Button Content="&lt;" HorizontalAlignment="Left" Margin="60,207,0,0" VerticalAlignment="Top" Width="45" Click="GoBackward_OnClick"/>
+        <Button Content="&gt;" HorizontalAlignment="Left" Margin="693,207,0,0" VerticalAlignment="Top" Width="45" Click="GoForward_OnClick"/>
+        <Label Content="Отсчёт: " Margin="313,204,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="57" HorizontalContentAlignment="Center"/>
+        <Button Content="Открыть" HorizontalAlignment="Left" Margin="793,10,0,0" VerticalAlignment="Top" Width="75" Click="OpenFileButton_OnClick"/>
+        <TextBox x:Name="SampleNumberTextBox" HorizontalAlignment="Left" Height="23" Margin="375,205,0,0" TextWrapping="Wrap" Text="{Binding SamplePosition,ElementName=MainWind, Mode=TwoWay}" VerticalAlignment="Top" Width="57" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" KeyDown="SampleNumberTextBox_OnKeyDown"/>
+        <Label Content="{Binding MaxSize,ElementName=MainWind}" HorizontalAlignment="Left" Margin="437,204,0,0" VerticalAlignment="Top"/>
+        <oxy:PlotView Model="{Binding AcfPreview,ElementName=MainWind}" Width="384" Height="192" Margin="10,432,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"></oxy:PlotView>
+        <oxy:PlotView Model="{Binding AcfsPreview, ElementName=MainWind}" Width="384" Height="192" Margin="404,432,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"></oxy:PlotView>
     </Grid>
 </Window>

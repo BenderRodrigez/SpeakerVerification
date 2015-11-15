@@ -159,8 +159,6 @@ namespace SpeakerVerification
                 speechStartPosition = 0;
                 speechStopPosition = (int) (speechFile.Length - analysisIntervalUpDown.Value*speechFileFormat.SampleRate);
                 var cbSize = (IsPowerOfTwo((uint)vqSizeNumericUpDown.Value)) ? (int)vqSizeNumericUpDown.Value : 64;
-                var max = speechFile.Max(x => Math.Abs(x));
-                speechFile = speechFile.Select(x => x/max).ToArray();
                 switch (featureSelectComboBox.SelectedItem as string)
                 {
                     case "LPC":
