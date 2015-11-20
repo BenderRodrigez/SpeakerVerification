@@ -1,7 +1,8 @@
 ﻿<Window x:Class="ExperimentalProcessing.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:oxy="http://oxyplot.org/wpf"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:oxy="http://oxyplot.org/wpf"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="669.896" Width="984.526"
+        Title="MainWindow" Height="670" Width="985"
         x:Name="MainWind" Background="Aquamarine" Cursor="{Binding WindowCursor, ElementName=MainWind}" ForceCursor="True" KeyDown="MainWindow_OnKeyDown">
     <Grid>
         <oxy:PlotView Model="{Binding AcfsPlotModel, ElementName=MainWind}" Width="384" Height="192" Margin="10,235,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
