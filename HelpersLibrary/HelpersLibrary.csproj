@@ -57,10 +57,14 @@
     <Compile Include="DataVisualisation\MatrixDataPlot.cs" />
     <Compile Include="DataVisualisation\WaveOscilationsPlot.cs" />
     <Compile Include="DspAlgorithms\Cepstrum.cs" />
+    <Compile Include="DspAlgorithms\ComplexNumber.cs" />
     <Compile Include="DspAlgorithms\Corellation.cs" />
+    <Compile Include="DspAlgorithms\FFT.cs" />
     <Compile Include="DspAlgorithms\Filters\HPF.cs" />
     <Compile Include="DspAlgorithms\Filters\LPF.cs" />
-    <Compile Include="DspAlgorithms\FurieTransform.cs" />
+    <Compile Include="DspAlgorithms\FurieTransform.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DspAlgorithms\LinearPredictCoefficient.cs" />
     <Compile Include="DspAlgorithms\SpeechSearch.cs" />
     <Compile Include="DspAlgorithms\TonalSpeechSelector.cs" />

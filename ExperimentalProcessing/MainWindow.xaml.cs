@@ -27,7 +27,7 @@ namespace ExperimentalProcessing
         public Cursor WindowCursor { get; private set; }
         public string MaxSize { get; private set; }
 
-        private int _samplePos = 0;
+        private int _samplePos;
         public int SamplePosition
         {
             get { return _samplePos; }

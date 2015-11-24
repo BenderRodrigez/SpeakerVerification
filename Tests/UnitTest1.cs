@@ -228,7 +228,18 @@ namespace Tests
             {
                 res.Add(corellation.Autocorrelation(ref testData, 0, i + 1));
             }
-            Assert.IsTrue(res.Where(double.IsNaN).Select(x => x).Any());
+            Assert.IsFalse(res.Where(double.IsNaN).Any());
+        }
+
+        [TestMethod]
+        public void TestAcfFft()
+        {
+            double[] corr1;
+            double[] corr2;
+            FFT.AutoCorrelation(4, _signal1, out corr1);
+            FFT.AutoCorrelation(4, _signal2, out corr2);
+
+            Assert.IsTrue(corr1.Any() && corr2.Any());
         }
 
         [TestMethod]

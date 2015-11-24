@@ -19,6 +19,12 @@ namespace HelpersLibrary.DspAlgorithms
         public double[][] Acfs { get; private set; }
         public double[][] Acf { get; private set; }
 
+
+        public void AutoCorrelationFast(ref float[] inputSignal, int size, int offset, out double[] result)
+        {
+            result = null;
+        }
+
         /// <summary>
         /// Вычисляет автокорелляционную функцию на заданном участке сигнала
         /// R(offset)
@@ -88,56 +94,6 @@ namespace HelpersLibrary.DspAlgorithms
             return autoCorrelation;
         }
 
-        /// <summary>
-        /// Вычисляет квадратную матрицу для последующего вычисления Коэффициентов линейного предсказания
-        /// </summary>
-        /// <param name="inputSignal">Входной сигнал</param>
-        /// <param name="sizeWindow">Участок, на котором расчитываем значения автокорелляционной функции</param>
-        /// <param name="size">Размер матрицы</param>
-        /// <param name="offset">Смещение в сигнале</param>
-        /// <param name="matrix">Матрица хранящая результат</param>
-        /// <param name="useWindow"></param>
-        public void AutoCorrelationSquareMatrix(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[][] matrix, WindowFunctions.WindowType useWindow)
-        {
-            UsedWindowType = useWindow;
-            UsedWindowSize = sizeWindow;
-
-            matrix = new double[size][];
-            for(int i = 0; i < size; i++)
-                matrix[i] = new double[size];
-
-            for(int i = 0; i < size; i++)
-            {
-                for(int j = 0; j < size; j++)
-                {
-                    if (i < j) continue; //нижняя половина матрицы
-
-                    matrix[j][i] = AutoCorrelationPerSample(ref inputSignal, offset, i - j);
-                    matrix[i][j] = matrix[j][i];
-                }
-            }
-        }
-
-        /// <summary>
-        /// Строит вектор значений автокорреляционной функции для последующего применения в расчётах КЛП.
-        /// </summary>
-        /// <param name="inputSignal">Входной сигнал</param>
-        /// <param name="sizeWindow">Размер области вычисления АКФ</param>
-        /// <param name="size">Длина вектора</param>
-        /// <param name="offset">Смещение в сигнале</param>
-        /// <param name="vector">Выходной вектор</param>
-        /// <param name="useWindow"></param>
-        public void AutoCorrelationVector(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowFunctions.WindowType useWindow)
-        {
-            UsedWindowType = useWindow;
-            UsedWindowSize = sizeWindow;
-            vector = new double[size];
-            for(int i = 0; i < size; i++)
-            {
-                vector[i] = AutoCorrelationPerSample(ref inputSignal, offset, i + 1);
-            }
-        }
-
         public double[] SpectrumAutocorellationFunction(ref float[] inputSignal, int size, int offset,
             WindowFunctions.WindowType windowType)
         {
@@ -146,6 +102,8 @@ namespace HelpersLibrary.DspAlgorithms
             var currentSample = new float[furieSize];
             Array.Copy(inputSignal, offset, windowedPart, 0, size);
             var window = new WindowFunctions();
+            var avg = windowedPart.Average();
+            windowedPart = windowedPart.Select(x => x/avg).ToArray();
             windowedPart = window.PlaceWindow(windowedPart, windowType);
             Array.Copy(windowedPart, 0, currentSample, 0, size);
             var complexSample = Array.ConvertAll(currentSample, input => (Complex)input);
@@ -226,64 +184,67 @@ namespace HelpersLibrary.DspAlgorithms
                     var candidates = new List<Tuple<int, double>>();//int = position, double = amplitude
                     //extract candidates
                     var acf = new double[size];
-                    if (debug)
+                    double[] acfsSample;
+                    var data = new float[size];
+                    Array.Copy(inputSignal, samples, data, 0, size);
+                    var window = new WindowFunctions();
+                    data = window.PlaceWindow(data, UsedWindowType);
+                    FFT.AutocorrelationAndSpectrumAutocorrelation(size, data, out acf, out acfsSample);
+
+//                    var aproximatedPosition = AproximatedPitchPosition(ref inputSignal, size, samples, windowFunction, out acfsSample);
+                    var aproximatedPosition = -1;
+                    for (int i = 1; i < acfsSample.Length-1; i++)
                     {
-                        double[] acfsSample;
-                        AproximatedPitchPosition(ref inputSignal, size, samples, windowFunction, out acfsSample);
-                        acfsImg.Add(acfsSample);
-                    }
-                    acf[0] = Autocorrelation(ref inputSignal, samples, 0);
-                    acf[1] = Autocorrelation(ref inputSignal, samples, 1);
-                    for (var i = 2; i < size; i++)
-                    {
-                        acf[i] = Autocorrelation(ref inputSignal, samples, i);
-                    }
-
-                    if (debug) acfImg.Add(acf);
-
-                    var max = acf.Max()*0.2;//get central cut
-
-                    for (int i = 0; i < acf.Length; i++)
-                    {//cut unreliable data
-                        acf[i] = acf[i] > max ? acf[i] - max: 0.0;
-                    }
-
-                    for (int i = 2; i < acf.Length; i++)
-                    {
-                        if ((acf[i - 1] > acf[i - 2] && acf[i - 1] > acf[i]))
+                        if (acfsSample[i] > acfsSample[i - 1] && acfsSample[i] > acfsSample[i + 1])
                         {
-                            candidates.Add(new Tuple<int, double>(i - 1, acf[i - 1])); //add each maximum of function
+                            aproximatedPosition = i;
+                            break;
                         }
                     }
-                    
-                    if(candidates.Count < 1)
+                    var freqPosition = (sampleFrequency / furieSize) * aproximatedPosition;//aproximated frequency value
+                    if (aproximatedPosition > -1 && freqPosition > 60 && freqPosition < 600)
                     {
-                        double[] acfs;
-                        var spectrumPosition = AproximatedPitchPosition(ref inputSignal, size, samples, windowFunction,
-                            out acfs);
-                        if (spectrumPosition > -1)
+                        var acfPosition = 2.0 / (aproximatedPosition / furieSize);//aproximated time value
+                        img.Add(new[] {acfPosition});
+                        acfsImg.Add(acfsSample);
+                        /*acf[0] = Autocorrelation(ref inputSignal, samples, 0);
+                        acf[1] = Autocorrelation(ref inputSignal, samples, 1);
+                        for (var i = 2; i < size; i++)
                         {
-                            var acfPosition = 2.0 / (spectrumPosition / furieSize);
-                            if (sampleFrequency/acfPosition > 60 && sampleFrequency/acfPosition < 600)
-                                candidates.Add(new Tuple<int, double>((int) Math.Round(acfPosition),
-                                    double.NegativeInfinity));
-                            else
+                            acf[i] = Autocorrelation(ref inputSignal, samples, i);
+                        }*/
+
+                        /*if (debug)*/ acfImg.Add(acf);
+
+                        var max = acf.Max()*0.2; //get central cut
+
+                        for (int i = 0; i < acf.Length; i++)
+                        {//cut unreliable data
+                            acf[i] = acf[i] > max ? acf[i] - max : 0.0;
+                        }
+
+                        for (int i = 2; i < acf.Length; i++)
+                        {
+                            if ((acf[i - 1] > acf[i - 2] && acf[i - 1] > acf[i]))
                             {
-                                candidates.Add(new Tuple<int, double>(0, Double.NegativeInfinity));
+                                candidates.Add(new Tuple<int, double>(i - 1, acf[i - 1]));//add each maximum of function
                             }
                         }
+
+                        if (candidates.Count < 1)
+                        {
+                            candidates.Add(new Tuple<int, double>((int) Math.Round(acfPosition), double.NegativeInfinity));
+                        }
+                        globalCandidates.Add(candidates);
                     }
-                    globalCandidates.Add(candidates);
                 }
             }
 
-            if (debug)
-            {
-                Acf = acfImg.ToArray();
-                Acfs = acfsImg.ToArray();
-            }
+            Acf = acfImg.ToArray();
+            Acfs = acfsImg.ToArray();
+
             //now we should process candidates to select one of them on each sample
-            foreach (var currentSample in globalCandidates)
+            /*foreach (var currentSample in globalCandidates)
             {
                 if (currentSample.Count < 1 || currentSample[0].Item1 <= 0.0)
                 {
@@ -293,6 +254,12 @@ namespace HelpersLibrary.DspAlgorithms
                 }
                 var maxVal = currentSample.Max(x => x.Item2);
                 img.Add(new[] {(double) currentSample.FirstOrDefault(x => x.Item2 == maxVal).Item1});
+            }*/
+
+            for (int i = 0; i < globalCandidates.Count; i++)
+            {
+                var max = globalCandidates[i].Max(x => Math.Abs(x.Item1 - img[i][0]));
+                img[i][0] = globalCandidates[i].FirstOrDefault(x => Math.Abs(x.Item1 - img[i][0]) == max).Item1;
             }
 
             for (int iteration = 0; iteration < 2; iteration++)
@@ -384,18 +351,6 @@ namespace HelpersLibrary.DspAlgorithms
             return -((x1 - x2)*pos + (t1*x2 - t2*x1))/(t2 - t1);
         }
 
-        public void AutoCorrelationVectorDurbin(ref float[] inputSignal, int sizeWindow, int size, int offset, out double[] vector, WindowFunctions.WindowType useWindow)
-        {
-            UsedWindowType = useWindow;
-            UsedWindowSize = sizeWindow;
-            UsedVectorSize = size;
-            vector = new double[size];
-            for (int i = 0; i < size; i++)
-            {
-                vector[i] = AutoCorrelationPerSample(ref inputSignal, offset, i);
-            }
-        }
-
         public void AutoCorrelationVectorDurbin(ref float[] inputSignal, int offset, out double[] vector)
         {
             vector = new double[UsedVectorSize];
@@ -403,33 +358,6 @@ namespace HelpersLibrary.DspAlgorithms
             {
                 vector[i] = AutoCorrelationPerSample(ref inputSignal, offset, i);
             }
-        }
-
-        /// <summary>
-        /// Вычисляет двухмерную кореллограмму для сигнала
-        /// </summary>
-        /// <param name="a">Входной сигнал</param>
-        /// <param name="sizeWindow">Размер окна (в секундах)</param>
-        /// <param name="sampleFrequency">Частота опроса</param>
-        /// <param name="totalLenght">Общая длина кореллограммы</param>
-        /// <returns>Двумерный массив значений кореллограммы, в котором представлено множество функций АКФ в пределах окна, для всего сигнала</returns>
-        public double[][] AutoCorrelationStart(float[] a, double sizeWindow, int sampleFrequency, int totalLenght)
-        {
-            int size = (int)Math.Round(sampleFrequency * sizeWindow);//Переводим размер окна в отсчёты
-            double[][] corel = new double[totalLenght][];
-            int x = 0;
-            for(int i = 0; i < a.Length-size; i++)
-            {
-                if (i % ((a.Length - size) / totalLenght) == 0)//"Прореживаем" множество функций, для того, чтобы оно уместилось в totalLenght масивов
-                {
-                    AutoCorrelation(ref a, size, i, out corel[x]);//Считаем АКФ для текущего участка
-                    if (x < 1023)
-                        x++;
-                    else
-                        break;
-                }
-            }
-            return corel;
         }
     }
 }
