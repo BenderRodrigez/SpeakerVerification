@@ -124,7 +124,9 @@ namespace HelpersLibrary.DspAlgorithms
         {
             var complexData = Array.ConvertAll(data, input => new ComplexNumber(input));
             AutoCorrelation(ref complexData);
-            result = Array.ConvertAll(complexData, input => Math.Sqrt(input.Sqr));
+            result = new double[size];
+            Array.Copy(complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray(), result, size);
+
             var k = result[0];
             result = result.Select(x => x/k).ToArray();
         }
@@ -142,7 +144,9 @@ namespace HelpersLibrary.DspAlgorithms
 
             AutoCorrelation(ref complexData);
             result = new double[(int)Math.Pow(2, nearestSize - 1)];
-            Array.Copy(complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray(), result, (int)Math.Pow(2, nearestSize - 1));
+            Array.Copy(complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray(), result, (int)Math.Pow(2, nearestSize - 2));
+            var k = result[0];
+            result = result.Select(x => x / k).ToArray();
         }
 
         private static void AutoCorrelation(ref ComplexNumber[] data)
