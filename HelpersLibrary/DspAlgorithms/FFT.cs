@@ -123,6 +123,22 @@ namespace HelpersLibrary.DspAlgorithms
             result = Array.ConvertAll(complexData, input => Math.Sqrt(input.Sqr));
         }
 
+        public static void SpectrumAutoCorrelation(int size, float[] data, out double[] result)
+        {
+            var nearestSize = (int)Math.Ceiling(Math.Log(size, 2));
+            var complexData = new ComplexNumber[(int)Math.Pow(2, nearestSize)];
+            for (int i = 0; i < size; i++)
+            {
+                complexData[i] = new ComplexNumber(data[i]);
+            }
+
+            FastFurieTransform(true, nearestSize, complexData);
+
+            AutoCorrelation(ref complexData);
+            result = new double[(int)Math.Pow(2, nearestSize - 1)];
+            Array.Copy(complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray(), result, (int)Math.Pow(2, nearestSize - 1));
+        }
+
         private static void AutoCorrelation(ref ComplexNumber[] data)
         {
             var nearestSize = Math.Ceiling(Math.Log(data.Length, 2));

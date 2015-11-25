@@ -71,8 +71,12 @@ namespace HelpersLibrary.DspAlgorithms
             var minimums = new List<Tuple<int, double>[]>();
             for (int i = 0; i < _signal.Length - windowSize; i += jump)
             {
-                var currentAcfs = corellation.SpectrumAutocorellationFunction(ref _signal, windowSize, i,
-                    WindowFunctions.WindowType.Blackman);
+                double[] currentAcfs;
+                var data = new float[windowSize];
+                Array.Copy(_signal, data, windowSize);
+                var window = new WindowFunctions();
+                data = window.PlaceWindow(data, WindowFunctions.WindowType.Blackman);
+                FFT.SpectrumAutoCorrelation(windowSize, data, out currentAcfs);
                 var currentMax = new List<Tuple<int,double>>();
                 var currentMin = new List<Tuple<int, double>>();
                 for (int j = 1; j < currentAcfs.Length - 1; j++)
