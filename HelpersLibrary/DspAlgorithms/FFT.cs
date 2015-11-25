@@ -97,7 +97,7 @@ namespace HelpersLibrary.DspAlgorithms
         public static void AutocorrelationAndSpectrumAutocorrelation(int size, float[] data, out double[] acf, out double[] acfs)
         {
             var nearestSize = (int)Math.Ceiling(Math.Log(size, 2));
-            var complexData = new ComplexNumber[(int)Math.Pow(2, nearestSize)];
+            var complexData = new ComplexNumber[(int)Math.Pow(2, nearestSize + 1)];
             for (int i = 0; i < size; i++)
             {
                 complexData[i] = new ComplexNumber(data[i]);
@@ -107,6 +107,7 @@ namespace HelpersLibrary.DspAlgorithms
             Array.Copy(complexData, complexAcf, (int)Math.Pow(2, nearestSize));
 
             FastFurieTransform(true, nearestSize, complexData);
+            Array.Resize(ref complexData, (int)Math.Pow(2, nearestSize - 1));
 
             AutoCorrelation(ref complexData);
             AutoCorrelation(ref complexAcf);
@@ -133,7 +134,7 @@ namespace HelpersLibrary.DspAlgorithms
 
         public static void SpectrumAutoCorrelation(int size, float[] data, out double[] result)
         {
-            var nearestSize = (int)Math.Ceiling(Math.Log(size, 2));
+            var nearestSize = (int)Math.Ceiling(Math.Log(size, 2)+1);
             var complexData = new ComplexNumber[(int)Math.Pow(2, nearestSize)];
             for (int i = 0; i < size; i++)
             {
@@ -141,6 +142,12 @@ namespace HelpersLibrary.DspAlgorithms
             }
 
             FastFurieTransform(true, nearestSize, complexData);
+            Array.Resize(ref complexData, (int)Math.Pow(2, nearestSize - 1));
+
+            var avgR = complexData.Average(x => x.RealPart);
+            var avgI = complexData.Average(x => x.ImaginaryPart);
+            complexData =
+                complexData.Select(x => new ComplexNumber(x.RealPart - avgR, x.ImaginaryPart - avgI)).ToArray();
 
             AutoCorrelation(ref complexData);
             result = new double[(int)Math.Pow(2, nearestSize - 1)];
@@ -152,10 +159,9 @@ namespace HelpersLibrary.DspAlgorithms
         private static void AutoCorrelation(ref ComplexNumber[] data)
         {
             var nearestSize = Math.Ceiling(Math.Log(data.Length, 2));
-            //bug if we try extract an average from data, it becomes corrupted
-            /*var avgX = data.Average(x=> x.RealPart);
+            var avgX = data.Average(x=> x.RealPart);
             var avgY = data.Average(x => x.ImaginaryPart);
-            data = data.Select(x => new ComplexNumber(x.RealPart - avgX, x.ImaginaryPart - avgY)).ToArray();*/
+            data = data.Select(x => new ComplexNumber(x.RealPart - avgX, x.ImaginaryPart - avgY)).ToArray();
             var newSize = (int)nearestSize + 1;
             var doubleSized = new ComplexNumber[(int) Math.Pow(2, newSize)];
             Array.Copy(data, doubleSized, data.Length);

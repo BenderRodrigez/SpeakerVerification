@@ -164,9 +164,9 @@ namespace HelpersLibrary.DspAlgorithms
 
             //preprocessing
             var hpf = new Hpf(60.0f, sampleFrequency);
-            inputSignal = hpf.Filter(inputSignal);
+            var filtredSignal = hpf.Filter(inputSignal);
             var lpf = new Lpf(600.0f, sampleFrequency);
-            inputSignal = lpf.StartFilter(inputSignal);
+            filtredSignal = lpf.StartFilter(filtredSignal);
 
             //analysis variables
             var jump = (int) Math.Round(size*offset);
@@ -183,13 +183,20 @@ namespace HelpersLibrary.DspAlgorithms
                 {
                     var candidates = new List<Tuple<int, double>>();//int = position, double = amplitude
                     //extract candidates
-                    var acf = new double[size];
+                    double[] acf;
                     double[] acfsSample;
                     var data = new float[size];
                     Array.Copy(inputSignal, samples, data, 0, size);
+                    var filterdData = new float[size];
+                    Array.Copy(filtredSignal, samples, filterdData, 0, size);
+
                     var window = new WindowFunctions();
                     data = window.PlaceWindow(data, UsedWindowType);
-                    FFT.AutocorrelationAndSpectrumAutocorrelation(size, data, out acf, out acfsSample);
+                    filterdData = window.PlaceWindow(filterdData, UsedWindowType);
+
+                    FFT.AutoCorrelation(size, filterdData, out acf);
+                    FFT.SpectrumAutoCorrelation(size, data, out acfsSample);
+//                    FFT.AutocorrelationAndSpectrumAutocorrelation(size, data, out acf, out acfsSample);
 
 //                    var aproximatedPosition = AproximatedPitchPosition(ref inputSignal, size, samples, windowFunction, out acfsSample);
                     var aproximatedPosition = -1;
