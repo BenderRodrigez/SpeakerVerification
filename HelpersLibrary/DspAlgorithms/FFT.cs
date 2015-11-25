@@ -111,9 +111,13 @@ namespace HelpersLibrary.DspAlgorithms
             AutoCorrelation(ref complexData);
             AutoCorrelation(ref complexAcf);
             acfs = new double[(int)Math.Pow(2, nearestSize - 1)];
-            Array.Copy(complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray(), acfs, (int)Math.Pow(2, nearestSize - 1));
+            Array.Copy(complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray(), acfs, (int)Math.Pow(2, nearestSize - 2));
             acf = new double[size];
             Array.Copy(complexAcf.Select(x => Math.Sqrt(x.Sqr)).ToArray(), acf, size);
+            var acfK = acf[0];
+            acf = acf.Select(x => x/acfK).ToArray();
+            var acfsk = acfs[0];
+            acfs = acfs.Select(x => x/acfsk).ToArray();
         }
 
         public static void AutoCorrelation(int size, float[] data, out double[] result)
@@ -121,6 +125,8 @@ namespace HelpersLibrary.DspAlgorithms
             var complexData = Array.ConvertAll(data, input => new ComplexNumber(input));
             AutoCorrelation(ref complexData);
             result = Array.ConvertAll(complexData, input => Math.Sqrt(input.Sqr));
+            var k = result[0];
+            result = result.Select(x => x/k).ToArray();
         }
 
         private static void AutoCorrelation(ref ComplexNumber[] data)
