@@ -1,5 +1,7 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
+using System.Numerics;
 
 namespace HelpersLibrary.DspAlgorithms
 {
@@ -87,47 +89,28 @@ namespace HelpersLibrary.DspAlgorithms
             }
         }
 
-        /// <summary>
-        /// Вычисляет АКФ и АКФС сигнала с помощью БПФ
-        /// </summary>
-        /// <param name="size">Размер окна</param>
-        /// <param name="data">Входной сигнал</param>
-        /// <param name="acf">АКФ входного сигнала</param>
-        /// <param name="acfs">АКФС входного сигнала</param>
-        public static void AutocorrelationAndSpectrumAutocorrelation(int size, float[] data, out double[] acf, out double[] acfs)
+        public static void SpectrumForAcfs(int size, float[] data, out double[] result)
         {
-            var nearestSize = (int)Math.Ceiling(Math.Log(size, 2));
-            var complexData = new ComplexNumber[(int)Math.Pow(2, nearestSize + 1)];
+            var nearestSize = (int)Math.Ceiling(Math.Log(size, 2) + 1);
+            var complexData = new ComplexNumber[(int)Math.Pow(2, nearestSize)];
             for (int i = 0; i < size; i++)
             {
                 complexData[i] = new ComplexNumber(data[i]);
             }
-
-            var complexAcf = new ComplexNumber[(int)Math.Pow(2, nearestSize)];
-            Array.Copy(complexData, complexAcf, (int)Math.Pow(2, nearestSize));
-
             FastFurieTransform(true, nearestSize, complexData);
-            Array.Resize(ref complexData, (int)Math.Pow(2, nearestSize - 1));
-
-            AutoCorrelation(ref complexData);
-            AutoCorrelation(ref complexAcf);
-            acfs = new double[(int)Math.Pow(2, nearestSize - 1)];
-            Array.Copy(complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray(), acfs, (int)Math.Pow(2, nearestSize - 2));
-            acf = new double[size];
-            Array.Copy(complexAcf.Select(x => Math.Sqrt(x.Sqr)).ToArray(), acf, size);
-            var acfK = acf[0];
-            acf = acf.Select(x => x/acfK).ToArray();
-            var acfsk = acfs[0];
-            acfs = acfs.Select(x => x/acfsk).ToArray();
+            Array.Resize(ref complexData, complexData.Length / 8);
+            var logSpectrum = complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray();
+            var avg = logSpectrum.Average();
+            complexData = logSpectrum.Select(x => new ComplexNumber(x - avg)).ToArray();
+            result = Array.ConvertAll(complexData, input => Math.Sqrt(input.Sqr));
         }
-
+        
         public static void AutoCorrelation(int size, float[] data, out double[] result)
         {
             var complexData = Array.ConvertAll(data, input => new ComplexNumber(input));
             AutoCorrelation(ref complexData);
             result = new double[size];
             Array.Copy(complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray(), result, size);
-
             var k = result[0];
             result = result.Select(x => x/k).ToArray();
         }
@@ -142,16 +125,15 @@ namespace HelpersLibrary.DspAlgorithms
             }
 
             FastFurieTransform(true, nearestSize, complexData);
-            Array.Resize(ref complexData, (int)Math.Pow(2, nearestSize - 1));
 
-            var avgR = complexData.Average(x => x.RealPart);
-            var avgI = complexData.Average(x => x.ImaginaryPart);
-            complexData =
-                complexData.Select(x => new ComplexNumber(x.RealPart - avgR, x.ImaginaryPart - avgI)).ToArray();
+            Array.Resize(ref complexData, complexData.Length / 8);
+            
+            var logSpectrum = complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray();
+            var avg = logSpectrum.Average(x => x);
+            complexData = logSpectrum.Select(x => new ComplexNumber(x - avg)).ToArray();
 
             AutoCorrelation(ref complexData);
-            result = new double[(int)Math.Pow(2, nearestSize - 1)];
-            Array.Copy(complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray(), result, (int)Math.Pow(2, nearestSize - 2));
+            result = complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray();
             var k = result[0];
             result = result.Select(x => x / k).ToArray();
         }

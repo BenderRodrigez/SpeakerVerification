@@ -25,12 +25,14 @@ namespace Tests
         private string partlyTonalSpeechFileName;
         private float[] _signal1;
         private float[] _signal2;
+        private string _impulseFileName;
 
         [TestInitialize]
         public void Set()
         {
             _signal1 = new[] {0.0f, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1};
             _signal2 = new[] {-1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0.0f};
+            _impulseFileName = "C:\\Users\\box12_000\\Desktop\\impulse.wav";
             fullTonalSpeechFileName = "C:\\Users\\Bender\\YandexDisk\\Documents\\Проекты записей голоса\\Экспорт\\Мама мыла Маню\\ГРР1.wav";
             partlyTonalSpeechFileName =
                 "C:\\Users\\Bender\\YandexDisk\\Documents\\Проекты записей голоса\\Экспорт\\Жирные сазаны ушли под палубу\\ГРР1.wav";
@@ -229,6 +231,37 @@ namespace Tests
                 res.Add(corellation.Autocorrelation(ref testData, 0, i + 1));
             }
             Assert.IsFalse(res.Where(double.IsNaN).Any());
+        }
+
+        [TestMethod]
+        public void TestSpectrum()
+        {
+            WaveFormat format;
+            var impulse = ReadWavFile(_impulseFileName, out format);
+            var size = 512;
+            var spectrum = impulse.Take(size).Select(x => new ComplexNumber(x)).ToArray();
+            FFT.FastFurieTransform(true, (int)Math.Log(size,2), spectrum);
+
+            using (var writer = new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "impulse_spectrum_rect.txt")))
+            {
+                foreach (var freq in spectrum)
+                {
+                    writer.WriteLine(Math.Sqrt(freq.Sqr));
+                }
+            }
+
+            var window = new WindowFunctions();
+            impulse = window.PlaceWindow(impulse.Take(size).ToArray(), WindowFunctions.WindowType.Blackman);
+            spectrum = impulse.Select(x => new ComplexNumber(x)).ToArray();
+            FFT.FastFurieTransform(true, (int)Math.Log(size, 2), spectrum);
+
+            using (var writer = new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "impulse_spectrum_black.txt")))
+            {
+                foreach (var freq in spectrum)
+                {
+                    writer.WriteLine(Math.Sqrt(freq.Sqr));
+                }
+            }
         }
 
         [TestMethod]

@@ -11,7 +11,8 @@ namespace HelpersLibrary.DspAlgorithms
         public enum Algorithm
         {
             Standart,
-            Acfs
+            Acfs,
+            Acf
         }
         private float[] _energy;
         private float[] _corellation;
@@ -54,6 +55,8 @@ namespace HelpersLibrary.DspAlgorithms
                     _jump = (int)Math.Round(_windowSize * jumpSize);
                     InitAcfsAlgorithm(windowSizeSamples, jumpSize);
                     break;
+                case Algorithm.Acf:
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -61,11 +64,6 @@ namespace HelpersLibrary.DspAlgorithms
 
         private void InitAcfsAlgorithm(int windowSize, float overlapping)
         {
-            var corellation = new Corellation
-            {
-                UsedWindowSize = windowSize,
-                UsedWindowType = WindowFunctions.WindowType.Blackman
-            };
             var jump = (int)Math.Round(windowSize * overlapping);
             var maximums = new List<Tuple<int, double>[]>();
             var minimums = new List<Tuple<int, double>[]>();

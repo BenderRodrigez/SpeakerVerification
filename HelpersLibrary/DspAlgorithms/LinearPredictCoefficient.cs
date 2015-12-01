@@ -201,7 +201,7 @@ namespace HelpersLibrary.DspAlgorithms
                 tmp = windowFunc.PlaceWindow(tmp, UsedWindowType);
                 var tmpSpectrum = Array.ConvertAll(tmp, x => (Complex)x);
 
-                tmpSpectrum = furieTransform.FastFurieTransform(tmpSpectrum);
+                tmpSpectrum = FurieTransform.FastFurieTransform(tmpSpectrum);
 
                 var spectrum = SmoothAndWrapSpectrum(tmpSpectrum, vectorSize);
                 for (int j = 0; j < spectrum.Length; j++)

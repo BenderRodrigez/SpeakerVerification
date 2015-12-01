@@ -91,11 +91,9 @@ namespace ExperimentalProcessing
             float[] speechFile;
             using (var reader = new WaveFileReader(filePath))
             {
+                var sampleProvider = reader.ToSampleProvider();
                 speechFile = new float[reader.SampleCount];
-                for (int i = 0; i < reader.SampleCount; i++)
-                {
-                    speechFile[i] = reader.ReadNextSampleFrame()[0];
-                }
+                sampleProvider.Read(speechFile, 0, (int)reader.SampleCount);
                 speechFileFormat = reader.WaveFormat;
             }
             return speechFile;
@@ -131,7 +129,7 @@ namespace ExperimentalProcessing
             WaveFormat signalFormat;
             var signal = ReadSpeechFile(fileName.ToString(), out signalFormat);
             var tonalSpeechSelector = new TonalSpeechSelector(signal, 0.8f, 0.95f, signalFormat.SampleRate,
-                TonalSpeechSelector.Algorithm.Acfs);
+                TonalSpeechSelector.Algorithm.Standart);
             var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
             var trainDataAcf = GetAcfImage(signal, signalFormat, speechMarks, out _acf, out _acfs);
             SamplePosition = 0;
@@ -192,7 +190,7 @@ namespace ExperimentalProcessing
             double[][] trainDataAcf;
             var corellation = new Corellation();
             corellation.AutCorrelationImage(ref speechFile, 441, 0.05f, out trainDataAcf,
-                WindowFunctions.WindowType.Blackman, speechFileFormat.SampleRate, speechMarks, true);
+                WindowFunctions.WindowType.Blackman, speechFileFormat.SampleRate, speechMarks);
             acf = corellation.Acf;
             acfs = corellation.Acfs;
             MaxSize = string.Format(" из {0}", acf.Length - 1);
@@ -283,6 +281,15 @@ namespace ExperimentalProcessing
                 SamplePosition--;
                 e.Handled = true;
             }
+        }
+
+        private void RestButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            AcfsPlotView.ResetAllAxes();
+            AcfsSamplePlotView.ResetAllAxes();
+            AcfPlotView.ResetAllAxes();
+            AcfsSamplePlotView.ResetAllAxes();
+            PitchPlotView.ResetAllAxes();
         }
     }
 }

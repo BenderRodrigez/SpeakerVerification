@@ -11,7 +11,7 @@ namespace HelpersLibrary.DspAlgorithms
         /// <param name="k"></param>
         /// <param name="n"></param>
         /// <returns></returns>
-        private Complex W(int k, int n)
+        private static Complex W(int k, int n)
         {
             if (k % n == 0) return 1.0;
             var arg = -2.0 * Math.PI * k / n;
@@ -23,7 +23,7 @@ namespace HelpersLibrary.DspAlgorithms
         /// </summary>
         /// <param name="x">Массив значений сигнала. Количество значений должно быть степенью 2</param>
         /// <returns>Массив со значениями спектра сигнала</returns>
-        public Complex[] FastFurieTransform(Complex[] x)
+        public static Complex[] FastFurieTransform(Complex[] x)
         {
             Complex[] transform;
             int n = x.Length;

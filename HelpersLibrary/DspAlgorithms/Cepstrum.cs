@@ -128,7 +128,7 @@ namespace HelpersLibrary.DspAlgorithms
 
                 var complexSignal = Array.ConvertAll(signalSpan, input => (Complex)input);
 
-                complexSignal = furieTransform.FastFurieTransform(complexSignal);
+                complexSignal = FurieTransform.FastFurieTransform(complexSignal);
 
                 var doubleSpectrum = Array.ConvertAll(complexSignal,
                     input => Math.Pow(input.Magnitude, 2)); //Go to Magnitude
