@@ -186,10 +186,10 @@ namespace HelpersLibrary.DspAlgorithms
                     if (acfsCandidates.Count > 3)
                     {
 
-                        var tuple = acfsCandidates.OrderByDescending(x => x.Item2).FirstOrDefault();
-                        if (tuple != null)
-                            aproximatedPosition = tuple.Item1;
-
+//                        var tuple = acfsCandidates.OrderByDescending(x => x.Item2).FirstOrDefault();
+//                        if (tuple != null)
+//                            aproximatedPosition = tuple.Item1;
+                        aproximatedPosition = acfsCandidates[0].Item1;
 
                         var freqPosition = (sampleFrequency/furieSize)*aproximatedPosition;
                             //aproximated frequency value
