@@ -1,7 +1,5 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
-using System.Numerics;
 
 namespace HelpersLibrary.DspAlgorithms
 {
@@ -110,7 +108,7 @@ namespace HelpersLibrary.DspAlgorithms
             var complexData = Array.ConvertAll(data, input => new ComplexNumber(input));
             AutoCorrelation(ref complexData);
             result = new double[size];
-            Array.Copy(complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray(), result, size);
+            Array.Copy(complexData.Select(x => (double)x.RealPart).ToArray(), result, size);
             var k = result[0];
             result = result.Select(x => x/k).ToArray();
         }
@@ -129,11 +127,11 @@ namespace HelpersLibrary.DspAlgorithms
             Array.Resize(ref complexData, complexData.Length / 8);
             
             var logSpectrum = complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray();
-            var avg = logSpectrum.Average(x => x);
-            complexData = logSpectrum.Select(x => new ComplexNumber(x - avg)).ToArray();
+            var avg = logSpectrum.Average();
+            complexData = logSpectrum.Select(x => new ComplexNumber(x-avg)).ToArray();
 
             AutoCorrelation(ref complexData);
-            result = complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray();
+            result = complexData.Select(x => (double)x.RealPart).ToArray();
             var k = result[0];
             result = result.Select(x => x / k).ToArray();
         }

@@ -123,39 +123,6 @@ namespace HelpersLibrary.DspAlgorithms
             return acf.ToArray();
         }
 
-        private int AproximatedPitchPosition(ref float[] inputSignal, int size, int offset,
-            WindowFunctions.WindowType windowType, out double[] acfsSample)
-        {
-            var furieSize = (int)Math.Pow(2, Math.Ceiling(Math.Log(size, 2)));
-            var windowedPart = new float[size];
-            var currentSample = new float[furieSize];
-            Array.Copy(inputSignal, offset, windowedPart, 0, size);
-            var window = new WindowFunctions();
-            windowedPart = window.PlaceWindow(windowedPart, windowType);
-            Array.Copy(windowedPart, 0, currentSample, 0, size);
-            var complexSample = Array.ConvertAll(currentSample, input => (Complex) input);
-            var transform = new FurieTransform();
-            var furieSample = FurieTransform.FastFurieTransform(complexSample);
-            currentSample = Array.ConvertAll(furieSample, input => (float)input.Magnitude);
-
-            var acf = new List<double>(furieSample.Length/4);
-            for (int i = 0; i < furieSample.Length/4; i++)
-            {
-                acf.Add(AutoCorrelationPerSample(ref currentSample, 0, i + 1));
-            }
-            for (int i = 2; i < acf.Count; i++)
-            {
-                acf[i - 1] = (acf[i] + acf[i - 1] + acf[i - 2])/3;
-            }
-            acfsSample = acf.ToArray();
-            for (int i = 2; i < acf.Count; i++)
-            {
-                if (acf[i - 1] > acf[i - 2] && acf[i - 1] > acf[i])
-                    return i - 1;
-            }
-            return -1;
-        }
-
         public void AutCorrelationImage(ref float[] inputSignal, int size, float offset, out double[][] image,
             WindowFunctions.WindowType windowFunction, int sampleFrequency, Tuple<int,int>[] speechMarks)
         {
@@ -177,9 +144,10 @@ namespace HelpersLibrary.DspAlgorithms
             var acfImg = new List<double[]>();
             var acfsImg = new List<double[]>();
             var furieSize = Math.Pow(2, Math.Ceiling(Math.Log(size, 2) + 1));
-            var globalCandidates = new List<List<Tuple<int, double>>>();
             foreach (var curentMark in speechMarks)
             {
+                var pieceImg = new List<double[]>();
+                var globalCandidates = new List<List<Tuple<int, double>>>();
                 for (int samples = curentMark.Item1;
                     samples < inputSignal.Length && samples < curentMark.Item2;
                     samples += jump)
@@ -197,133 +165,88 @@ namespace HelpersLibrary.DspAlgorithms
 
                     double[] acf;
                     FFT.AutoCorrelation(size, filterdData, out acf);
+
                     double[] acfsSample;
                     FFT.SpectrumAutoCorrelation(size, data, out acfsSample);
+                    for (int i = 1; i < acfsSample.Length - 1; i++)
+                    {
+                        acfsSample[i] = (acfsSample[i - 1] + acfsSample[i] + acfsSample[i + 1])/3;
+                    }
 
                     var aproximatedPosition = -1;
+                    var acfsCandidates = new List<Tuple<int, double>>();
                     for (int i = 1; i < acfsSample.Length-1; i++)
                     {
                         if (acfsSample[i] > acfsSample[i - 1] && acfsSample[i] > acfsSample[i + 1])
                         {
-                            aproximatedPosition = i;
-                            break;
+                            acfsCandidates.Add(new Tuple<int, double>(i, acfsSample[i]));
                         }
                     }
-                    var freqPosition = (sampleFrequency / furieSize) * aproximatedPosition;//aproximated frequency value
-                    if (aproximatedPosition > -1 && freqPosition > 60 && freqPosition < 600)
-                    {
-                        var acfPosition = 2.0 / (aproximatedPosition / furieSize);//aproximated time value
-                        img.Add(new[] {acfPosition});
-                        acfsImg.Add(acfsSample);
-                        acfImg.Add(acf);
 
-                        for (int i = 2; i < acf.Length; i++)
+                    if (acfsCandidates.Count > 3)
+                    {
+
+                        var tuple = acfsCandidates.OrderByDescending(x => x.Item2).FirstOrDefault();
+                        if (tuple != null)
+                            aproximatedPosition = tuple.Item1;
+
+
+                        var freqPosition = (sampleFrequency/furieSize)*aproximatedPosition;
+                            //aproximated frequency value
+                        if (aproximatedPosition > -1 && freqPosition > 60 && freqPosition < 600)
                         {
-                            if ((acf[i - 1] > acf[i - 2] && acf[i - 1] > acf[i]))
+                            var acfPosition = 1.0/(aproximatedPosition/furieSize); //aproximated time value
+
+                            for (int i = 2; i < acf.Length; i++)
                             {
-                                candidates.Add(new Tuple<int, double>(i - 1, acf[i - 1]));//add each maximum of function
+                                if ((acf[i - 1] > acf[i - 2] && acf[i - 1] > acf[i]))
+                                {
+                                    candidates.Add(new Tuple<int, double>(i - 1, acf[i - 1]));
+                                        //add each maximum of function
+                                }
+                            }
+                            if (candidates.Count > 2)
+                            {
+                                var maxCandidate = candidates.Max(x => x.Item2)*0.2;
+                                candidates.RemoveAll(x => x.Item2 < maxCandidate);
+                                acfsImg.Add(acfsSample);
+                                acfImg.Add(acf);
+                                pieceImg.Add(new[] {acfPosition});
+                                globalCandidates.Add(candidates);
                             }
                         }
-                        globalCandidates.Add(candidates);
                     }
                 }
+                ExtractPitch(pieceImg, globalCandidates, sampleFrequency, furieSize);
+                img.AddRange(pieceImg);
             }
 
+//            image = img.Select(x => new []{x[0]> 0.0?sampleFrequency/x[0]:0.0}).ToArray();
             Acf = acfImg.ToArray();
             Acfs = acfsImg.ToArray();
-
-            ExtractPitch(img, globalCandidates);
-
-//            image = img.Select(x => new []{x[0]> 0.0?sampleFrequency/x[0]:0.0}).ToArray();
             image = img.ToArray();
         }
 
-        private void ExtractPitch(IReadOnlyList<double[]> img, IReadOnlyList<List<Tuple<int, double>>> globalCandidates)
+        private void ExtractPitch(IReadOnlyList<double[]> img, IReadOnlyList<List<Tuple<int, double>>> globalCandidates, int sampleRate, double furieSize)
         {
-            if (globalCandidates[0].Count > 0)
+            var searchWindow = Math.Ceiling(sampleRate*1.5/furieSize);
+            for (int i = 0; i < img.Count; i++)
             {
-                //select nearest from acf
-                var nearest = globalCandidates[0].Min(x => Math.Abs(x.Item1 - img[0][0]));
-                img[0][0] = globalCandidates[0].First(x => Math.Abs(x.Item1 - img[0][0]) <= nearest).Item1;
-            }
-            if (globalCandidates[1].Count > 0)
-            {
-                //select nearest from acf
-                var nearest = globalCandidates[1].Min(x => Math.Abs(x.Item1 - img[1][0]));
-                img[1][0] = globalCandidates[1].First(x => Math.Abs(x.Item1 - img[1][0]) <= nearest).Item1;
-            }
-            for (int i = 2; i < img.Count; i++)
-            {
-                if (globalCandidates[i].Count > 0)
+                if (globalCandidates[i].Count > 0 && globalCandidates[i].Any(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow))
                 {
-                    var nearest = globalCandidates[i].Min(x => Math.Abs(x.Item1 - img[i][0]));
-                    img[i][0] = globalCandidates[i].First(x => Math.Abs(x.Item1 - img[i][0]) <= nearest).Item1;
-                }
-
-                if (Math.Abs(img[i - 1][0] - img[i - 2][0]) > 2 && Math.Abs(img[i - 1][0] - img[i][0]) > 2 &&
-                    img[i][0] > 0.0 && img[i - 2][0] > 0.0)
-                {
-                    img[i - 1][0] = (img[i - 2][0] + img[i][0])/2;
-                }
-                else if (img[i - 1][0] <= 0.0 && img[i - 2][0] > 0.0 && Math.Abs(img[i - 1][0] - img[i - 2][0]) < 5)
-                {
-                    var pos = 1;
-                    for (int j = 1; j < img.Count - i - 1 && img[i - 1 + j][0] <= 0.0; j++)
-                    {
-                        pos = j;
-                    }
-                    if (pos < 6)
-                    {
-                        img[i - 1][0] = FunctionBetwenTwoPoints(i - 2, i + pos, img[i - 2][0], img[i + pos][0],
-                            i - 1);
-                    }
-                }
-
-                if (Math.Abs(img[i - 1][0] - img[i - 2][0]) > 5 && img[i][0] <= 0.0)
-                {
-                    img[i - 1][0] = 0.0;
-                }
-                if (Math.Abs(img[i - 1][0] - img[i][0]) > 5 && img[i - 2][0] <= 0.0)
-                {
-                    img[i - 1][0] = 0.0;
-                }
-
-                if (Math.Abs(img[i - 1][0] - img[i - 2][0]) > 5 && img[i - 1][0] > 0.0 && img[i - 2][0] > 0.0)
-                {
-                    //search candidate that will be closer to img[i-2][0] than img[i-1][0]
-                    var candidate =
-                        globalCandidates[i - 1].Where(
-                            x => x.Item1 != img[i - 1][0] && Math.Abs(x.Item1 - img[i - 2][0]) <= 5)
-                            .OrderByDescending(x => Math.Abs(x.Item1 - img[i - 1][0]))
-                            .FirstOrDefault();
-
-                    if (candidate != null)
-                        img[i - 1][0] = candidate.Item1;
-                    else
-                    {
-                        //try approximation
-                        img[i - 1][0] = FunctionBetwenTwoPoints(i - 2, i, img[i - 2][0], img[i][0], i - 1);
-                    }
-                }
-
-                if (img[i - 2][0] > 0.0 && img[i - 1][0] <= 0.0 && img[i][0] > 0.0)
-                {
-                    var candidate =
-                        globalCandidates[i - 1].Where(
-                            x => x.Item1 != img[i - 1][0] && Math.Abs(x.Item1 - img[i - 2][0]) <= 5)
-                            .OrderByDescending(x => Math.Abs(x.Item1 - img[i - 1][0]))
-                            .FirstOrDefault();
-
-                    if (candidate != null)
-                        img[i - 1][0] = candidate.Item1;
-                    else
-                    {
-                        //try approximation
-                        img[i - 1][0] = FunctionBetwenTwoPoints(i - 2, i, img[i - 2][0], img[i][0], i - 1);
-                    }
+                    var nearest =
+                        globalCandidates[i]
+                            .Where(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow)
+                            .Max(x => x.Item2);
+                    img[i][0] =
+                        globalCandidates[i]
+                            .Where(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow)
+                            .First(x => x.Item2 >= nearest)
+                            .Item1;
                 }
             }
         }
+
 #if DEBUG
         private void SaveTmpImage(double[][] img)
         {

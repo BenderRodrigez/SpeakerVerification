@@ -23,6 +23,7 @@ namespace HelpersLibrary.DspAlgorithms
         private readonly Algorithm _usedAlgorithm;
         private Tuple<int, double>[][] _acfsMaximums;
         private Tuple<int, double>[][] _acfsMinimums;
+        private bool[] _acfFeature;
         private readonly int _windowSize;
         private readonly int _jump;
 
@@ -56,10 +57,38 @@ namespace HelpersLibrary.DspAlgorithms
                     InitAcfsAlgorithm(windowSizeSamples, jumpSize);
                     break;
                 case Algorithm.Acf:
+                    _jump = (int)Math.Round(_windowSize * jumpSize);
+                    InitAcfAlgorithm(windowSizeSamples, jumpSize, sampleRate);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+
+        private void InitAcfAlgorithm(int windowSize, float overlapping, int sampleFrequency)
+        {
+            var highPassFilter = new Hpf(60.0f, sampleFrequency);
+            var lowPassFilter = new Lpf(600.0f, sampleFrequency);
+            _signal = lowPassFilter.StartFilter(_signal);
+            _signal = highPassFilter.Filter(_signal);
+
+            windowSize = windowSize/2;
+            var signalCutLevel = _signal.Max(x => Math.Abs(x))*0.15;
+            _signal = _signal.Select(x => Math.Abs(x) > signalCutLevel ? x : 0.0f).ToArray();
+
+            var jump = (int)Math.Round(windowSize * overlapping);
+            var feature = new List<bool>();
+            for (int i = 0; i < _signal.Length - windowSize; i += jump)
+            {
+                double[] currentAcfs;
+                var data = new float[windowSize];
+                Array.Copy(_signal, data, windowSize);
+                var window = new WindowFunctions();
+                data = window.PlaceWindow(data, WindowFunctions.WindowType.Blackman);
+                FFT.AutoCorrelation(windowSize, data, out currentAcfs);
+                feature.Add(currentAcfs.All(double.IsNaN));
+            }
+            _acfFeature = feature.ToArray();
         }
 
         private void InitAcfsAlgorithm(int windowSize, float overlapping)
@@ -77,6 +106,14 @@ namespace HelpersLibrary.DspAlgorithms
                 FFT.SpectrumAutoCorrelation(windowSize, data, out currentAcfs);
                 var currentMax = new List<Tuple<int,double>>();
                 var currentMin = new List<Tuple<int, double>>();
+                
+                
+                for (int j = 1; j < currentAcfs.Length - 1; j++)
+                {
+                    currentAcfs[j] = (currentAcfs[j - 1] + currentAcfs[j] + currentAcfs[j + 1]) / 3;
+                }
+
+
                 for (int j = 1; j < currentAcfs.Length - 1; j++)
                 {
                     if (currentAcfs[j] > currentAcfs[j - 1] && currentAcfs[j] > currentAcfs[j + 1])
@@ -126,25 +163,20 @@ namespace HelpersLibrary.DspAlgorithms
         {
             var voicedSpeech = new List<float>(_signal.Length);
             var start = -1;
-            using ( //TODO: remove this debug feature after it
-                var writer = new BinaryWriter(File.Create(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "generalFeature.txt"))))
+            for (int i = 0; i < _generalFeature.Length; i++)
             {
-                for (int i = 0; i < _generalFeature.Length; i++)
+                if (_generalFeature[i] > _border && start < 0)
                 {
-                    writer.Write((short) Math.Round(_generalFeature[i]*10000000));
-                    if (_generalFeature[i] > _border && start < 0)
+                    start = i;
+                }
+                else
+                {
+                    if (start > -1 && _generalFeature[i] < _border)
                     {
-                        start = i;
-                    }
-                    else
-                    {
-                        if (start > -1 && _generalFeature[i] < _border)
-                        {
-                            var tmp = new float[i - start];
-                            Array.Copy(_signal, start, tmp, 0, i - start);
-                            start = -1;
-                            voicedSpeech.AddRange(tmp);
-                        }
+                        var tmp = new float[i - start];
+                        Array.Copy(_signal, start, tmp, 0, i - start);
+                        start = -1;
+                        voicedSpeech.AddRange(tmp);
                     }
                 }
             }
@@ -159,9 +191,33 @@ namespace HelpersLibrary.DspAlgorithms
                     return GetTonalSpeechMarksStandart();
                 case Algorithm.Acfs:
                     return GetTonalSpeechMarksAcfs();
+                    case Algorithm.Acf:
+                    return GetTonalSpeechMarksAcf();
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+
+        private Tuple<int, int>[] GetTonalSpeechMarksAcf()
+        {
+            var marks = new List<Tuple<int, int>>();
+            var state = false;
+            var start = 0;
+            for (int i = 0; i < _acfFeature.Length; i++)
+            {
+                if (_acfFeature[i] && !state)
+                {
+                    start = i;
+                    state = true;
+                }
+                else if(!_acfFeature[i] && state)
+                {
+                    marks.Add(new Tuple<int, int>(start * _jump, i * _jump));
+                    start = -1;
+                    state = false;
+                }
+            }
+            return marks.ToArray();
         }
 
         private Tuple<int, int>[] GetTonalSpeechMarksAcfs()
