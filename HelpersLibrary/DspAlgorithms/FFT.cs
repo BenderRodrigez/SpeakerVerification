@@ -4,7 +4,7 @@ using System.Linq;
 namespace HelpersLibrary.DspAlgorithms
 {
     // ReSharper disable once InconsistentNaming
-    public class FFT
+    public static class FFT
     {
         /// <summary>
         /// This computes an in-place complex-to-complex FFT 
@@ -13,7 +13,7 @@ namespace HelpersLibrary.DspAlgorithms
         public static void FastFurieTransform(bool forward, int m, ComplexNumber[] data)
         {
             int n, i, i1, j, k, i2, l, l1, l2;
-            float c1, c2, tx, ty, t1, t2, u1, u2, z;
+            double c1, c2, tx, ty, t1, t2, u1, u2, z;
 
             // Calculate the number of points
             n = 1;
@@ -108,7 +108,7 @@ namespace HelpersLibrary.DspAlgorithms
             var complexData = Array.ConvertAll(data, input => new ComplexNumber(input));
             AutoCorrelation(ref complexData);
             result = new double[size];
-            Array.Copy(complexData.Select(x => (double)x.RealPart).ToArray(), result, size);
+            Array.Copy(complexData.Select(x => x.RealPart).ToArray(), result, size);
             var k = result[0];
             result = result.Select(x => x/k).ToArray();
         }
@@ -131,7 +131,7 @@ namespace HelpersLibrary.DspAlgorithms
             complexData = logSpectrum.Select(x => new ComplexNumber(x-avg)).ToArray();
 
             AutoCorrelation(ref complexData);
-            result = complexData.Select(x => (double)x.RealPart).ToArray();
+            result = complexData.Select(x => x.RealPart).ToArray();
             var k = result[0];
             result = result.Select(x => x / k).ToArray();
         }

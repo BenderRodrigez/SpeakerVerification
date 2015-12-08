@@ -26,6 +26,7 @@ namespace ExperimentalProcessing
         public PlotModel AcfsPreview { get; private set; }
         public Cursor WindowCursor { get; private set; }
         public string MaxSize { get; private set; }
+        public string FileName { get; private set; }
 
         private int _samplePos;
         public int SamplePosition
@@ -118,8 +119,10 @@ namespace ExperimentalProcessing
         private void OpenFileDlgOnFileOk(object sender, CancelEventArgs cancelEventArgs)
         {
             var fileName = ((OpenFileDialog) sender).FileName;
+            FileName = fileName;
             var task = new Task(OpenFile, fileName);
             task.Start();
+            OnPropertyChanged("FileName");
         }
 
         private void OpenFile(object fileName)

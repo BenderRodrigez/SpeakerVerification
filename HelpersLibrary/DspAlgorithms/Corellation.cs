@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using HelpersLibrary.DspAlgorithms.Filters;
 
 namespace HelpersLibrary.DspAlgorithms
@@ -18,12 +17,6 @@ namespace HelpersLibrary.DspAlgorithms
         public int UsedVectorSize { private get; set; }
         public double[][] Acfs { get; private set; }
         public double[][] Acf { get; private set; }
-
-
-        public void AutoCorrelationFast(ref float[] inputSignal, int size, int offset, out double[] result)
-        {
-            result = null;
-        }
 
         /// <summary>
         /// Вычисляет автокорелляционную функцию на заданном участке сигнала
@@ -94,35 +87,6 @@ namespace HelpersLibrary.DspAlgorithms
             return autoCorrelation;
         }
 
-        public double[] SpectrumAutocorellationFunction(ref float[] inputSignal, int size, int offset,
-            WindowFunctions.WindowType windowType)
-        {
-            var furieSize = (int)Math.Pow(2, Math.Ceiling(Math.Log(size, 2)));
-            var windowedPart = new float[size];
-            var currentSample = new float[furieSize];
-            Array.Copy(inputSignal, offset, windowedPart, 0, size);
-            var window = new WindowFunctions();
-            var avg = windowedPart.Average();
-            windowedPart = windowedPart.Select(x => x/avg).ToArray();
-            windowedPart = window.PlaceWindow(windowedPart, windowType);
-            Array.Copy(windowedPart, 0, currentSample, 0, size);
-            var complexSample = Array.ConvertAll(currentSample, input => (Complex)input);
-            var transform = new FurieTransform();
-            var furieSample = FurieTransform.FastFurieTransform(complexSample);
-            currentSample = Array.ConvertAll(furieSample, input => (float)input.Magnitude);
-
-            var acf = new List<double>(furieSample.Length / 4);
-            for (int i = 0; i < furieSample.Length / 4; i++)
-            {
-                acf.Add(AutoCorrelationPerSample(ref currentSample, 0, i + 1));
-            }
-            for (int i = 2; i < acf.Count; i++)
-            {
-                acf[i - 1] = (acf[i] + acf[i - 1] + acf[i - 2]) / 3;
-            }
-            return acf.ToArray();
-        }
-
         public void AutCorrelationImage(ref float[] inputSignal, int size, float offset, out double[][] image,
             WindowFunctions.WindowType windowFunction, int sampleFrequency, Tuple<int,int>[] speechMarks)
         {
@@ -168,12 +132,12 @@ namespace HelpersLibrary.DspAlgorithms
 
                     double[] acfsSample;
                     FFT.SpectrumAutoCorrelation(size, data, out acfsSample);
+
                     for (int i = 1; i < acfsSample.Length - 1; i++)
                     {
                         acfsSample[i] = (acfsSample[i - 1] + acfsSample[i] + acfsSample[i + 1])/3;
                     }
 
-                    var aproximatedPosition = -1;
                     var acfsCandidates = new List<Tuple<int, double>>();
                     for (int i = 1; i < acfsSample.Length-1; i++)
                     {
@@ -185,11 +149,7 @@ namespace HelpersLibrary.DspAlgorithms
 
                     if (acfsCandidates.Count > 3)
                     {
-
-//                        var tuple = acfsCandidates.OrderByDescending(x => x.Item2).FirstOrDefault();
-//                        if (tuple != null)
-//                            aproximatedPosition = tuple.Item1;
-                        aproximatedPosition = acfsCandidates[0].Item1;
+                        var aproximatedPosition = acfsCandidates[0].Item1;
 
                         var freqPosition = (sampleFrequency/furieSize)*aproximatedPosition;
                             //aproximated frequency value

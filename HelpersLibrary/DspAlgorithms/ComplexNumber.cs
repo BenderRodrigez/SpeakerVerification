@@ -14,16 +14,16 @@ namespace HelpersLibrary.DspAlgorithms
         /// <summary>
         /// Real Part
         /// </summary>
-        public float RealPart;
+        public double RealPart;
         /// <summary>
         /// Imaginary Part
         /// </summary>
-        public float ImaginaryPart;
+        public double ImaginaryPart;
 
         public ComplexNumber(double realPart, double imagimaryPart = 0.0)
         {
-            RealPart = (float) realPart;
-            ImaginaryPart = (float) imagimaryPart;
+            RealPart = realPart;
+            ImaginaryPart = imagimaryPart;
         }
     }
 }
