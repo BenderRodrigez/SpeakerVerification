@@ -150,6 +150,10 @@ namespace HelpersLibrary.DspAlgorithms
                     if (acfsCandidates.Count > 3)
                     {
                         var aproximatedPosition = acfsCandidates[0].Item1;
+                        var controlMax = acfsCandidates.Max(x => x.Item2);
+                        
+                        if (acfsCandidates[0].Item2 < controlMax/10.0)
+                            aproximatedPosition = acfsCandidates.First(x => x.Item2 == controlMax).Item1;
 
                         var freqPosition = (sampleFrequency/furieSize)*aproximatedPosition;
                             //aproximated frequency value

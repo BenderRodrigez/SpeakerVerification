@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using HelpersLibrary.DspAlgorithms;
+using HelpersLibrary.DspAlgorithms.Filters;
 using HelpersLibrary.LearningAlgorithms;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NAudio.Wave;
@@ -209,6 +210,14 @@ namespace Tests
                     writer.WriteLine(s);
                 }
             }
+        }
+
+        [TestMethod]
+        public void TestGauss()
+        {
+            var gauss = new GaussianBlur();
+            var res = gauss.GetBlur(new[] {0.5, 0.5, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5}, 3);
+            Assert.IsNotNull(res);
         }
 
         [TestMethod]
