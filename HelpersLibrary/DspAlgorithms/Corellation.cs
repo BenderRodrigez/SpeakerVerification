@@ -110,6 +110,7 @@ namespace HelpersLibrary.DspAlgorithms
             var furieSize = Math.Pow(2, Math.Ceiling(Math.Log(size, 2) + 1));
             foreach (var curentMark in speechMarks)
             {
+                var prevAcfsCandidate = -1;
                 var pieceImg = new List<double[]>();
                 var globalCandidates = new List<List<Tuple<int, double>>>();
                 for (int samples = curentMark.Item1;
@@ -155,6 +156,12 @@ namespace HelpersLibrary.DspAlgorithms
                         if (acfsCandidates[0].Item2 < controlMax/10.0)
                             aproximatedPosition = acfsCandidates.First(x => x.Item2 == controlMax).Item1;
 
+                        if ((aproximatedPosition < prevAcfsCandidate - 2 || aproximatedPosition > prevAcfsCandidate + 2) && prevAcfsCandidate > -1)
+                        {
+                            controlMax = acfsCandidates.Min(x => Math.Abs(x.Item1 - prevAcfsCandidate));
+                            aproximatedPosition = acfsCandidates.First(x => Math.Abs(x.Item1 - prevAcfsCandidate) == controlMax).Item1;
+                        }
+
                         var freqPosition = (sampleFrequency/furieSize)*aproximatedPosition;
                             //aproximated frequency value
                         if (aproximatedPosition > -1 && freqPosition > 60 && freqPosition < 600)
@@ -177,6 +184,7 @@ namespace HelpersLibrary.DspAlgorithms
                                 acfImg.Add(acf);
                                 pieceImg.Add(new[] {acfPosition});
                                 globalCandidates.Add(candidates);
+                                prevAcfsCandidate = aproximatedPosition;
                             }
                         }
                     }
