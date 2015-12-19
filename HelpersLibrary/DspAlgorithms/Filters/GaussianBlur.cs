@@ -31,7 +31,7 @@ namespace HelpersLibrary.DspAlgorithms.Filters
                 {
                     sum += data[i + j] * (Math.Exp(-Math.Pow(j, 2) / (2.0 * Math.Pow(Sigma, 2)))) / (Math.Sqrt(2 * Math.PI) * Sigma);
                 }
-                data[i] = data[i]*(Math.Exp(-Math.Pow(0, 2)/(2.0*Math.Pow(Sigma, 2))))/(Math.Sqrt(2*Math.PI)*Sigma);
+                data[i] = sum/size;
             }
             return data;
         }
