@@ -108,14 +108,21 @@ namespace HelpersLibrary.DspAlgorithms
             var acfImg = new List<double[]>();
             var acfsImg = new List<double[]>();
             var furieSize = Math.Pow(2, Math.Ceiling(Math.Log(size, 2) + 1));
+            var resultImg = new List<double[]>(inputSignal.Length);
+            var prevStop = 0;
             foreach (var curentMark in speechMarks)
             {
+                for (int i = prevStop; i < curentMark.Item1; i++)
+                {
+                    resultImg.Add(new[] {0.0});
+                    acfsImg.Add(new double[128].Select(x=> double.NaN).ToArray());
+                    acfImg.Add(new double[size].Select(x => double.NaN).ToArray());
+                }
+
                 var prevAcfsCandidate = -1;
                 var pieceImg = new List<double[]>();
                 var globalCandidates = new List<List<Tuple<int, double>>>();
-                for (int samples = curentMark.Item1;
-                    samples < inputSignal.Length && samples < curentMark.Item2;
-                    samples += jump)
+                for (int samples = curentMark.Item1; samples < inputSignal.Length && samples < curentMark.Item2; samples += jump)
                 {
                     var candidates = new List<Tuple<int, double>>();//int = position, double = amplitude
                     //extract candidates
@@ -162,46 +169,87 @@ namespace HelpersLibrary.DspAlgorithms
                             aproximatedPosition = acfsCandidates.First(x => Math.Abs(x.Item1 - prevAcfsCandidate) == controlMax).Item1;
                         }
 
-                        var freqPosition = (sampleFrequency/furieSize)*aproximatedPosition;
-                            //aproximated frequency value
+                        var freqPosition = (sampleFrequency/furieSize)*aproximatedPosition;//aproximated frequency value
+
                         if (aproximatedPosition > -1 && freqPosition > 60 && freqPosition < 600)
                         {
-                            var acfPosition = 1.0/(aproximatedPosition/furieSize); //aproximated time value
+                            var acfPosition = sampleFrequency/freqPosition; //aproximated time value
 
                             for (int i = 2; i < acf.Length; i++)
                             {
                                 if ((acf[i - 1] > acf[i - 2] && acf[i - 1] > acf[i]))
                                 {
-                                    candidates.Add(new Tuple<int, double>(i - 1, acf[i - 1]));
-                                        //add each maximum of function
+                                    candidates.Add(new Tuple<int, double>(i - 1, acf[i - 1]));//add each maximum of function
                                 }
                             }
+
                             if (candidates.Count > 2)
                             {
                                 var maxCandidate = candidates.Max(x => x.Item2)*0.2;
                                 candidates.RemoveAll(x => x.Item2 < maxCandidate);
-                                acfsImg.Add(acfsSample);
-                                acfImg.Add(acf);
-                                pieceImg.Add(new[] {acfPosition});
+
+                                for (int i = 0; i < jump; i++)
+                                {
+                                    acfsImg.Add(acfsSample);
+                                    acfImg.Add(acf);
+                                }
+                                pieceImg.Add(new[] { acfPosition });
                                 globalCandidates.Add(candidates);
                                 prevAcfsCandidate = aproximatedPosition;
                             }
+                            else
+                            {
+                                for (int i = 0; i < jump; i++)
+                                {
+                                    resultImg.Add(new []{0.0});
+                                    acfsImg.Add(acfsSample);
+                                    acfImg.Add(acf);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            for (int i = 0; i < jump; i++)
+                            {
+                                resultImg.Add(new[] { 0.0 });
+                                acfsImg.Add(acfsSample);
+                                acfImg.Add(acf);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < jump; i++)
+                        {
+                            resultImg.Add(new[] { 0.0 });
+                            acfsImg.Add(acfsSample);
+                            acfImg.Add(acf);
                         }
                     }
                 }
                 ExtractPitch(pieceImg, globalCandidates, sampleFrequency, furieSize);
-                img.AddRange(pieceImg);
+
+                foreach (var doublese in pieceImg)
+                {
+                    for (int i = 0; i < jump; i++)
+                    {
+                        resultImg.Add(doublese);
+                    }
+                }
+//                img.AddRange(pieceImg);
+                prevStop = curentMark.Item2 + 1;
             }
 
 //            image = img.Select(x => new []{x[0]> 0.0?sampleFrequency/x[0]:0.0}).ToArray();
             Acf = acfImg.ToArray();
             Acfs = acfsImg.ToArray();
-            image = img.ToArray();
+            image = resultImg.ToArray();
+//            image = img.ToArray();
         }
 
         private void ExtractPitch(IReadOnlyList<double[]> img, IReadOnlyList<List<Tuple<int, double>>> globalCandidates, int sampleRate, double furieSize)
         {
-            var searchWindow = Math.Ceiling(sampleRate*1.5/furieSize);
+            var searchWindow = Math.Ceiling(sampleRate*1.2/furieSize);
             for (int i = 0; i < img.Count; i++)
             {
                 if (globalCandidates[i].Count > 0 && globalCandidates[i].Any(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow))

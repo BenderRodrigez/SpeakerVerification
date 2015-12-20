@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -45,8 +46,27 @@ namespace HelpersLibrary.LearningAlgorithms
 			TrainingSet = traningSet;
             DistortionDelta = 0.05;
             CodeBookInit(vectorLength);
+            ClearCodeBook();
+
             DistortionDispertion = DistortionMeasureDispersion();
 		}
+
+        private void ClearCodeBook()
+        {
+            var effecivness = new int[CodeBook.Length];
+            foreach (var t in TrainingSet)
+            {
+                effecivness[QuantazationIndex(t)]++;
+            }
+
+            var clearCodeBook = new List<double[]>(CodeBook.Length);
+            for (int i = 0; i < effecivness.Length; i++)
+            {
+                if(effecivness[i] > 0)
+                    clearCodeBook.Add(CodeBook[i]);
+            }
+            CodeBook = clearCodeBook.ToArray();
+        }
 
         private double DistortionMeasureDispersion()
         {
