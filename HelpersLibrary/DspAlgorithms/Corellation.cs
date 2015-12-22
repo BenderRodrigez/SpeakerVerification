@@ -115,7 +115,7 @@ namespace HelpersLibrary.DspAlgorithms
                 for (int i = prevStop; i < curentMark.Item1; i++)
                 {
                     resultImg.Add(new[] {0.0});
-                    acfsImg.Add(new double[128].Select(x=> double.NaN).ToArray());
+                    acfsImg.Add(new double[128].Select(x => double.NaN).ToArray());
                     acfImg.Add(new double[size].Select(x => double.NaN).ToArray());
                 }
 
