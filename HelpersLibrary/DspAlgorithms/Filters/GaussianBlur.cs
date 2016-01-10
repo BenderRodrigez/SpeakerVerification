@@ -19,15 +19,20 @@ namespace HelpersLibrary.DspAlgorithms.Filters
         {
             Sigma = (size - 1.0) / 6;
             var delta = Math.Floor(size/2.0);
+            var sum = 0.0;
+            for (int j = (int)-delta; j <= delta; j++)
+            {
+                sum += Math.Exp(-Math.Pow(j, 2) / (2.0 * Math.Pow(Sigma, 2))) / (Math.Sqrt(2 * Math.PI) * Sigma);
+            }
 
             for (int i = (int)delta; i < data.Length-delta; i++)
             {
-                var sum = 0.0;
+                var res = 0.0;
                 for (int j = (int)-delta; j <= delta; j++)
                 {
-                    sum += data[i + j] * (Math.Exp(-Math.Pow(j, 2) / (2.0 * Math.Pow(Sigma, 2)))) / (Math.Sqrt(2 * Math.PI) * Sigma);
+                    res += data[i+j]* (Math.Exp(-Math.Pow(j, 2)/(2.0*Math.Pow(Sigma, 2)))/(Math.Sqrt(2*Math.PI)*Sigma))/sum;
                 }
-                data[i] = sum/size;
+                data[i] = res;
             }
             return data;
         }

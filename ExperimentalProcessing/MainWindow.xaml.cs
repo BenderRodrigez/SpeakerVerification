@@ -19,6 +19,7 @@ namespace ExperimentalProcessing
     /// </summary>
     public sealed partial class MainWindow : INotifyPropertyChanged
     {
+        private bool _useHz;
         public PlotModel PitchPlotModel { get; private set; }
         public PlotModel AcfPlotModel { get; private set; }
         public PlotModel AcfsPlotModel { get; private set; }
@@ -28,15 +29,28 @@ namespace ExperimentalProcessing
         public string MaxSize { get; private set; }
         public string FileName { get; private set; }
 
+        public bool UseHz
+        {
+            get
+            {
+                return _useHz;
+            }
+            set
+            {
+                _useHz = value;
+                if(_pitch != null) PlotPitch(_pitch);
+            }
+        }
+
         private int _samplePos;
         public int SamplePosition
         {
-            get { return _samplePos; }
+            get { return _samplePos*_jump; }
             set
             {
-                if (_acf != null && _acfs != null && value > -1 && value < _acf.Length)
+                if (_acf != null && _acfs != null && value > -1 && value < _acf.Length*_jump)
                 {
-                    _samplePos = value;
+                    _samplePos = (int)Math.Round(value/(double)_jump);
                     PlotAcfSample(_samplePos);
                     PlotAcfsSample(_samplePos);
                     OnPropertyChanged();
@@ -46,24 +60,27 @@ namespace ExperimentalProcessing
 
         double[][] _acf;
         double[][] _acfs;
+        double[][] _pitch;
+        double _sampleFreq;
+        int _jump = 22;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            PitchPlotModel = new PlotModel { Title = "Трек ОТ" };
+            PitchPlotModel = new PlotModel { Title = "Трек ОТ", TitleFontSize = 10.0};
             PitchPlotModel.Series.Add(new FunctionSeries(Math.Cos, 0, 10, 0.1));
             OnPropertyChanged("PitchPlotModel");
 
-            AcfPlotModel = new PlotModel { Title = "АКФ" };
+            AcfPlotModel = new PlotModel { Title = "АКФ", TitleFontSize = 10.0 };
             AcfPlotModel.Series.Add(new FunctionSeries(Math.Cos, 0, 10, 0.1));
             OnPropertyChanged("AcfPlotModel");
 
-            AcfsPlotModel = new PlotModel { Title = "АКФС" };
+            AcfsPlotModel = new PlotModel { Title = "АКФС", TitleFontSize = 10.0 };
             AcfsPlotModel.Series.Add(new FunctionSeries(Math.Cos, 0, 10, 0.1));
             OnPropertyChanged("AcfsPlotModel");
 
-            AcfPreview = new PlotModel {Title = "Кореллограмма АКФ"};
+            AcfPreview = new PlotModel {Title = "Кореллограмма АКФ", TitleFontSize = 10.0 };
             var linearColorAxis = new LinearColorAxis
             {
                 HighColor = OxyColors.White,
@@ -74,7 +91,7 @@ namespace ExperimentalProcessing
             AcfPreview.Axes.Add(linearColorAxis);
             AcfPreview.Series.Add(new FunctionSeries(Math.Cosh, 0, 10, 0.1));
             OnPropertyChanged("AcfPreview");
-            AcfsPreview = new PlotModel { Title = "Кореллограмма АКФС" };
+            AcfsPreview = new PlotModel { Title = "Кореллограмма АКФС", TitleFontSize = 10.0 };
             var linearColorAxis1 = new LinearColorAxis
             {
                 HighColor = OxyColors.White,
@@ -131,11 +148,13 @@ namespace ExperimentalProcessing
             OnPropertyChanged("WindowCursor");
             WaveFormat signalFormat;
             var signal = ReadSpeechFile(fileName.ToString(), out signalFormat);
+            _sampleFreq = signalFormat.SampleRate;
             var tonalSpeechSelector = new TonalSpeechSelector(signal, 0.8f, 0.95f, signalFormat.SampleRate,
                 TonalSpeechSelector.Algorithm.Standart);
             var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
             var trainDataAcf = GetAcfImage(signal, signalFormat, speechMarks, out _acf, out _acfs);
             SamplePosition = 0;
+            _pitch = trainDataAcf;
             PlotPitch(trainDataAcf);
             PlotAcfPreview();
             PlotAcfsPreview();
@@ -149,9 +168,9 @@ namespace ExperimentalProcessing
             {
                 Data = new double[_acfs.Length, _acfs[0].Length],
                 X0 = 0,
-                X1 = _acfs.Length,
+                X1 = _acfs.Length*_jump,
                 Y0 = 0,
-                Y1 = _acfs[0].Length,
+                Y1 = _acfs[0].Length*(_sampleFreq/1024.0),
                 Interpolate = false
             };
             for (int i = 0; i < _acfs.Length; i++)
@@ -171,9 +190,9 @@ namespace ExperimentalProcessing
             {
                 Data = new double[_acf.Length, _acf[0].Length],
                 X0 = 0,
-                X1 = _acf.Length,
+                X1 = _acf.Length*_jump,
                 Y0 = 0,
-                Y1 = _acf[0].Length,
+                Y1 = _acf[0].Length/_sampleFreq,
                 Interpolate = false
             };
             for (int i = 0; i < _acf.Length; i++)
@@ -196,6 +215,7 @@ namespace ExperimentalProcessing
                 WindowFunctions.WindowType.Blackman, speechFileFormat.SampleRate, speechMarks);
             acf = corellation.Acf;
             acfs = corellation.Acfs;
+            _jump = (int)Math.Round(441*0.05f);
             MaxSize = string.Format(" из {0}", acf.Length - 1);
             OnPropertyChanged("MaxSize");
             return trainDataAcf;
@@ -205,7 +225,7 @@ namespace ExperimentalProcessing
         {
             var heatMap = new LineSeries();
             for (int i = 0; i < _acf[pos].Length; i++)
-                heatMap.Points.Add(new DataPoint(i, _acf[pos][i]));
+                heatMap.Points.Add(new DataPoint(i/_sampleFreq, _acf[pos][i]));
             AcfPlotModel.Series.Clear();
             AcfPlotModel.Series.Add(heatMap);
             AcfPlotModel.InvalidatePlot(true);
@@ -215,7 +235,7 @@ namespace ExperimentalProcessing
         {
             var heatMap = new LineSeries();
             for (int i = 0; i < _acfs[pos].Length; i++)
-                heatMap.Points.Add(new DataPoint(i, _acfs[pos][i]));
+                heatMap.Points.Add(new DataPoint(i*(_sampleFreq/1024.0), _acfs[pos][i]));
             AcfsPlotModel.Series.Clear();
             AcfsPlotModel.Series.Add(heatMap);
             AcfsPlotModel.InvalidatePlot(true);
@@ -223,11 +243,15 @@ namespace ExperimentalProcessing
 
         private void PlotPitch(double[][] featureSet)
         {
-            var heatMap = new LineSeries();
+            var lineSeries = new LineSeries();
             for (int i = 0; i < featureSet.Length; i++)
-                heatMap.Points.Add(new DataPoint(i, featureSet[i][0]));
+            {
+                lineSeries.Points.Add(_useHz
+                    ? new DataPoint(i*_jump, _sampleFreq/featureSet[i][0])
+                    : new DataPoint(i*_jump, featureSet[i][0]/_sampleFreq));
+            }
             PitchPlotModel.Series.Clear();
-            PitchPlotModel.Series.Add(heatMap);
+            PitchPlotModel.Series.Add(lineSeries);
             PitchPlotModel.InvalidatePlot(true);
         }
 
@@ -254,7 +278,7 @@ namespace ExperimentalProcessing
 
         private void GoForward_OnClick(object sender, RoutedEventArgs e)
         {
-            if (SamplePosition < _acf.Length - 1) SamplePosition++;
+            if (SamplePosition < (_acf.Length - 1)*_jump) SamplePosition++;
         }
 
         private void GoBackward_OnClick(object sender, RoutedEventArgs e)
@@ -264,7 +288,7 @@ namespace ExperimentalProcessing
 
         private void ToEnd_OnClick(object sender, RoutedEventArgs e)
         {
-            SamplePosition = _acf.Length - 1;
+            SamplePosition = (_acf.Length - 1) * _jump;
         }
 
         private void ToStart_OnClick(object sender, RoutedEventArgs e)

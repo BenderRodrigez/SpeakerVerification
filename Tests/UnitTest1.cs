@@ -216,7 +216,7 @@ namespace Tests
         public void TestGauss()
         {
             var gauss = new GaussianBlur();
-            var res = gauss.GetBlur(new[] {0.5, 0.5, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5}, 3);
+            var res = gauss.GetBlur(new[] {0.5, -0.5, 0.5, -0.5, 0.5, -1.0, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5}, 5);
             Assert.IsNotNull(res);
         }
 
