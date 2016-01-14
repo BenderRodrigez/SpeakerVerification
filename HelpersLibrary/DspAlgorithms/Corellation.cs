@@ -104,7 +104,6 @@ namespace HelpersLibrary.DspAlgorithms
 
             //analysis variables
             var jump = (int) Math.Round(size*offset);
-            var img = new List<double[]>();
             var acfImg = new List<double[]>();
             var acfsImg = new List<double[]>();
             var furieSize = Math.Pow(2, Math.Ceiling(Math.Log(size, 2) + 1));
@@ -122,10 +121,8 @@ namespace HelpersLibrary.DspAlgorithms
                     }
                 }
 
-                var prevAcfsCandidate = -1;
                 var pieceImg = new List<double[]>();
                 var globalCandidates = new List<List<Tuple<int, double>>>();
-                var globalCandidatesMinimums = new List<List<Tuple<int, double>>>();
                 for (int samples = curentMark.Item1; samples < inputSignal.Length && samples < curentMark.Item2; samples += jump)
                 {
                     var candidates = new List<Tuple<int, double>>();//int = position, double = amplitude
@@ -170,16 +167,6 @@ namespace HelpersLibrary.DspAlgorithms
                     if (acfsCandidates.Count > 3)
                     {
                         var aproximatedPosition = acfsCandidates[0].Item1;
-                        var controlMax = acfsCandidates.Max(x => x.Item2);
-
-//                        if (acfsCandidates[0].Item2 < controlMax/10.0)
-//                            aproximatedPosition = acfsCandidates.First(x => x.Item2 == controlMax).Item1;
-//
-//                        if ((aproximatedPosition < prevAcfsCandidate - 2 || aproximatedPosition > prevAcfsCandidate + 2) && prevAcfsCandidate > -1)
-//                        {
-//                            controlMax = acfsCandidates.Min(x => Math.Abs(x.Item1 - prevAcfsCandidate));
-//                            aproximatedPosition = acfsCandidates.First(x => Math.Abs(x.Item1 - prevAcfsCandidate) == controlMax).Item1;
-//                        }
 
                         var freqPosition = (sampleFrequency/furieSize)*aproximatedPosition;//aproximated frequency value
 
@@ -196,8 +183,6 @@ namespace HelpersLibrary.DspAlgorithms
                                 acfsImg.Add(acfsSample);
                                 acfImg.Add(acf);
                                 globalCandidates.Add(candidates);
-                                globalCandidatesMinimums.Add(candidatesMins);
-                                prevAcfsCandidate = aproximatedPosition;
                             }
                             else
                             {
@@ -205,8 +190,6 @@ namespace HelpersLibrary.DspAlgorithms
                                 acfsImg.Add(acfsSample);
                                 acfImg.Add(acf);
                                 globalCandidates.Add(candidates);
-                                globalCandidatesMinimums.Add(candidatesMins);
-                                prevAcfsCandidate = -1;
                             }
                         }
                         else
@@ -215,8 +198,6 @@ namespace HelpersLibrary.DspAlgorithms
                             acfsImg.Add(acfsSample);
                             acfImg.Add(acf);
                             globalCandidates.Add(candidates);
-                            globalCandidatesMinimums.Add(candidatesMins);
-                            prevAcfsCandidate = -1;
                         }
                     }
                     else
@@ -225,51 +206,25 @@ namespace HelpersLibrary.DspAlgorithms
                         acfsImg.Add(acfsSample);
                         acfImg.Add(acf);
                         globalCandidates.Add(candidates);
-                        globalCandidatesMinimums.Add(candidatesMins);
-                        prevAcfsCandidate = -1;
                     }
                 }
-                ExtractPitch(pieceImg, globalCandidates, sampleFrequency, furieSize, globalCandidatesMinimums);
+                ExtractPitch(pieceImg, globalCandidates, sampleFrequency, furieSize);
 
-                foreach (var doublese in pieceImg)
-                {
-//                    for (int i = 0; i < jump; i++)
-//                    {
-                        resultImg.Add(doublese);
-//                    }
-                }
-//                img.AddRange(pieceImg);
+                resultImg.AddRange(pieceImg);
                 prevStop = curentMark.Item2 + 1;
             }
 
-//            image = img.Select(x => new []{x[0]> 0.0?sampleFrequency/x[0]:0.0}).ToArray();
             Acf = acfImg.ToArray();
             Acfs = acfsImg.ToArray();
             image = resultImg.ToArray();
-//            image = img.ToArray();
         }
 
-        private void ExtractPitch(IReadOnlyList<double[]> img, IReadOnlyList<List<Tuple<int, double>>> globalCandidates, int sampleRate, double furieSize, IReadOnlyList<List<Tuple<int, double>>> globalCandidatesMinimums)
+        private void ExtractPitch(IReadOnlyList<double[]> img, IReadOnlyList<List<Tuple<int, double>>> globalCandidates, int sampleRate, double furieSize)
         {
             var searchWindow = Math.Ceiling(sampleRate*1.2/furieSize);
             var prevVal = 0.0;
             for (int i = 0; i < img.Count; i++)
             {
-//                if (img[i][0] <= 0.0 && globalCandidates[i].Any())
-//                {
-//                    var candidate = globalCandidates[i].OrderByDescending(x => x.Item2).First();
-//                    var mins = globalCandidatesMinimums[i].OrderBy(x => Math.Abs(x.Item1 - img[i][0])).Take(2).ToArray();
-//                    if (mins.Length == 2 && candidate.Item1 > 18 && candidate.Item1 < 183 && candidate.Item2 > 0.1)
-//                    {
-//                        var dist = mins[0].Item1 - mins[1].Item1;
-//                        var amp = candidate.Item2 - (mins[0].Item2 + mins[1].Item2)/2;
-//                        if (amp > 0.2)
-//                        {
-//                            img[i][0] = candidate.Item1;
-//                        }
-//                    }
-//                }
-
                 if (globalCandidates[i].Count > 0 && img[i][0] > 0.0 && globalCandidates[i].Any(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow && x.Item1 > 18 && x.Item1 < 183))
                 {
                     var nearest =
@@ -283,67 +238,27 @@ namespace HelpersLibrary.DspAlgorithms
                             .Item1;
                 }
             }
-
-            for (int cnts = 0; cnts < 0; cnts++)
-            {
-                for (int i = 0; i < img.Count - 1; i++)
+            var filterRadius = 9;
+            for (int i = filterRadius; i < img.Count-filterRadius; i++)
+            {//use median filter to cath the errors
+                var itemsToSort = new List<double>(filterRadius*2 + 1);
+                for (int j = -filterRadius; j <= filterRadius; j++)
                 {
-                    var delta = img[i][0] - img[i + 1][0];
-                    if (Math.Abs(delta) > 5)
-                    {
-                        var size = 0;
-                        while (i + size + 2 < img.Count && (Math.Abs(img[i+size][0] - img[i+size+1][0]) < 5 || delta* img[i + size][0] - img[i + size + 1][0] < 0.0))
-                        {
-                            size++;
-                        }
-
-                        for (int j = 0; j < size; j++)
-                        {
-                            if(!globalCandidates[i+j].Any())
-                                continue;
-
-                            var linearApprox = FunctionBetwenTwoPoints(i, i + size + 1, img[i][0], img[i + size + 1][0],
-                                i + j);
-                            var minDist = globalCandidates[i + j].Min(x => Math.Abs(x.Item1 - linearApprox));
-                            var candidate =
-                                globalCandidates[i + j].First(x => Math.Abs(x.Item1 - linearApprox) <= minDist);
-                            img[i + j][0] = candidate.Item1;
-                        }
-
-//                        var max = globalCandidates[i].Max(x => x.Item2);
-//                        var candidate = globalCandidates[i].First(x => x.Item2 >= max);
-//                        if (Math.Abs(candidate.Item1 - img[i + 1][0]) < Math.Abs(img[i][0] - img[i + 1][0]))
-//                            img[i][0] = candidate.Item1;
-
-//                        //jump
-//                        var jumpStart = i+1;
-//                        var t = 1;
-//                        var jumpCnt = 0;
-//                        while (i + t + 1 < img.Count && Math.Abs(img[i + t][0] - img[i + t + 1][0]) < 5)
-//                        {
-//                            jumpCnt++;
-//                            t++;
-//                        }
-//
-//                        for (int j = 0; j < jumpCnt + 1; j++)
-//                        {
-//                            if (globalCandidates[jumpStart + j].Count < 1)
-//                                continue;
-//
-//                            var pos = img[jumpStart+jumpCnt][0] > 0.0?FunctionBetwenTwoPoints(jumpStart, jumpStart + jumpCnt, img[jumpStart][0],
-//                                img[jumpStart + jumpCnt][0], jumpStart + j):img[jumpStart + j][0];
-//
-//                            var nearest =
-//                                globalCandidates[jumpStart + j].Where(x => Math.Abs(x.Item1 - pos) < 2.5* searchWindow && x.Item1 > 18 && x.Item1 < 183)
-//                                    .ToArray();
-//                            if (!nearest.Any())
-//                                continue;
-//
-//                            var nearestPoint = nearest.Max(x => x.Item2);
-//
-//                            img[jumpStart + j][0] = nearest.First(x => x.Item2 >= nearestPoint).Item1;
-//                        }
-                    }
+                    itemsToSort.Add(img[i+j][0]);
+                }
+                var arr = itemsToSort.ToArray();
+                Array.Sort(arr);
+                if (globalCandidates[i].Count > 0 && img[i][0] > 0.0 && globalCandidates[i].Any(x => Math.Abs(x.Item1 - arr[filterRadius]) < searchWindow && x.Item1 > 18 && x.Item1 < 183))
+                {
+                    var nearest =
+                        globalCandidates[i]
+                            .Where(x => Math.Abs(x.Item1 - arr[filterRadius]) < searchWindow && x.Item1 > 18 && x.Item1 < 183)
+                            .Max(x => x.Item2);
+                    img[i][0] =
+                        globalCandidates[i]
+                            .Where(x => Math.Abs(x.Item1 - arr[filterRadius]) < searchWindow && x.Item1 > 18 && x.Item1 < 183)
+                            .First(x => x.Item2 >= nearest)
+                            .Item1;
                 }
             }
         }
