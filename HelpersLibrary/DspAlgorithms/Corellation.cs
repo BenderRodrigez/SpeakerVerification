@@ -63,7 +63,7 @@ namespace HelpersLibrary.DspAlgorithms
                     energy += tmp[j]*tmp[j];
                 }
             }
-            return energy != 0.0 ? autoCorrelation/energy : 0.0;
+            return energy > 0.0 ? autoCorrelation/energy : 0.0;
         }
 
         public double Autocorrelation(ref float[] inputSignal, int offset, int k)
@@ -126,7 +126,6 @@ namespace HelpersLibrary.DspAlgorithms
                 for (int samples = curentMark.Item1; samples < inputSignal.Length && samples < curentMark.Item2; samples += jump)
                 {
                     var candidates = new List<Tuple<int, double>>();//int = position, double = amplitude
-                    var candidatesMins = new List<Tuple<int, double>>();//int = position, double = amplitude
                     //extract candidates
                     var data = new float[size];
                     Array.Copy(inputSignal, samples, data, 0, size);
@@ -157,10 +156,6 @@ namespace HelpersLibrary.DspAlgorithms
                         if ((acf[i - 1] > acf[i - 2] && acf[i - 1] > acf[i]))
                         {
                             candidates.Add(new Tuple<int, double>(i - 1, acf[i - 1]));//add each maximum of function
-                        }
-                        else if (acf[i - 1] < acf[i - 2] && acf[i - 1] < acf[i])
-                        {
-                            candidatesMins.Add(new Tuple<int, double>(i - 1, acf[i - 1]));
                         }
                     }
 
