@@ -217,10 +217,9 @@ namespace HelpersLibrary.DspAlgorithms
         private void ExtractPitch(IReadOnlyList<double[]> img, IReadOnlyList<List<Tuple<int, double>>> globalCandidates, int sampleRate, double furieSize)
         {
             var searchWindow = Math.Ceiling(sampleRate*1.2/furieSize);
-            var prevVal = 0.0;
             for (int i = 0; i < img.Count; i++)
             {
-                if (globalCandidates[i].Count > 0 && img[i][0] > 0.0 && globalCandidates[i].Any(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow && x.Item1 > 18 && x.Item1 < 183))
+                if (img[i][0] > 0.0 && globalCandidates[i].Any(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow && x.Item1 > 18 && x.Item1 < 183))
                 {
                     var nearest =
                         globalCandidates[i]
@@ -234,8 +233,10 @@ namespace HelpersLibrary.DspAlgorithms
                 }
             }
             var filterRadius = 9;
+            var prevVal = 0.0;
             for (int i = filterRadius; i < img.Count-filterRadius; i++)
-            {//use median filter to cath the errors
+            {
+                //use median filter to cath the errors
                 var itemsToSort = new List<double>(filterRadius*2 + 1);
                 for (int j = -filterRadius; j <= filterRadius; j++)
                 {
@@ -243,18 +244,39 @@ namespace HelpersLibrary.DspAlgorithms
                 }
                 var arr = itemsToSort.ToArray();
                 Array.Sort(arr);
-                if (globalCandidates[i].Count > 0 && img[i][0] > 0.0 && globalCandidates[i].Any(x => Math.Abs(x.Item1 - arr[filterRadius]) < searchWindow && x.Item1 > 18 && x.Item1 < 183))
+                if (globalCandidates[i].Count > 0)
                 {
-                    var nearest =
-                        globalCandidates[i]
-                            .Where(x => Math.Abs(x.Item1 - arr[filterRadius]) < searchWindow && x.Item1 > 18 && x.Item1 < 183)
-                            .Max(x => x.Item2);
-                    img[i][0] =
-                        globalCandidates[i]
-                            .Where(x => Math.Abs(x.Item1 - arr[filterRadius]) < searchWindow && x.Item1 > 18 && x.Item1 < 183)
-                            .First(x => x.Item2 >= nearest)
-                            .Item1;
+                    var selectedCandidates =
+                        globalCandidates[i].Where(
+                            x => Math.Abs(x.Item1 - arr[filterRadius]) < searchWindow && x.Item1 > 18 && x.Item1 < 183)
+                            .ToArray();
+                
+                    if (selectedCandidates.Any())
+                    {
+                        var nearest = selectedCandidates.Max(x => x.Item2);
+                        img[i][0] = selectedCandidates.First(x => x.Item2 >= nearest).Item1;
+                    }
+                    else
+                    {
+                        img[i][0] = arr[filterRadius];
+                    }
                 }
+
+//                if (prevVal > 0.0 && Math.Abs(prevVal - img[i][0]) > 5 &&
+//                    globalCandidates[i].Any(
+//                        x => Math.Abs(x.Item1 - prevVal) < searchWindow && x.Item1 > 18 && x.Item1 < 183))
+//                {
+//                    var nearest =
+//                        globalCandidates[i]
+//                            .Where(x => Math.Abs(x.Item1 - prevVal) < searchWindow && x.Item1 > 18 && x.Item1 < 183)
+//                            .Max(x => x.Item2);
+//                    img[i][0] =
+//                        globalCandidates[i]
+//                            .Where(x => Math.Abs(x.Item1 - prevVal) < searchWindow && x.Item1 > 18 && x.Item1 < 183)
+//                            .First(x => x.Item2 >= nearest)
+//                            .Item1;
+//                }
+                prevVal = img[i][0];
             }
         }
 
