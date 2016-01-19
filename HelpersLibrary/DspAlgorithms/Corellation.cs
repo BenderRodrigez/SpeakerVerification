@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using HelpersLibrary.DspAlgorithms.Filters;
 
 namespace HelpersLibrary.DspAlgorithms
@@ -123,7 +124,7 @@ namespace HelpersLibrary.DspAlgorithms
 
                 var pieceImg = new List<double[]>();
                 var globalCandidates = new List<List<Tuple<int, double>>>();
-                for (int samples = curentMark.Item1; samples < inputSignal.Length && samples < curentMark.Item2; samples += jump)
+                for (int samples = curentMark.Item1; samples+size < inputSignal.Length && samples < curentMark.Item2; samples += jump)
                 {
                     var candidates = new List<Tuple<int, double>>();//int = position, double = amplitude
                     //extract candidates
@@ -217,8 +218,10 @@ namespace HelpersLibrary.DspAlgorithms
         private void ExtractPitch(IReadOnlyList<double[]> img, IReadOnlyList<List<Tuple<int, double>>> globalCandidates, int sampleRate, double furieSize)
         {
             var searchWindow = Math.Ceiling(sampleRate*1.2/furieSize);
+            var prevVal = 0.0;
             for (int i = 0; i < img.Count; i++)
             {
+                var acfsCandidate = img[i][0];
                 if (img[i][0] > 0.0 && globalCandidates[i].Any(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow && x.Item1 > 18 && x.Item1 < 183))
                 {
                     var nearest =
@@ -231,9 +234,18 @@ namespace HelpersLibrary.DspAlgorithms
                             .First(x => x.Item2 >= nearest)
                             .Item1;
                 }
+                if (prevVal > 0.0 && Math.Abs(prevVal - img[i][0]) > 5 && Math.Abs(prevVal - acfsCandidate) > 5 && globalCandidates[i].Any())
+                {
+                    var max = globalCandidates[i].Max(x => x.Item2);
+                    var newCandidate = globalCandidates[i].First(x => x.Item2 >= max).Item1;
+                    if (Math.Abs(newCandidate - prevVal) <= 5)
+                    {
+                        img[i][0] = newCandidate;
+                    }
+                }
+                prevVal = img[i][0];
             }
             var filterRadius = 9;
-            var prevVal = 0.0;
             for (int i = filterRadius; i < img.Count-filterRadius; i++)
             {
                 //use median filter to cath the errors
@@ -261,22 +273,6 @@ namespace HelpersLibrary.DspAlgorithms
                         img[i][0] = arr[filterRadius];
                     }
                 }
-
-//                if (prevVal > 0.0 && Math.Abs(prevVal - img[i][0]) > 5 &&
-//                    globalCandidates[i].Any(
-//                        x => Math.Abs(x.Item1 - prevVal) < searchWindow && x.Item1 > 18 && x.Item1 < 183))
-//                {
-//                    var nearest =
-//                        globalCandidates[i]
-//                            .Where(x => Math.Abs(x.Item1 - prevVal) < searchWindow && x.Item1 > 18 && x.Item1 < 183)
-//                            .Max(x => x.Item2);
-//                    img[i][0] =
-//                        globalCandidates[i]
-//                            .Where(x => Math.Abs(x.Item1 - prevVal) < searchWindow && x.Item1 > 18 && x.Item1 < 183)
-//                            .First(x => x.Item2 >= nearest)
-//                            .Item1;
-//                }
-                prevVal = img[i][0];
             }
         }
 
