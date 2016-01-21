@@ -63,6 +63,7 @@ namespace ExperimentalProcessing
         double[][] _pitch;
         double _sampleFreq;
         int _jump = 22;
+        int _windowSize = 441;
 
         public MainWindow()
         {
@@ -170,7 +171,7 @@ namespace ExperimentalProcessing
                 X0 = 0,
                 X1 = _acfs.Length*_jump,
                 Y0 = 0,
-                Y1 = _acfs[0].Length*(_sampleFreq/1024.0),
+                Y1 = _acfs[0].Length*(_sampleFreq/ Math.Pow(2, Math.Ceiling(Math.Log(_windowSize, 2) + 1))),
                 Interpolate = false
             };
             for (int i = 0; i < _acfs.Length; i++)
@@ -210,12 +211,14 @@ namespace ExperimentalProcessing
             out double[][] acf, out double[][] acfs)
         {
             double[][] trainDataAcf;
+            var windowSize = (int)Math.Round(speechFileFormat.SampleRate*0.04);
             var corellation = new Corellation();
-            corellation.AutCorrelationImage(ref speechFile, 441, 0.05f, out trainDataAcf,
+            corellation.PitchImage(ref speechFile, windowSize, 0.05f, out trainDataAcf,
                 WindowFunctions.WindowType.Blackman, speechFileFormat.SampleRate, speechMarks);
             acf = corellation.Acf;
             acfs = corellation.Acfs;
-            _jump = (int)Math.Round(441*0.05f);
+            _jump = (int)Math.Round(windowSize * 0.05f);
+            _windowSize = windowSize;
             MaxSize = string.Format(" из {0}", acf.Length - 1);
             OnPropertyChanged("MaxSize");
             return trainDataAcf;
@@ -235,7 +238,7 @@ namespace ExperimentalProcessing
         {
             var heatMap = new LineSeries();
             for (int i = 0; i < _acfs[pos].Length; i++)
-                heatMap.Points.Add(new DataPoint(i*(_sampleFreq/1024.0), _acfs[pos][i]));
+                heatMap.Points.Add(new DataPoint(i*(_sampleFreq/ Math.Pow(2, Math.Ceiling(Math.Log(_windowSize, 2) + 1))), _acfs[pos][i]));
             AcfsPlotModel.Series.Clear();
             AcfsPlotModel.Series.Add(heatMap);
             AcfsPlotModel.InvalidatePlot(true);
@@ -266,11 +269,11 @@ namespace ExperimentalProcessing
                     e.Handled = true;
                     break;
                 case Key.Left:
-                    SamplePosition--;
+                    SamplePosition-=_jump;
                     e.Handled = true;
                     break;
                 case Key.Right:
-                    SamplePosition++;
+                    SamplePosition+=_jump;
                     e.Handled = true;
                     break;
             }
@@ -278,34 +281,36 @@ namespace ExperimentalProcessing
 
         private void GoForward_OnClick(object sender, RoutedEventArgs e)
         {
-            if (SamplePosition < (_acf.Length - 1)*_jump) SamplePosition++;
+            if (SamplePosition < (_acf.Length - 1)*_jump) SamplePosition+=_jump;
         }
 
         private void GoBackward_OnClick(object sender, RoutedEventArgs e)
         {
-            if (SamplePosition > 0) SamplePosition--;
+            if (SamplePosition > 0) SamplePosition-=_jump;
         }
 
         private void ToEnd_OnClick(object sender, RoutedEventArgs e)
         {
-            SamplePosition = (_acf.Length - 1) * _jump;
+            if(_acf != null)
+                SamplePosition = (_acf.Length - 1) * _jump;
         }
 
         private void ToStart_OnClick(object sender, RoutedEventArgs e)
         {
-            SamplePosition = 0;
+            if (_acf != null)
+                SamplePosition = 0;
         }
 
         private void MainWindow_OnKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Right)
             {
-                SamplePosition+=_jump+1;
+                SamplePosition+=_jump;
                 e.Handled = true;
             }
             else if (e.Key == Key.Left)
             {
-                SamplePosition-=_jump+1;
+                SamplePosition-=_jump;
                 e.Handled = true;
             }
         }

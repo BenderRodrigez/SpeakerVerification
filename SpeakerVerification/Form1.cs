@@ -251,11 +251,11 @@ namespace SpeakerVerification
             var corellation = new Corellation();
             WindowFunctions.WindowType windowType;
             Enum.TryParse(windowTypeComboBox.SelectedItem as string, out windowType);
-            corellation.AutCorrelationImage(ref speechFile,
+            corellation.PitchImage(ref speechFile,
                 (int) Math.Round(analysisIntervalUpDown.Value*speechFileFormat.SampleRate),
                 (1.0f - (float) overlappingUpDown.Value/100.0f), out trainDataAcf, windowType,
-                speechFileFormat.SampleRate, speechMarks);
-            return trainDataAcf;
+                speechFileFormat.SampleRate, new[] { new Tuple<int, int>(0, speechFile.Length) });
+            return trainDataAcf.Where(x=> x[0] > 0.0).Select(x => new[] {speechFileFormat.SampleRate/x[0]}).ToArray();
         }
 
         private bool IsPowerOfTwo(uint val)

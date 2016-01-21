@@ -129,27 +129,7 @@ namespace HelpersLibrary.DspAlgorithms
             
             var logSpectrum = complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray();
 
-//            for (int i = 1; i < logSpectrum.Length - 1; i++)
-//            {
-//                var tmp = new[] { logSpectrum[i - 1], logSpectrum[i], logSpectrum[i + 1] };
-//                Array.Sort(tmp);
-//                logSpectrum[i] = tmp[1];
-//            }
-
             const int blurSize = 9;
-//            for (int repeatings = 0; repeatings < 3; repeatings++)
-//            {
-//                for (int i = blurSize; i < logSpectrum.Length - blurSize; i++)
-//                {
-//                    var sum = 0.0;
-//                    for (int j = 1; j < blurSize; j++)
-//                    {
-//                        sum += logSpectrum[i - j] + logSpectrum[i + j];
-//                    }
-//                    logSpectrum[i] = (sum + logSpectrum[i])/(blurSize*2 + 1);
-//                }
-//            }
-
             var blur = new GaussianBlur();
             logSpectrum = blur.GetBlur(logSpectrum, blurSize);
 

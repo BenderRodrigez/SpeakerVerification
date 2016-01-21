@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using HelpersLibrary.DspAlgorithms.Filters;
 
 namespace HelpersLibrary.DspAlgorithms
@@ -88,7 +87,7 @@ namespace HelpersLibrary.DspAlgorithms
             return autoCorrelation;
         }
 
-        public void AutCorrelationImage(ref float[] inputSignal, int size, float offset, out double[][] image,
+        public void PitchImage(ref float[] inputSignal, int size, float offset, out double[][] image,
             WindowFunctions.WindowType windowFunction, int sampleFrequency, Tuple<int,int>[] speechMarks)
         {
             UsedWindowSize = size;
@@ -113,21 +112,20 @@ namespace HelpersLibrary.DspAlgorithms
             foreach (var curentMark in speechMarks)
             {
                 for (int i = prevStop; i < curentMark.Item1; i++)
-                {
                     if (i%jump == 0)
                     {
                         resultImg.Add(new[] {0.0});
                         acfsImg.Add(new double[128].Select(x => double.NaN).ToArray());
                         acfImg.Add(new double[size].Select(x => double.NaN).ToArray());
                     }
-                }
 
                 var pieceImg = new List<double[]>();
                 var globalCandidates = new List<List<Tuple<int, double>>>();
                 for (int samples = curentMark.Item1; samples+size < inputSignal.Length && samples < curentMark.Item2; samples += jump)
                 {
                     var candidates = new List<Tuple<int, double>>();//int = position, double = amplitude
-                    //extract candidates
+                    
+                    //generate acfs and acf on analysis interval
                     var data = new float[size];
                     Array.Copy(inputSignal, samples, data, 0, size);
                     var filterdData = new float[size];
@@ -143,6 +141,7 @@ namespace HelpersLibrary.DspAlgorithms
                     double[] acfsSample;
                     FFT.SpectrumAutoCorrelation(size, data, out acfsSample);
 
+                    //extract candidates
                     var acfsCandidates = new List<Tuple<int, double>>();
                     for (int i = 1; i < acfsSample.Length-1; i++)
                     {
@@ -152,55 +151,38 @@ namespace HelpersLibrary.DspAlgorithms
                         }
                     }
 
-                    for (int i = 2; i < acf.Length; i++)
+                    for (int i = 17; i < acf.Length && i < 184; i++)
                     {
-                        if ((acf[i - 1] > acf[i - 2] && acf[i - 1] > acf[i]))
+                        if (acf[i - 1] > acf[i - 2] && acf[i - 1] > acf[i])
                         {
-                            candidates.Add(new Tuple<int, double>(i - 1, acf[i - 1]));//add each maximum of function
+                            candidates.Add(new Tuple<int, double>(i - 1, acf[i - 1]));//add each maximum of function from 60 to 600 Hz
                         }
                     }
 
-                    if (acfsCandidates.Count > 3)
+                    var aproximatedPosition = acfsCandidates.Any()?acfsCandidates[0].Item1:-1;
+                    var freqPosition = (sampleFrequency / furieSize) * aproximatedPosition;//aproximated frequency value
+
+                    if (acfsCandidates.Count > 3 && aproximatedPosition > -1 && freqPosition > 60 && freqPosition < 600 &&
+                        candidates.Count > 2)
                     {
-                        var aproximatedPosition = acfsCandidates[0].Item1;
+                        var acfPosition = sampleFrequency/freqPosition; //aproximated time value
+                        var maxCandidate = candidates.Max(x => x.Item2)*0.2;
+                        candidates.RemoveAll(x => x.Item2 < maxCandidate);
 
-                        var freqPosition = (sampleFrequency/furieSize)*aproximatedPosition;//aproximated frequency value
-
-                        if (aproximatedPosition > -1 && freqPosition > 60 && freqPosition < 600)
-                        {
-                            var acfPosition = sampleFrequency/freqPosition; //aproximated time value
-
-                            if (candidates.Count > 2)
-                            {
-                                var maxCandidate = candidates.Max(x => x.Item2)*0.2;
-                                candidates.RemoveAll(x => x.Item2 < maxCandidate);
-
-                                pieceImg.Add(new[] { acfPosition });
-                                acfsImg.Add(acfsSample);
-                                acfImg.Add(acf);
-                                globalCandidates.Add(candidates);
-                            }
-                            else
-                            {
-                                pieceImg.Add(new[] { 0.0 });
-                                acfsImg.Add(acfsSample);
-                                acfImg.Add(acf);
-                                globalCandidates.Add(candidates);
-                            }
-                        }
-                        else
-                        {
-                            pieceImg.Add(new[] { 0.0 });
-                            acfsImg.Add(acfsSample);
-                            acfImg.Add(acf);
-                            globalCandidates.Add(candidates);
-                        }
+                        pieceImg.Add(new[] {acfPosition});
+#if DEBUG
+                        acfsImg.Add(acfsSample);
+                        acfImg.Add(acf);
+#endif
+                        globalCandidates.Add(candidates);
                     }
                     else
                     {
                         pieceImg.Add(new[] {0.0});
+#if DEBUG
                         acfsImg.Add(acfsSample);
                         acfImg.Add(acf);
+#endif
                         globalCandidates.Add(candidates);
                     }
                 }
@@ -209,9 +191,10 @@ namespace HelpersLibrary.DspAlgorithms
                 resultImg.AddRange(pieceImg);
                 prevStop = curentMark.Item2 + 1;
             }
-
+#if DEBUG
             Acf = acfImg.ToArray();
             Acfs = acfsImg.ToArray();
+#endif
             image = resultImg.ToArray();
         }
 
@@ -222,15 +205,15 @@ namespace HelpersLibrary.DspAlgorithms
             for (int i = 0; i < img.Count; i++)
             {
                 var acfsCandidate = img[i][0];
-                if (img[i][0] > 0.0 && globalCandidates[i].Any(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow && x.Item1 > 18 && x.Item1 < 183))
+                if (img[i][0] > 0.0 && globalCandidates[i].Any(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow))
                 {
                     var nearest =
                         globalCandidates[i]
-                            .Where(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow && x.Item1 > 18 && x.Item1 < 183)
+                            .Where(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow)
                             .Max(x => x.Item2);
                     img[i][0] =
                         globalCandidates[i]
-                            .Where(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow && x.Item1 > 18 && x.Item1 < 183)
+                            .Where(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow)
                             .First(x => x.Item2 >= nearest)
                             .Item1;
                 }
@@ -260,7 +243,7 @@ namespace HelpersLibrary.DspAlgorithms
                 {
                     var selectedCandidates =
                         globalCandidates[i].Where(
-                            x => Math.Abs(x.Item1 - arr[filterRadius]) < searchWindow && x.Item1 > 18 && x.Item1 < 183)
+                            x => Math.Abs(x.Item1 - arr[filterRadius]) < searchWindow)
                             .ToArray();
                 
                     if (selectedCandidates.Any())
