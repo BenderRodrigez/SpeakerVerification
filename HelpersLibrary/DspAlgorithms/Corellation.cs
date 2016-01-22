@@ -99,9 +99,6 @@ namespace HelpersLibrary.DspAlgorithms
             var lpf = new Lpf(600.0f, sampleFrequency);
             filtredSignal = lpf.StartFilter(filtredSignal);
 
-            var maxSignal = Math.Abs(filtredSignal.Max()*0.15);
-            filtredSignal = filtredSignal.Select(x => Math.Abs(x) > maxSignal ? x : 0.0f).ToArray();//provide central cut
-
             //analysis variables
             var jump = (int) Math.Round(size*offset);
             var acfImg = new List<double[]>();
@@ -135,6 +132,9 @@ namespace HelpersLibrary.DspAlgorithms
                     data = window.PlaceWindow(data, UsedWindowType);
                     filterdData = window.PlaceWindow(filterdData, UsedWindowType);
 
+                    var maxSignal = Math.Abs(filterdData.Max() * 0.3);
+                    filterdData = filterdData.Select(x => Math.Abs(x) > maxSignal ? x : 0.0f).ToArray();//provide central cut
+
                     double[] acf;
                     FFT.AutoCorrelation(size, filterdData, out acf);
 
@@ -143,11 +143,18 @@ namespace HelpersLibrary.DspAlgorithms
 
                     //extract candidates
                     var acfsCandidates = new List<Tuple<int, double>>();
+                    var maxEnergy = 0.0;
+                    var minEnergy = 0.0;
                     for (int i = 1; i < acfsSample.Length-1; i++)
                     {
                         if (acfsSample[i] > acfsSample[i - 1] && acfsSample[i] > acfsSample[i + 1])
                         {
                             acfsCandidates.Add(new Tuple<int, double>(i, acfsSample[i]));
+                            maxEnergy += Math.Pow(acfsSample[i], 2);
+                        }
+                        else if (acfsSample[i] < acfsSample[i - 1] && acfsSample[i] < acfsSample[i + 1])
+                        {
+                            minEnergy += Math.Pow(acfsSample[i], 2);
                         }
                     }
 
@@ -163,7 +170,7 @@ namespace HelpersLibrary.DspAlgorithms
                     var freqPosition = (sampleFrequency / furieSize) * aproximatedPosition;//aproximated frequency value
 
                     if (acfsCandidates.Count > 3 && aproximatedPosition > -1 && freqPosition > 60 && freqPosition < 600 &&
-                        candidates.Count > 2)
+                        candidates.Count > 2 && maxEnergy > minEnergy*2)
                     {
                         var acfPosition = sampleFrequency/freqPosition; //aproximated time value
                         var maxCandidate = candidates.Max(x => x.Item2)*0.2;

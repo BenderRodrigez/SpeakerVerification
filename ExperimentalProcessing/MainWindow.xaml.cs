@@ -153,7 +153,7 @@ namespace ExperimentalProcessing
             var tonalSpeechSelector = new TonalSpeechSelector(signal, 0.8f, 0.95f, signalFormat.SampleRate,
                 TonalSpeechSelector.Algorithm.Standart);
             var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
-            var trainDataAcf = GetAcfImage(signal, signalFormat, new []{new Tuple<int, int>(0, signal.Length) }, out _acf, out _acfs);
+            var trainDataAcf = GetAcfImage(signal, signalFormat, /*new []{new Tuple<int, int>(0, signal.Length) }*/ speechMarks, out _acf, out _acfs);
             SamplePosition = 0;
             _pitch = trainDataAcf;
             PlotPitch(trainDataAcf);
@@ -250,7 +250,7 @@ namespace ExperimentalProcessing
             for (int i = 0; i < featureSet.Length; i++)
             {
                 lineSeries.Points.Add(_useHz
-                    ? new DataPoint(i*_jump, _sampleFreq/featureSet[i][0])
+                    ? new DataPoint(i*_jump, featureSet[i][0] > 0.0?_sampleFreq/featureSet[i][0]:0.0)
                     : new DataPoint(i*_jump, featureSet[i][0]/_sampleFreq));
             }
             PitchPlotModel.Series.Clear();

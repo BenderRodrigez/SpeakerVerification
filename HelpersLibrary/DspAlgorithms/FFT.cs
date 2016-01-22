@@ -129,9 +129,9 @@ namespace HelpersLibrary.DspAlgorithms
             
             var logSpectrum = complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray();
 
-            const int blurSize = 9;
-            var blur = new GaussianBlur();
-            logSpectrum = blur.GetBlur(logSpectrum, blurSize);
+//            const int blurSize = 5;
+//            var blur = new GaussianBlur();
+//            logSpectrum = blur.GetBlur(logSpectrum, blurSize);
 
             var max = double.NegativeInfinity;
             for (int i = 1; i < logSpectrum.Length-1; i++)
@@ -140,15 +140,15 @@ namespace HelpersLibrary.DspAlgorithms
                     max = logSpectrum[i];
             }
 
-            if (double.IsNegativeInfinity(max))
-            {
-                result = new double[logSpectrum.Length];
-                return;
-            }
-            else
-            {
-                logSpectrum = logSpectrum.Select(x => Math.Abs(x) > max * 0.5 ? x : 0.0).ToArray();
-            }
+//            if (double.IsNegativeInfinity(max))
+//            {
+//                result = new double[logSpectrum.Length];
+//                return;
+//            }
+//            else
+//            {
+//                logSpectrum = logSpectrum.Select(x => Math.Abs(x) > max * 0.5 ? x : 0.0).ToArray();
+//            }
 
             var avg = logSpectrum.Average();
             complexData = logSpectrum.Select(x => new ComplexNumber(x-avg)).ToArray();
@@ -164,7 +164,7 @@ namespace HelpersLibrary.DspAlgorithms
             var nearestSize = Math.Ceiling(Math.Log(data.Length, 2));
             var avgX = data.Average(x=> x.RealPart);
             var avgY = data.Average(x => x.ImaginaryPart);
-            data = data.Select(x => new ComplexNumber(x.RealPart - avgX, x.ImaginaryPart - avgY)).ToArray();
+//            data = data.Select(x => new ComplexNumber(x.RealPart - avgX, x.ImaginaryPart - avgY)).ToArray();
             var newSize = (int)nearestSize + 1;
             var doubleSized = new ComplexNumber[(int) Math.Pow(2, newSize)];
             Array.Copy(data, doubleSized, data.Length);
