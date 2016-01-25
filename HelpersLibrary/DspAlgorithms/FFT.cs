@@ -104,13 +104,14 @@ namespace HelpersLibrary.DspAlgorithms
             result = Array.ConvertAll(complexData, input => Math.Sqrt(input.Sqr));
         }
         
-        public static void AutoCorrelation(int size, float[] data, out double[] result)
+        public static void AutoCorrelation(int size, float[] data, out double[] result, out double rOne)
         {
             var complexData = Array.ConvertAll(data, input => new ComplexNumber(input));
             AutoCorrelation(ref complexData);
             result = new double[size];
             Array.Copy(complexData.Select(x => x.RealPart).ToArray(), result, size);
             var k = result[0];
+            rOne = k;
             result = result.Select(x => x/k).ToArray();
         }
 

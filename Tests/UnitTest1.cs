@@ -278,8 +278,9 @@ namespace Tests
         {
             double[] corr1;
             double[] corr2;
-            FFT.AutoCorrelation(4, _signal1, out corr1);
-            FFT.AutoCorrelation(4, _signal2, out corr2);
+            var rOne = 0.0;
+            FFT.AutoCorrelation(4, _signal1, out corr1, out rOne);
+            FFT.AutoCorrelation(4, _signal2, out corr2, out rOne);
 
             Assert.IsTrue(corr1.Any() && corr2.Any());
         }

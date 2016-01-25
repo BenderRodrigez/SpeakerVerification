@@ -85,7 +85,8 @@ namespace HelpersLibrary.DspAlgorithms
                 Array.Copy(_signal, data, windowSize);
                 var window = new WindowFunctions();
                 data = window.PlaceWindow(data, WindowFunctions.WindowType.Blackman);
-                FFT.AutoCorrelation(windowSize, data, out currentAcfs);
+                var rOne = 0.0;
+                FFT.AutoCorrelation(windowSize, data, out currentAcfs, out rOne);
                 feature.Add(currentAcfs.All(double.IsNaN));
             }
             _acfFeature = feature.ToArray();

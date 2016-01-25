@@ -153,7 +153,7 @@ namespace ExperimentalProcessing
             var tonalSpeechSelector = new TonalSpeechSelector(signal, 0.8f, 0.95f, signalFormat.SampleRate,
                 TonalSpeechSelector.Algorithm.Standart);
             var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
-            var trainDataAcf = GetAcfImage(signal, signalFormat, /*new []{new Tuple<int, int>(0, signal.Length) }*/ speechMarks, out _acf, out _acfs);
+            var trainDataAcf = GetAcfImage(signal, signalFormat, new []{new Tuple<int, int>(0, signal.Length) } /*speechMarks*/, out _acf, out _acfs);
             SamplePosition = 0;
             _pitch = trainDataAcf;
             PlotPitch(trainDataAcf);
