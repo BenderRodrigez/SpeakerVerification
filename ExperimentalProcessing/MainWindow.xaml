@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:oxy="http://oxyplot.org/wpf"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="{Binding FileName, ElementName=MainWind, Mode=OneWay}" Height="670" Width="886"
+        Title="{Binding FileName, ElementName=MainWind, Mode=OneWay}" Height="670" Width="939"
         x:Name="MainWind" Background="Aquamarine" Cursor="{Binding WindowCursor, ElementName=MainWind}" ForceCursor="True" KeyDown="MainWindow_OnKeyDown">
     <Grid>
         <Grid.RowDefinitions>
@@ -12,27 +12,41 @@
             <RowDefinition Height="210*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="373*"/>
-            <ColumnDefinition Width="25*"/>
-            <ColumnDefinition Width="36*"/>
-            <ColumnDefinition Width="444*"/>
+            <ColumnDefinition Width="393*"/>
+            <ColumnDefinition Width="8*"/>
+            <ColumnDefinition Width="50*"/>
+            <ColumnDefinition Width="351*"/>
+            <ColumnDefinition Width="130"/>
         </Grid.ColumnDefinitions>
-        <oxy:PlotView Model="{Binding AcfsPlotModel, ElementName=MainWind}" Margin="10,5,4,2" Grid.Row="2" Grid.ColumnSpan="2" x:Name="AcfsSamplePlotView"/>
-        <oxy:PlotView Model="{Binding AcfPlotModel, ElementName=MainWind}" Margin="6,5,90,2" Grid.Column="2" Grid.Row="2" Grid.ColumnSpan="2" x:Name="AcfSamplePlotView"/>
-        <oxy:PlotView Model="{Binding PitchPlotModel, ElementName=MainWind}" Margin="10,10,90,2" Grid.ColumnSpan="4" x:Name="PitchPlotView"/>
+        <oxy:PlotView Model="{Binding AcfsPlotModel, ElementName=MainWind}" Margin="10,5,2,2" Grid.Row="2" x:Name="AcfsSamplePlotView" Grid.ColumnSpan="2"/>
+        <oxy:PlotView Model="{Binding AcfPlotModel, ElementName=MainWind}" Margin="2,5,0,2" Grid.Column="2" Grid.Row="2" Grid.ColumnSpan="2" x:Name="AcfSamplePlotView"/>
+        <oxy:PlotView Model="{Binding PitchPlotModel, ElementName=MainWind}" Margin="10,10,0,2" Grid.ColumnSpan="4" x:Name="PitchPlotView"/>
         <Button Content="&lt;&lt;" HorizontalAlignment="Left" Margin="10,3,0,0" Width="45" Click="ToStart_OnClick" Grid.Row="1" Height="20" VerticalAlignment="Top"/>
-        <Button Content="&gt;&gt;" Margin="0,3,90,0" VerticalAlignment="Top" Click="ToEnd_OnClick" HorizontalAlignment="Right" Width="45" Grid.Column="3" Grid.Row="1"/>
-        <Button Content="&lt;" HorizontalAlignment="Left" Margin="60,3,0,0" VerticalAlignment="Top" Width="45" Click="GoBackward_OnClick" Grid.Row="1"/>
-        <Button Content="&gt;" Margin="0,3,140,0" VerticalAlignment="Top" Click="GoForward_OnClick" HorizontalAlignment="Right" Width="45" Grid.Column="3" Grid.Row="1"/>
-        <Label Content="Отсчёт: " Margin="0,0,3,0" VerticalAlignment="Top" HorizontalContentAlignment="Center" Grid.Row="1" HorizontalAlignment="Right" Width="57"/>
-        <Button Content="Открыть" Margin="0,10,10,0" VerticalAlignment="Top" Click="OpenFileButton_OnClick" HorizontalAlignment="Right" Width="75"
-                Grid.Row="0" Grid.Column="3"/>
-        <TextBox x:Name="SampleNumberTextBox" Height="23" Margin="2,1,2,0" TextWrapping="Wrap" Text="{Binding SamplePosition,ElementName=MainWind, Mode=TwoWay}" VerticalAlignment="Top" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" KeyDown="SampleNumberTextBox_OnKeyDown" Grid.ColumnSpan="2" Grid.Row="1" Grid.Column="1"/>
-        <Label Content="{Binding MaxSize,ElementName=MainWind}" Margin="3,0,0,0" VerticalAlignment="Top" Grid.Column="3" Grid.Row="1" HorizontalAlignment="Left" Width="10"/>
-        <oxy:PlotView Model="{Binding AcfPreview,ElementName=MainWind}" Margin="6,3,90,15" Grid.Column="2" Grid.Row="3" Grid.ColumnSpan="2" x:Name="AcfPlotView"/>
-        <oxy:PlotView Model="{Binding AcfsPreview, ElementName=MainWind}" Margin="10,3,4,15" Grid.Row="3" Grid.ColumnSpan="2"
-                      Grid.Column="0" x:Name="AcfsPlotView"/>
-        <Button Content="Сброс" Grid.Row="0" Grid.Column="3" Margin="0,35,10,0" VerticalAlignment="Top" Click="RestButton_OnClick" HorizontalAlignment="Right" Width="75"/>
-        <CheckBox x:Name="checkBox" Content="Гц/сек" Grid.Column="3" Margin="0,60,30,0" VerticalAlignment="Top" IsChecked="{Binding UseHz, ElementName=MainWind}" HorizontalAlignment="Right" Width="55"/>
+        <Button Content="&gt;&gt;" Margin="0,3,5,0" VerticalAlignment="Top" Click="ToEnd_OnClick" HorizontalAlignment="Right" Width="45" Grid.Column="3" Grid.Row="1" Height="20"/>
+        <Button Content="&lt;" HorizontalAlignment="Left" Margin="60,3,0,0" VerticalAlignment="Top" Width="45" Click="GoBackward_OnClick" Grid.Row="1" Height="20"/>
+        <Button Content="&gt;" Margin="0,3,55,0" VerticalAlignment="Top" Click="GoForward_OnClick" HorizontalAlignment="Right" Width="45" Grid.Column="3" Grid.Row="1" Height="20"/>
+        <Label Content="Отсчёт: " Margin="0,0,3,0" VerticalAlignment="Top" HorizontalContentAlignment="Right" Grid.Row="1" HorizontalAlignment="Right" Width="57" Height="26"/>
+        <Button Content="Открыть файл" Margin="10,10,10,0" VerticalAlignment="Top" Click="OpenFileButton_OnClick"
+                Grid.Row="0" Grid.Column="4" Height="20"/>
+        <TextBox x:Name="SampleNumberTextBox" Height="23" Margin="0,1,0,0" TextWrapping="Wrap" Text="{Binding SamplePosition,ElementName=MainWind, Mode=TwoWay}" VerticalAlignment="Top" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" KeyDown="SampleNumberTextBox_OnKeyDown" Grid.Row="1" Grid.Column="2"/>
+        <Label Content="{Binding MaxSize,ElementName=MainWind}" Margin="3,0,0,0" VerticalAlignment="Top" Grid.Column="3" Grid.Row="1" HorizontalAlignment="Left" Width="10" Height="10"/>
+        <oxy:PlotView Model="{Binding AcfPreview,ElementName=MainWind}" Margin="2,3,0,15" Grid.Column="2" Grid.Row="3" Grid.ColumnSpan="2" x:Name="AcfPlotView"/>
+        <oxy:PlotView Model="{Binding AcfsPreview, ElementName=MainWind}" Margin="10,3,2,15" Grid.Row="3"
+                      Grid.Column="0" x:Name="AcfsPlotView" Grid.ColumnSpan="2"/>
+        <Button Content="Сброс масштаба" Grid.Row="0" Grid.Column="4" Margin="10,35,10,0" VerticalAlignment="Top" Click="RestButton_OnClick" Height="20"/>
+        <CheckBox Content=" График ОТ в Гц" Grid.Row="0" Grid.Column="4" Margin="10,60,10,0" VerticalAlignment="Top" IsChecked="{Binding UseHz, ElementName=MainWind}" Height="15"/>
+        <TextBox x:Name="CentralLimitTextBox" Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,26,0,0" Grid.Row="2" TextWrapping="Wrap" Text="{Binding CentralLimit,ElementName=MainWind}" VerticalAlignment="Top" Width="110"/>
+        <TextBox x:Name="MaxFreqJumpsTextBox" Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,80,0,0" Grid.Row="2" TextWrapping="Wrap" Text="{Binding MaxFreqJumps,ElementName=MainWind}" VerticalAlignment="Top" Width="110"/>
+        <TextBox x:Name="FilterRadiusTextBox" Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,134,0,0" Grid.Row="2" TextWrapping="Wrap" Text="{Binding FilterRadius,ElementName=MainWind}" VerticalAlignment="Top" Width="110"/>
+        <TextBox x:Name="EnergyLineBorderTextBox" Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,188,0,0" Grid.Row="2" TextWrapping="Wrap" Text="{Binding EnergyLineBorder,ElementName=MainWind}" VerticalAlignment="Top" Width="110" Grid.RowSpan="2"/>
+        <TextBox x:Name="LowPassFilterBorderTextBox" Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,242,0,0" Grid.Row="2" Grid.RowSpan="2" TextWrapping="Wrap" Text="{Binding LowPassFilterBorder,ElementName=MainWind}" VerticalAlignment="Top" Width="110"/>
+        <TextBox x:Name="HighPassFilterBorderTextBox" Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,296,0,0" Grid.Row="2" Grid.RowSpan="2" TextWrapping="Wrap" Text="{Binding HighPassFilterBorder,ElementName=MainWind}" VerticalAlignment="Top" Width="110"/>
+        <Label Content="Порог ЦО:" Grid.Column="4" HorizontalAlignment="Left" Margin="10,0,0,0" Grid.Row="2" VerticalAlignment="Top" Width="110"/>
+        <Label Content="Макс. Δ частоты:" Grid.Column="4" HorizontalAlignment="Left" Margin="10,54,0,0" Grid.Row="2" VerticalAlignment="Top" Width="110"/>
+        <Label Content="R медиан. сглаж.:" Grid.Column="4" HorizontalAlignment="Left" Margin="10,108,0,0" Grid.Row="2" VerticalAlignment="Top" Width="110"/>
+        <Label Content="Пор. эн. в пол. ч.:" Grid.Column="4" HorizontalAlignment="Left" Margin="10,162,0,0" Grid.Row="2" VerticalAlignment="Top" Width="110"/>
+        <Label Content="Ч. среза ФНЧ:" Grid.Column="4" HorizontalAlignment="Left" Margin="10,216,0,0" Grid.Row="2" VerticalAlignment="Top" Width="110" Height="25" Grid.RowSpan="2"/>
+        <Label Content="Ч. среза ФВЧ:" Grid.Column="4" HorizontalAlignment="Left" Margin="10,270,0,0" Grid.Row="2" VerticalAlignment="Top" Width="110" Height="25" Grid.RowSpan="2"/>
+        <Button x:Name="RenewCalculationsButton" Content="Перерасчёт" Grid.Column="4" HorizontalAlignment="Left" Margin="10,334,0,0" Grid.Row="2" Grid.RowSpan="2" VerticalAlignment="Top" Width="110" Click="RenewCalculationsButton_OnClick"/>
     </Grid>
 </Window>

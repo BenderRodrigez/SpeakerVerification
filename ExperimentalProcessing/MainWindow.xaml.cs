@@ -54,7 +54,7 @@ namespace ExperimentalProcessing
         public int FilterRadius
         {
             get { return _corellation.FilterRadius; }
-            set { if (value%2 == 1) _corellation.FilterRadius = value; }
+            set { _corellation.FilterRadius = value; }
         }
 
         public double CentralLimit
@@ -382,6 +382,13 @@ namespace ExperimentalProcessing
             AcfPlotView.ResetAllAxes();
             AcfsSamplePlotView.ResetAllAxes();
             PitchPlotView.ResetAllAxes();
+        }
+
+        private void RenewCalculationsButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            var task = new Task(OpenFile, FileName);
+            task.Start();
+            OnPropertyChanged("FileName");
         }
     }
 }

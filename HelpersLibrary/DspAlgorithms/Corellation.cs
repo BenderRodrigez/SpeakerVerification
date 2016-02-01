@@ -238,8 +238,8 @@ namespace HelpersLibrary.DspAlgorithms
                             .First(x => x.Item2 >= nearest)
                             .Item1;
                 }
-                if (prevVal > 0.0 && Math.Abs(prevVal - img[i][0])/prevVal < MaxFrequencyJumpPercents && Math.Abs(prevVal - acfsCandidate)/prevVal < MaxFrequencyJumpPercents && globalCandidates[i].Any())
-                {
+                if (prevVal > 0.0 && Math.Abs(prevVal - img[i][0])/prevVal > MaxFrequencyJumpPercents && Math.Abs(prevVal - acfsCandidate)/prevVal > MaxFrequencyJumpPercents && globalCandidates[i].Any())
+                {//todo: think about this place
                     var max = globalCandidates[i].Max(x => x.Item2);
                     var newCandidate = globalCandidates[i].First(x => x.Item2 >= max).Item1;
                     if (Math.Abs(newCandidate - prevVal)/prevVal <= MaxFrequencyJumpPercents)
@@ -276,6 +276,19 @@ namespace HelpersLibrary.DspAlgorithms
                     {
                         img[i][0] = arr[FilterRadius];
                     }
+                }
+            }
+
+            prevVal = 0.0;
+            for (int i = 0; i < img.Count; i++)
+            {
+                if (prevVal > 0.0 && Math.Abs(prevVal - img[i][0]) / prevVal > MaxFrequencyJumpPercents)
+                {
+                    img[i][0] = 0.0;
+                }
+                else
+                {
+                    prevVal = img[i][0];
                 }
             }
         }
