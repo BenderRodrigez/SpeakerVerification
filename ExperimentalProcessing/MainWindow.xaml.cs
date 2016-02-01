@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -28,6 +29,47 @@ namespace ExperimentalProcessing
         public Cursor WindowCursor { get; private set; }
         public string MaxSize { get; private set; }
         public string FileName { get; private set; }
+
+        public float HighPassFilterBorder
+        {
+            get
+            {
+                return _corellation.HighPassFilterBorder;
+            }
+            set { _corellation.HighPassFilterBorder = value; }
+        }
+
+        public float LowPassFilterBorder
+        {
+            get { return _corellation.LowPassFilterBorder; }
+            set { _corellation.LowPassFilterBorder = value; }
+        }
+
+        public double EnergyLineBorder
+        {
+            get { return _corellation.FrequencyEnergyLineBorder; }
+            set { _corellation.FrequencyEnergyLineBorder = value; }
+        }
+
+        public int FilterRadius
+        {
+            get { return _corellation.FilterRadius; }
+            set { if (value%2 == 1) _corellation.FilterRadius = value; }
+        }
+
+        public double CentralLimit
+        {
+            get { return _corellation.SignalCentralLimitationBorder; }
+            set { _corellation.SignalCentralLimitationBorder = value; }
+        }
+
+        public double MaxFreqJumps
+        {
+            get { return _corellation.MaxFrequencyJumpPercents; }
+            set { _corellation.MaxFrequencyJumpPercents = value; }
+        }
+
+        private readonly Corellation _corellation;
 
         public bool UseHz
         {
@@ -64,9 +106,12 @@ namespace ExperimentalProcessing
         double _sampleFreq;
         int _jump = 22;
         int _windowSize = 441;
+        private float[] _inputFile;
 
         public MainWindow()
         {
+            _corellation = new Corellation();
+
             InitializeComponent();
 
             PitchPlotModel = new PlotModel { Title = "Трек ОТ", TitleFontSize = 10.0};
@@ -149,8 +194,10 @@ namespace ExperimentalProcessing
             OnPropertyChanged("WindowCursor");
             WaveFormat signalFormat;
             var signal = ReadSpeechFile(fileName.ToString(), out signalFormat);
+            _inputFile = new float[signal.Length];
+            Array.Copy(signal, _inputFile, signal.Length);
             _sampleFreq = signalFormat.SampleRate;
-            var tonalSpeechSelector = new TonalSpeechSelector(signal, 0.8f, 0.95f, signalFormat.SampleRate,
+            var tonalSpeechSelector = new TonalSpeechSelector(signal, 0.04f, 0.95f, signalFormat.SampleRate,
                 TonalSpeechSelector.Algorithm.Standart);
             var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
             var trainDataAcf = GetAcfImage(signal, signalFormat, new []{new Tuple<int, int>(0, signal.Length) } /*speechMarks*/, out _acf, out _acfs);
@@ -212,11 +259,10 @@ namespace ExperimentalProcessing
         {
             double[][] trainDataAcf;
             var windowSize = (int)Math.Round(speechFileFormat.SampleRate*0.04);
-            var corellation = new Corellation();
-            corellation.PitchImage(ref speechFile, windowSize, 0.05f, out trainDataAcf,
+            _corellation.PitchImage(ref speechFile, windowSize, 0.05f, out trainDataAcf,
                 WindowFunctions.WindowType.Blackman, speechFileFormat.SampleRate, speechMarks);
-            acf = corellation.Acf;
-            acfs = corellation.Acfs;
+            acf = _corellation.Acf;
+            acfs = _corellation.Acfs;
             _jump = (int)Math.Round(windowSize * 0.05f);
             _windowSize = windowSize;
             MaxSize = string.Format(" из {0}", acf.Length - 1);
@@ -253,7 +299,21 @@ namespace ExperimentalProcessing
                     ? new DataPoint(i*_jump, featureSet[i][0] > 0.0?_sampleFreq/featureSet[i][0]:0.0)
                     : new DataPoint(i*_jump, featureSet[i][0]/_sampleFreq));
             }
+
+            var signal = new LineSeries();
+            signal.Color = OxyColors.Aqua;
+            var signalYAxes = new LinearAxis {Key = "signalY", Position = AxisPosition.Right};
+            signal.YAxisKey = "signalY";
+            for (int i = 0; i < _inputFile.Length; i++)
+            {
+                signal.Points.Add(new DataPoint(i, _inputFile[i]));
+            }
+
+            if(PitchPlotModel.Axes.FirstOrDefault(x=> x.Key == "signalY") == null)
+                PitchPlotModel.Axes.Add(signalYAxes);
+
             PitchPlotModel.Series.Clear();
+            PitchPlotModel.Series.Add(signal);
             PitchPlotModel.Series.Add(lineSeries);
             PitchPlotModel.InvalidatePlot(true);
         }

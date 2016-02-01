@@ -342,6 +342,15 @@ namespace HelpersLibrary.DspAlgorithms
                 tmp[i] -= min;
             }
             _corellation = tmp;
+#if DEBUG
+            using (var writer = new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "rone.txt")))
+            {
+                foreach (var x in _corellation)
+                {
+                    writer.WriteLine(x);
+                }
+            }
+#endif
         }
 
         private void GetZeroCrossings(int windowSize, float overlapping)
@@ -362,6 +371,15 @@ namespace HelpersLibrary.DspAlgorithms
                     tmp[k] = tmp[i];
             }
             _zeroCrossings = tmp;
+#if DEBUG
+            using (var writer = new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "zeros.txt")))
+            {
+                foreach (var x in _zeroCrossings)
+                {
+                    writer.WriteLine(x);
+                }
+            }
+#endif
         }
 
         private void GenerateGeneralFeature(int windowSize)

@@ -11,6 +11,22 @@ namespace HelpersLibrary.DspAlgorithms
     /// </summary>
     public class Corellation
     {
+        public double MaxFrequencyJumpPercents;
+        public double FrequencyEnergyLineBorder;
+        public int FilterRadius;
+        public double SignalCentralLimitationBorder;
+        public float HighPassFilterBorder;
+        public float LowPassFilterBorder;
+
+        public Corellation()
+        {
+            MaxFrequencyJumpPercents = 0.25;
+            FrequencyEnergyLineBorder = 0.00005;
+            FilterRadius = 9;
+            SignalCentralLimitationBorder = 0.3;
+            HighPassFilterBorder = 60.0f;
+            LowPassFilterBorder = 600.0f;
+        }
 
         public WindowFunctions.WindowType UsedWindowType { private get; set; }
         public int UsedWindowSize { private get; set; }
@@ -94,9 +110,9 @@ namespace HelpersLibrary.DspAlgorithms
             UsedWindowType = windowFunction;
 
             //preprocessing
-            var hpf = new Hpf(60.0f, sampleFrequency);
+            var hpf = new Hpf(HighPassFilterBorder, sampleFrequency);
             var filtredSignal = hpf.Filter(inputSignal);
-            var lpf = new Lpf(600.0f, sampleFrequency);
+            var lpf = new Lpf(LowPassFilterBorder, sampleFrequency);
             filtredSignal = lpf.StartFilter(filtredSignal);
 
             //analysis variables
@@ -114,7 +130,7 @@ namespace HelpersLibrary.DspAlgorithms
                     if (i%jump == 0)
                     {
                         resultImg.Add(new[] {0.0});
-                        acfsImg.Add(new double[128].Select(x => double.NaN).ToArray());
+                        acfsImg.Add(new double[(int)furieSize/8].Select(x => double.NaN).ToArray());
                         acfImg.Add(new double[size].Select(x => double.NaN).ToArray());
                     }
 
@@ -134,7 +150,7 @@ namespace HelpersLibrary.DspAlgorithms
                     data = window.PlaceWindow(data, UsedWindowType);
                     filterdData = window.PlaceWindow(filterdData, UsedWindowType);
 
-                    var maxSignal = Math.Abs(filterdData.Max() * 0.3);
+                    var maxSignal = filterdData.Max(x=> Math.Abs(x)) * SignalCentralLimitationBorder;
                     filterdData = filterdData.Select(x => Math.Abs(x) > maxSignal ? x : 0.0f).ToArray();//provide central cut
 
                     double[] acf;
@@ -147,24 +163,13 @@ namespace HelpersLibrary.DspAlgorithms
 
                     //extract candidates
                     var acfsCandidates = new List<Tuple<int, double>>();
-                    var maxEnergy = 0.0;
-                    var minEnergy = 0.0;
-                    var minsCount = 0;
                     for (int i = 1; i < acfsSample.Length-1; i++)
                     {
                         if (acfsSample[i] > acfsSample[i - 1] && acfsSample[i] > acfsSample[i + 1])
                         {
                             acfsCandidates.Add(new Tuple<int, double>(i, acfsSample[i]));
-                            maxEnergy += Math.Pow(acfsSample[i], 2);
-                        }
-                        else if (acfsSample[i] < acfsSample[i - 1] && acfsSample[i] < acfsSample[i + 1])
-                        {
-                            minEnergy += Math.Pow(acfsSample[i], 2);
-                            minsCount++;
                         }
                     }
-                    maxEnergy /= acfsCandidates.Count;
-                    minEnergy /= minsCount;
 
                     for (int i = 17; i < acf.Length && i < 184; i++)
                     {
@@ -178,7 +183,7 @@ namespace HelpersLibrary.DspAlgorithms
                     var freqPosition = (sampleFrequency / furieSize) * aproximatedPosition;//aproximated frequency value
 
                     if (acfsCandidates.Count > 3 && aproximatedPosition > -1 && freqPosition > 60 && freqPosition < 600 &&
-                        candidates.Count > 2 && (rOne > 0.00005 && (Math.Abs(prevCandidate - freqPosition) < 10 || prevCandidate <= 0.0)))
+                        candidates.Count > 2 && (rOne > FrequencyEnergyLineBorder && (Math.Abs(prevCandidate - freqPosition) / prevCandidate < MaxFrequencyJumpPercents || prevCandidate <= 0.0)))
                     {
                         var acfPosition = sampleFrequency/freqPosition; //aproximated time value
 
@@ -233,23 +238,23 @@ namespace HelpersLibrary.DspAlgorithms
                             .First(x => x.Item2 >= nearest)
                             .Item1;
                 }
-                if (prevVal > 0.0 && Math.Abs(prevVal - img[i][0]) > 5 && Math.Abs(prevVal - acfsCandidate) > 5 && globalCandidates[i].Any())
+                if (prevVal > 0.0 && Math.Abs(prevVal - img[i][0])/prevVal < MaxFrequencyJumpPercents && Math.Abs(prevVal - acfsCandidate)/prevVal < MaxFrequencyJumpPercents && globalCandidates[i].Any())
                 {
                     var max = globalCandidates[i].Max(x => x.Item2);
                     var newCandidate = globalCandidates[i].First(x => x.Item2 >= max).Item1;
-                    if (Math.Abs(newCandidate - prevVal) <= 5)
+                    if (Math.Abs(newCandidate - prevVal)/prevVal <= MaxFrequencyJumpPercents)
                     {
                         img[i][0] = newCandidate;
                     }
                 }
                 prevVal = img[i][0];
             }
-            var filterRadius = 9;
-            for (int i = filterRadius; i < img.Count-filterRadius; i++)
+            
+            for (int i = FilterRadius; i < img.Count-FilterRadius; i++)
             {
                 //use median filter to cath the errors
-                var itemsToSort = new List<double>(filterRadius*2 + 1);
-                for (int j = -filterRadius; j <= filterRadius; j++)
+                var itemsToSort = new List<double>(FilterRadius*2 + 1);
+                for (int j = -FilterRadius; j <= FilterRadius; j++)
                 {
                     itemsToSort.Add(img[i+j][0]);
                 }
@@ -259,7 +264,7 @@ namespace HelpersLibrary.DspAlgorithms
                 {
                     var selectedCandidates =
                         globalCandidates[i].Where(
-                            x => Math.Abs(x.Item1 - arr[filterRadius]) < searchWindow)
+                            x => Math.Abs(x.Item1 - arr[FilterRadius]) < searchWindow)
                             .ToArray();
                 
                     if (selectedCandidates.Any())
@@ -269,7 +274,7 @@ namespace HelpersLibrary.DspAlgorithms
                     }
                     else
                     {
-                        img[i][0] = arr[filterRadius];
+                        img[i][0] = arr[FilterRadius];
                     }
                 }
             }
