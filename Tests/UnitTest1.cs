@@ -285,29 +285,6 @@ namespace Tests
             Assert.IsTrue(corr1.Any() && corr2.Any());
         }
 
-        [TestMethod]
-        public void TestTonalSelector()
-        {
-            WaveFormat fullTonalFormat;
-            var fullTonalSpeech = ReadWavFile(fullTonalSpeechFileName, out fullTonalFormat);
-            var selector = new TonalSpeechSelector(fullTonalSpeech, 0.09f, 0.95f, fullTonalFormat.SampleRate);
-            var cleanedSpeech = selector.CleanUnvoicedSpeech();
-            using (var writer = new WaveFileWriter(fullTonalSpeechFileName + "cleaned.wav", fullTonalFormat))
-            {
-                writer.WriteSamples(cleanedSpeech, 0, cleanedSpeech.Length);
-            }
-
-            WaveFormat partlyTonalFormat;
-            var partlyTonalSpeech = ReadWavFile(partlyTonalSpeechFileName, out partlyTonalFormat);
-
-            selector = new TonalSpeechSelector(partlyTonalSpeech, 0.09f, 0.95f, partlyTonalFormat.SampleRate);
-            cleanedSpeech = selector.CleanUnvoicedSpeech();
-            using (var writer = new WaveFileWriter(partlyTonalSpeechFileName + "cleaned.wav", partlyTonalFormat))
-            {
-                writer.WriteSamples(cleanedSpeech, 0, cleanedSpeech.Length);
-            }
-        }
-
         private static void DrawLpcMatrix(ref double[][] lpc, ref Image graphic)
         {
             using (Graphics.FromImage(graphic))

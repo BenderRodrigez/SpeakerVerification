@@ -149,12 +149,11 @@ namespace SpeakerVerification
                 WaveFormat speechFileFormat;
                 float[] speechFile;
                 ReadWavFile(wavFileOpenDialog.FileName, out speechFileFormat, out speechFile);
-/*                var speechSearcher = new SpeechSearch((byte) histogrammBagsNumberUpDown.Value,
-                    (float) analysisIntervalUpDown.Value, ((float) overlappingUpDown.Value)/100,
-                    speechFileFormat.SampleRate);
-                speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);*/
-                var tonalSpeechSelector = new TonalSpeechSelector(speechFile, (float) analysisIntervalUpDown.Value*2.0f,
-                    (float) overlappingUpDown.Value/100.0f, speechFileFormat.SampleRate, TonalSpeechSelector.Algorithm.Acfs);
+                
+                var tonalSpeechSelector = new TonalSpeechSelector();
+                tonalSpeechSelector.InitData(speechFile, (float) analysisIntervalUpDown.Value*2.0f,
+                    (float) overlappingUpDown.Value/100.0f, speechFileFormat.SampleRate);
+
                 var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
                 speechStartPosition = 0;
                 speechStopPosition = (int) (speechFile.Length - analysisIntervalUpDown.Value*speechFileFormat.SampleRate);
@@ -503,11 +502,9 @@ namespace SpeakerVerification
                 WaveFormat speechFileFormat;
                 float[] speechFile;
                 ReadWavFile(wavFileOpenDialog.FileName, out speechFileFormat, out speechFile);
-                /*var speechSearcher = new SpeechSearch((byte)histogrammBagsNumberUpDown.Value,
-                    (float)analysisIntervalUpDown.Value, ((float)overlappingUpDown.Value) / 100,
-                    speechFileFormat.SampleRate);
-                speechSearcher.GetMarks(speechFile, out speechStartPosition, out speechStopPosition);*/
-                var tonalSpeechSelector = new TonalSpeechSelector(speechFile, (float)analysisIntervalUpDown.Value * 2.0f,
+
+                var tonalSpeechSelector = new TonalSpeechSelector();
+                tonalSpeechSelector.InitData(speechFile, (float)analysisIntervalUpDown.Value * 2.0f,
                     (float)overlappingUpDown.Value / 100.0f, speechFileFormat.SampleRate);
                 var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
                 speechStartPosition = 0;

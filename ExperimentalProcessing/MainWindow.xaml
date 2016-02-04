@@ -37,16 +37,19 @@
         <CheckBox Content=" График ОТ в Гц" Grid.Row="0" Grid.Column="4" Margin="10,60,10,0" VerticalAlignment="Top" IsChecked="{Binding UseHz, ElementName=MainWind}" Height="15"/>
         <TextBox x:Name="CentralLimitTextBox" Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,26,0,0" Grid.Row="2" TextWrapping="Wrap" Text="{Binding CentralLimit,ElementName=MainWind}" VerticalAlignment="Top" Width="110"/>
         <TextBox x:Name="MaxFreqJumpsTextBox" Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,80,0,0" Grid.Row="2" TextWrapping="Wrap" Text="{Binding MaxFreqJumps,ElementName=MainWind}" VerticalAlignment="Top" Width="110"/>
-        <TextBox x:Name="FilterRadiusTextBox" Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,134,0,0" Grid.Row="2" TextWrapping="Wrap" Text="{Binding FilterRadius,ElementName=MainWind}" VerticalAlignment="Top" Width="110"/>
+        <TextBox x:Name="FilterRadiusTextBox" Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,134,0,0" Grid.Row="2" TextWrapping="Wrap" Text="{Binding FilterDiameter,ElementName=MainWind}" VerticalAlignment="Top" Width="110"/>
         <TextBox x:Name="EnergyLineBorderTextBox" Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,188,0,0" Grid.Row="2" TextWrapping="Wrap" Text="{Binding EnergyLineBorder,ElementName=MainWind}" VerticalAlignment="Top" Width="110" Grid.RowSpan="2"/>
         <TextBox x:Name="LowPassFilterBorderTextBox" Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,242,0,0" Grid.Row="2" Grid.RowSpan="2" TextWrapping="Wrap" Text="{Binding LowPassFilterBorder,ElementName=MainWind}" VerticalAlignment="Top" Width="110"/>
         <TextBox x:Name="HighPassFilterBorderTextBox" Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,296,0,0" Grid.Row="2" Grid.RowSpan="2" TextWrapping="Wrap" Text="{Binding HighPassFilterBorder,ElementName=MainWind}" VerticalAlignment="Top" Width="110"/>
         <Label Content="Порог ЦО:" Grid.Column="4" HorizontalAlignment="Left" Margin="10,0,0,0" Grid.Row="2" VerticalAlignment="Top" Width="110"/>
         <Label Content="Макс. Δ частоты:" Grid.Column="4" HorizontalAlignment="Left" Margin="10,54,0,0" Grid.Row="2" VerticalAlignment="Top" Width="110"/>
-        <Label Content="R медиан. сглаж.:" Grid.Column="4" HorizontalAlignment="Left" Margin="10,108,0,0" Grid.Row="2" VerticalAlignment="Top" Width="110"/>
+        <Label Content="D медиан. сглаж.:" Grid.Column="4" HorizontalAlignment="Left" Margin="10,108,0,0" Grid.Row="2" VerticalAlignment="Top" Width="110"/>
         <Label Content="Пор. эн. в пол. ч.:" Grid.Column="4" HorizontalAlignment="Left" Margin="10,162,0,0" Grid.Row="2" VerticalAlignment="Top" Width="110"/>
         <Label Content="Ч. среза ФНЧ:" Grid.Column="4" HorizontalAlignment="Left" Margin="10,216,0,0" Grid.Row="2" VerticalAlignment="Top" Width="110" Height="25" Grid.RowSpan="2"/>
         <Label Content="Ч. среза ФВЧ:" Grid.Column="4" HorizontalAlignment="Left" Margin="10,270,0,0" Grid.Row="2" VerticalAlignment="Top" Width="110" Height="25" Grid.RowSpan="2"/>
         <Button x:Name="RenewCalculationsButton" Content="Перерасчёт" Grid.Column="4" HorizontalAlignment="Left" Margin="10,334,0,0" Grid.Row="2" Grid.RowSpan="2" VerticalAlignment="Top" Width="110" Click="RenewCalculationsButton_OnClick"/>
+        <TextBox Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,0,0,0" TextWrapping="Wrap" Text="{Binding TonalSpeechSelectorBorder, ElementName=MainWind}" VerticalAlignment="Top" Width="110" Grid.Row="1"/>
+        <TextBox Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,171,0,0" TextWrapping="Wrap" Text="{Binding AdditveNoiseLevel, ElementName=MainWind}" VerticalAlignment="Top" Width="110"/>
+        <TextBox Grid.Column="4" HorizontalAlignment="Left" Height="23" Margin="10,143,0,0" TextWrapping="Wrap" Text="{Binding MinimalVoicedSpeechLength, ElementName=MainWind }" VerticalAlignment="Top" Width="110"/>
     </Grid>
 </Window>

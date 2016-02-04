@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Linq;
-using HelpersLibrary.DspAlgorithms.Filters;
-
 namespace HelpersLibrary.DspAlgorithms
 {
     // ReSharper disable once InconsistentNaming
@@ -87,23 +85,7 @@ namespace HelpersLibrary.DspAlgorithms
                 }
             }
         }
-
-        public static void SpectrumForAcfs(int size, float[] data, out double[] result)
-        {
-            var nearestSize = (int)Math.Ceiling(Math.Log(size, 2) + 1);
-            var complexData = new ComplexNumber[(int)Math.Pow(2, nearestSize)];
-            for (int i = 0; i < size; i++)
-            {
-                complexData[i] = new ComplexNumber(data[i]);
-            }
-            FastFurieTransform(true, nearestSize, complexData);
-            Array.Resize(ref complexData, complexData.Length / 8);
-            var logSpectrum = complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray();
-            var avg = logSpectrum.Average();
-            complexData = logSpectrum.Select(x => new ComplexNumber(x - avg)).ToArray();
-            result = Array.ConvertAll(complexData, input => Math.Sqrt(input.Sqr));
-        }
-        
+ 
         public static void AutoCorrelation(int size, float[] data, out double[] result, out double rOne)
         {
             var complexData = Array.ConvertAll(data, input => new ComplexNumber(input));
@@ -130,26 +112,12 @@ namespace HelpersLibrary.DspAlgorithms
             
             var logSpectrum = complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray();
 
-//            const int blurSize = 5;
-//            var blur = new GaussianBlur();
-//            logSpectrum = blur.GetBlur(logSpectrum, blurSize);
-
             var max = double.NegativeInfinity;
             for (int i = 1; i < logSpectrum.Length-1; i++)
             {
                 if (logSpectrum[i] > logSpectrum[i - 1] && logSpectrum[i] > logSpectrum[i + 1] && logSpectrum[i] > max)
                     max = logSpectrum[i];
             }
-
-//            if (double.IsNegativeInfinity(max))
-//            {
-//                result = new double[logSpectrum.Length];
-//                return;
-//            }
-//            else
-//            {
-//                logSpectrum = logSpectrum.Select(x => Math.Abs(x) > max * 0.5 ? x : 0.0).ToArray();
-//            }
 
             var avg = logSpectrum.Average();
             complexData = logSpectrum.Select(x => new ComplexNumber(x-avg)).ToArray();
@@ -163,9 +131,6 @@ namespace HelpersLibrary.DspAlgorithms
         private static void AutoCorrelation(ref ComplexNumber[] data)
         {
             var nearestSize = Math.Ceiling(Math.Log(data.Length, 2));
-            var avgX = data.Average(x=> x.RealPart);
-            var avgY = data.Average(x => x.ImaginaryPart);
-//            data = data.Select(x => new ComplexNumber(x.RealPart - avgX, x.ImaginaryPart - avgY)).ToArray();
             var newSize = (int)nearestSize + 1;
             var doubleSized = new ComplexNumber[(int) Math.Pow(2, newSize)];
             Array.Copy(data, doubleSized, data.Length);

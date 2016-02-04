@@ -13,16 +13,16 @@ namespace HelpersLibrary.DspAlgorithms
     {
         public double MaxFrequencyJumpPercents;
         public double FrequencyEnergyLineBorder;
-        public int FilterRadius;
+        public int FilterDiameter;
         public double SignalCentralLimitationBorder;
         public float HighPassFilterBorder;
         public float LowPassFilterBorder;
 
         public Corellation()
         {
-            MaxFrequencyJumpPercents = 0.25;
+            MaxFrequencyJumpPercents = 0.27;
             FrequencyEnergyLineBorder = 0.00005;
-            FilterRadius = 9;
+            FilterDiameter = 5;
             SignalCentralLimitationBorder = 0.3;
             HighPassFilterBorder = 60.0f;
             LowPassFilterBorder = 600.0f;
@@ -33,26 +33,6 @@ namespace HelpersLibrary.DspAlgorithms
         public int UsedVectorSize { private get; set; }
         public double[][] Acfs { get; private set; }
         public double[][] Acf { get; private set; }
-
-        /// <summary>
-        /// Вычисляет автокорелляционную функцию на заданном участке сигнала
-        /// R(offset)
-        /// </summary>
-        /// <param name="a">Входной сигнал</param>
-        /// <param name="size">Размер участка (в отсчётах)</param>
-        /// <param name="offset">Смещение в сигнале</param>
-        /// <param name="ret">Результат</param>
-        public void AutoCorrelation(ref float[] a, int size, int offset, out double[] ret)
-        {
-            double[] autoCorrelation = new double[size];
-            for (int i = 0; i < size; i++)
-                for (int j = offset; j < size+offset - i; j++)
-                {
-                    autoCorrelation[i] += a[j] * a[j + i];
-                }
-            ret = autoCorrelation;
-        }
-
 
         /// <summary>
         /// Вычисляет кратковременную автокорелляцию. Применяется в дальнейших вычислениях КЛП.
@@ -124,6 +104,7 @@ namespace HelpersLibrary.DspAlgorithms
             var prevStop = 0;
             var rOneList = new List<double>();
             var prevCandidate = 0.0;
+            var globalCandidates = new List<List<Tuple<int, double>>>();
             foreach (var curentMark in speechMarks)
             {
                 for (int i = prevStop; i < curentMark.Item1; i++)
@@ -132,10 +113,9 @@ namespace HelpersLibrary.DspAlgorithms
                         resultImg.Add(new[] {0.0});
                         acfsImg.Add(new double[(int)furieSize/8].Select(x => double.NaN).ToArray());
                         acfImg.Add(new double[size].Select(x => double.NaN).ToArray());
+                        globalCandidates.Add(new List<Tuple<int, double>>());
                     }
 
-                var pieceImg = new List<double[]>();
-                var globalCandidates = new List<List<Tuple<int, double>>>();
                 for (int samples = curentMark.Item1; samples+size < inputSignal.Length && samples < curentMark.Item2; samples += jump)
                 {
                     var candidates = new List<Tuple<int, double>>();//int = position, double = amplitude
@@ -187,7 +167,7 @@ namespace HelpersLibrary.DspAlgorithms
                     {
                         var acfPosition = sampleFrequency/freqPosition; //aproximated time value
 
-                        pieceImg.Add(new[] {acfPosition});
+                        resultImg.Add(new[] { acfPosition });
 #if DEBUG
                         acfsImg.Add(acfsSample);
                         acfImg.Add(acf);
@@ -196,7 +176,7 @@ namespace HelpersLibrary.DspAlgorithms
                     }
                     else
                     {
-                        pieceImg.Add(new[] {0.0});
+                        resultImg.Add(new[] { 0.0 });
 #if DEBUG
                         acfsImg.Add(acfsSample);
                         acfImg.Add(acf);
@@ -205,11 +185,9 @@ namespace HelpersLibrary.DspAlgorithms
                     }
                     prevCandidate = freqPosition;
                 }
-                ExtractPitch(pieceImg, globalCandidates, sampleFrequency, furieSize);
-
-                resultImg.AddRange(pieceImg);
                 prevStop = curentMark.Item2 + 1;
             }
+            ExtractPitch(resultImg, globalCandidates, sampleFrequency, furieSize, jump, speechMarks);
 #if DEBUG
             Acf = acfImg.ToArray();
             Acfs = acfsImg.ToArray();
@@ -219,7 +197,7 @@ namespace HelpersLibrary.DspAlgorithms
             SaveTmpImage(rOneList.Select(x=> new[]{x}).ToArray());
         }
 
-        private void ExtractPitch(IReadOnlyList<double[]> img, IReadOnlyList<List<Tuple<int, double>>> globalCandidates, int sampleRate, double furieSize)
+        private void ExtractPitch(IReadOnlyList<double[]> img, IReadOnlyList<List<Tuple<int, double>>> globalCandidates, int sampleRate, double furieSize, int jumpSize, Tuple<int,int>[] voicedSpeechMarks)
         {
             var searchWindow = Math.Ceiling(sampleRate*1.2/furieSize);
             var prevVal = 0.0;
@@ -239,7 +217,7 @@ namespace HelpersLibrary.DspAlgorithms
                             .Item1;
                 }
                 if (prevVal > 0.0 && Math.Abs(prevVal - img[i][0])/prevVal > MaxFrequencyJumpPercents && Math.Abs(prevVal - acfsCandidate)/prevVal > MaxFrequencyJumpPercents && globalCandidates[i].Any())
-                {//todo: think about this place
+                {
                     var max = globalCandidates[i].Max(x => x.Item2);
                     var newCandidate = globalCandidates[i].First(x => x.Item2 >= max).Item1;
                     if (Math.Abs(newCandidate - prevVal)/prevVal <= MaxFrequencyJumpPercents)
@@ -249,47 +227,31 @@ namespace HelpersLibrary.DspAlgorithms
                 }
                 prevVal = img[i][0];
             }
-            
-            for (int i = FilterRadius; i < img.Count-FilterRadius; i++)
+
+            prevVal = 0.0;
+            for (int i = FilterDiameter/2; i < img.Count-FilterDiameter/2; i++)
             {
                 //use median filter to cath the errors
-                var itemsToSort = new List<double>(FilterRadius*2 + 1);
-                for (int j = -FilterRadius; j <= FilterRadius; j++)
+                var itemsToSort = new List<double>(FilterDiameter);
+                for (int j = -FilterDiameter/2; j <= FilterDiameter/2; j++)
                 {
                     itemsToSort.Add(img[i+j][0]);
                 }
                 var arr = itemsToSort.ToArray();
                 Array.Sort(arr);
-                if (globalCandidates[i].Count > 0)
+                if (Math.Abs(arr[FilterDiameter/2] - prevVal)/prevVal > MaxFrequencyJumpPercents && prevVal > 0.0)
                 {
-                    var selectedCandidates =
-                        globalCandidates[i].Where(
-                            x => Math.Abs(x.Item1 - arr[FilterRadius]) < searchWindow)
-                            .ToArray();
-                
-                    if (selectedCandidates.Any())
+                    var nearestSpeechEnd = voicedSpeechMarks.OrderBy(x=> x.Item2).First(x => x.Item2/jumpSize >= i);
+                    for (int j = i; j < nearestSpeechEnd.Item2/jumpSize && j < img.Count; j++)
                     {
-                        var nearest = selectedCandidates.Max(x => x.Item2);
-                        img[i][0] = selectedCandidates.First(x => x.Item2 >= nearest).Item1;
+                        img[j][0] = 0.0;
                     }
-                    else
-                    {
-                        img[i][0] = arr[FilterRadius];
-                    }
-                }
-            }
-
-            prevVal = 0.0;
-            for (int i = 0; i < img.Count; i++)
-            {
-                if (prevVal > 0.0 && Math.Abs(prevVal - img[i][0]) / prevVal > MaxFrequencyJumpPercents)
-                {
-                    img[i][0] = 0.0;
                 }
                 else
                 {
-                    prevVal = img[i][0];
+                    img[i][0] = arr[FilterDiameter/2];
                 }
+                prevVal = img[i][0];
             }
         }
 
@@ -305,11 +267,6 @@ namespace HelpersLibrary.DspAlgorithms
             }
         }
 #endif
-
-        private double FunctionBetwenTwoPoints(int t1, int t2, double x1, double x2, int pos)
-        {
-            return -((x1 - x2)*pos + (t1*x2 - t2*x1))/(t2 - t1);
-        }
 
         public void AutoCorrelationVectorDurbin(ref float[] inputSignal, int offset, out double[] vector)
         {

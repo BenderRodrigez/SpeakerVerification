@@ -51,10 +51,10 @@ namespace ExperimentalProcessing
             set { _corellation.FrequencyEnergyLineBorder = value; }
         }
 
-        public int FilterRadius
+        public int FilterDiameter
         {
-            get { return _corellation.FilterRadius; }
-            set { _corellation.FilterRadius = value; }
+            get { return _corellation.FilterDiameter; }
+            set { if(value%2 == 0) _corellation.FilterDiameter = value; }
         }
 
         public double CentralLimit
@@ -67,6 +67,24 @@ namespace ExperimentalProcessing
         {
             get { return _corellation.MaxFrequencyJumpPercents; }
             set { _corellation.MaxFrequencyJumpPercents = value; }
+        }
+
+        public float AdditveNoiseLevel
+        {
+            get { return _tonalSpeechSelector.AdditiveNoiseLevel; }
+            set { if(value < 1.0f) _tonalSpeechSelector.AdditiveNoiseLevel = value; }
+        }
+
+        public double TonalSpeechSelectorBorder
+        {
+            get { return _tonalSpeechSelector.Border; }
+            set { _tonalSpeechSelector.Border = value; }
+        }
+
+        public double MinimalVoicedSpeechLength
+        {
+            get { return _tonalSpeechSelector.MinimalVoicedSpeechLength; }
+            set { _tonalSpeechSelector.MinimalVoicedSpeechLength = value; }
         }
 
         private readonly Corellation _corellation;
@@ -107,10 +125,12 @@ namespace ExperimentalProcessing
         int _jump = 22;
         int _windowSize = 441;
         private float[] _inputFile;
+        private TonalSpeechSelector _tonalSpeechSelector;
 
         public MainWindow()
         {
             _corellation = new Corellation();
+            _tonalSpeechSelector = new TonalSpeechSelector();
 
             InitializeComponent();
 
@@ -160,6 +180,8 @@ namespace ExperimentalProcessing
                 sampleProvider.Read(speechFile, 0, (int)reader.SampleCount);
                 speechFileFormat = reader.WaveFormat;
             }
+            var max = speechFile.Max(x => Math.Abs(x));
+            speechFile = speechFile.Select(x => x/max).ToArray();
             return speechFile;
         }
 
@@ -197,10 +219,11 @@ namespace ExperimentalProcessing
             _inputFile = new float[signal.Length];
             Array.Copy(signal, _inputFile, signal.Length);
             _sampleFreq = signalFormat.SampleRate;
-            var tonalSpeechSelector = new TonalSpeechSelector(signal, 0.04f, 0.95f, signalFormat.SampleRate,
-                TonalSpeechSelector.Algorithm.Standart);
-            var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
-            var trainDataAcf = GetAcfImage(signal, signalFormat, new []{new Tuple<int, int>(0, signal.Length) } /*speechMarks*/, out _acf, out _acfs);
+
+            _tonalSpeechSelector.InitData(signal, 0.04f, 0.95f, signalFormat.SampleRate);
+
+            var speechMarks = _tonalSpeechSelector.GetTonalSpeechMarks();
+            var trainDataAcf = GetAcfImage(signal, signalFormat, speechMarks, out _acf, out _acfs);
             SamplePosition = 0;
             _pitch = trainDataAcf;
             PlotPitch(trainDataAcf);
