@@ -12,6 +12,11 @@ using NAudio.Wave;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
+using OxyPlot.Wpf;
+using HeatMapSeries = OxyPlot.Series.HeatMapSeries;
+using LinearAxis = OxyPlot.Axes.LinearAxis;
+using LinearColorAxis = OxyPlot.Axes.LinearColorAxis;
+using LineSeries = OxyPlot.Series.LineSeries;
 
 namespace ExperimentalProcessing
 {
@@ -54,7 +59,7 @@ namespace ExperimentalProcessing
         public int FilterDiameter
         {
             get { return _corellation.FilterDiameter; }
-            set { if(value%2 == 0) _corellation.FilterDiameter = value; }
+            set { if(value%2 == 1) _corellation.FilterDiameter = value; }
         }
 
         public double CentralLimit
@@ -125,13 +130,13 @@ namespace ExperimentalProcessing
         int _jump = 22;
         int _windowSize = 441;
         private float[] _inputFile;
-        private TonalSpeechSelector _tonalSpeechSelector;
+        private readonly TonalSpeechSelector _tonalSpeechSelector;
 
         public MainWindow()
         {
             _corellation = new Corellation();
             _tonalSpeechSelector = new TonalSpeechSelector();
-
+            _useHz = true;
             InitializeComponent();
 
             PitchPlotModel = new PlotModel { Title = "Трек ОТ", TitleFontSize = 10.0};
@@ -168,6 +173,12 @@ namespace ExperimentalProcessing
             AcfsPreview.Axes.Add(linearColorAxis1);
             AcfsPreview.Series.Add(new FunctionSeries(Math.Cosh, 0, 10, 0.1));
             OnPropertyChanged("AcfsPreview");
+
+            if (PitchPlotView.TrackerDefinitions.Count == 0)
+            {
+                PitchPlotView.TrackerDefinitions.Add(new TrackerDefinition { TrackerKey = "signal", TrackerTemplate = null });
+                PitchPlotView.TrackerDefinitions.Add(new TrackerDefinition { TrackerKey = "", TrackerTemplate = PitchPlotView.DefaultTrackerTemplate });
+            }
         }
 
         private static float[] ReadSpeechFile(string filePath, out WaveFormat speechFileFormat)
@@ -191,10 +202,10 @@ namespace ExperimentalProcessing
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             var handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            handler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        private void OpenFileButton_OnClick(object sender, RoutedEventArgs e)
+        internal void OpenFileButton()
         {
             var openFileDlg = new OpenFileDialog();
             openFileDlg.FileOk += OpenFileDlgOnFileOk;
@@ -288,7 +299,7 @@ namespace ExperimentalProcessing
             acfs = _corellation.Acfs;
             _jump = (int)Math.Round(windowSize * 0.05f);
             _windowSize = windowSize;
-            MaxSize = string.Format(" из {0}", acf.Length - 1);
+            MaxSize = $" из {speechFile.Length - 1}";
             OnPropertyChanged("MaxSize");
             return trainDataAcf;
         }
@@ -323,8 +334,7 @@ namespace ExperimentalProcessing
                     : new DataPoint(i*_jump, featureSet[i][0]/_sampleFreq));
             }
 
-            var signal = new LineSeries();
-            signal.Color = OxyColors.Aqua;
+            var signal = new LineSeries {Color = OxyColors.Aqua, Selectable = false, TrackerKey = "signal"};
             var signalYAxes = new LinearAxis {Key = "signalY", Position = AxisPosition.Right};
             signal.YAxisKey = "signalY";
             for (int i = 0; i < _inputFile.Length; i++)
@@ -334,7 +344,6 @@ namespace ExperimentalProcessing
 
             if(PitchPlotModel.Axes.FirstOrDefault(x=> x.Key == "signalY") == null)
                 PitchPlotModel.Axes.Add(signalYAxes);
-
             PitchPlotModel.Series.Clear();
             PitchPlotModel.Series.Add(signal);
             PitchPlotModel.Series.Add(lineSeries);
@@ -398,7 +407,7 @@ namespace ExperimentalProcessing
             }
         }
 
-        private void RestButton_OnClick(object sender, RoutedEventArgs e)
+        internal void RestButton()
         {
             AcfsPlotView.ResetAllAxes();
             AcfsSamplePlotView.ResetAllAxes();
@@ -407,11 +416,17 @@ namespace ExperimentalProcessing
             PitchPlotView.ResetAllAxes();
         }
 
-        private void RenewCalculationsButton_OnClick(object sender, RoutedEventArgs e)
+        internal void RenewCalculations()
         {
             var task = new Task(OpenFile, FileName);
             task.Start();
             OnPropertyChanged("FileName");
+        }
+
+        private void MainWindow_OnContentRendered(object sender, EventArgs e)
+        {
+            var settings = new SettingsWindow { Owner = this };
+            settings.Show();
         }
     }
 }
