@@ -28,7 +28,6 @@ namespace HelpersLibrary.DspAlgorithms
         public void InitData(float[] speechSignal, float windowSize, float overlapping, int sampleRate)
         {
             _sampleRate = sampleRate;
-            InitVariables();
             var windowSizeSamples = (int) Math.Round(sampleRate*windowSize);
             var jumpSize = 1.0f - overlapping;
             _signal = new float[speechSignal.Length];
@@ -44,7 +43,7 @@ namespace HelpersLibrary.DspAlgorithms
             LowPassFilterBorder = 300;
             AdditiveNoiseLevel = 0.2f;
             MinimalVoicedSpeechLength = 0.05;
-            Border = 50.0;
+            Border = 10.0;
         }
 
         public Tuple<int, int>[] GetTonalSpeechMarks()
@@ -104,7 +103,7 @@ namespace HelpersLibrary.DspAlgorithms
 
             var tmp = new float[file.Length - windowSize];
 
-            for (int i = 0; i < file.Length; i += 20)
+            for (int i = 0; i < file.Length; i++)
                 file[i] += (float) rand.NextDouble()*AdditiveNoiseLevel;
 
             var jump = (int) Math.Round(windowSize*overlapping);

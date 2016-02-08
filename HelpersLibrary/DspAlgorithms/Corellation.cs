@@ -22,7 +22,7 @@ namespace HelpersLibrary.DspAlgorithms
         {
             MaxFrequencyJumpPercents = 0.27;
             FrequencyEnergyLineBorder = 0.00005;
-            FilterDiameter = 5;
+            FilterDiameter = 9;
             SignalCentralLimitationBorder = 0.3;
             HighPassFilterBorder = 60.0f;
             LowPassFilterBorder = 600.0f;
@@ -103,7 +103,6 @@ namespace HelpersLibrary.DspAlgorithms
             var resultImg = new List<double[]>(inputSignal.Length);
             var prevStop = 0;
             var rOneList = new List<double>();
-            var prevCandidate = 0.0;
             var globalCandidates = new List<List<Tuple<int, double>>>();
             foreach (var curentMark in speechMarks)
             {
@@ -162,8 +161,8 @@ namespace HelpersLibrary.DspAlgorithms
                     var aproximatedPosition = acfsCandidates.Any() ? acfsCandidates[0].Item1 : -1;
                     var freqPosition = (sampleFrequency / furieSize) * aproximatedPosition;//aproximated frequency value
 
-                    if (acfsCandidates.Count > 3 && aproximatedPosition > -1 && freqPosition > 60 && freqPosition < 600 &&
-                        candidates.Count > 2 && (rOne > FrequencyEnergyLineBorder && (Math.Abs(prevCandidate - freqPosition) / prevCandidate < MaxFrequencyJumpPercents || prevCandidate <= 0.0)))
+                    if (acfsCandidates.Count > 4 && aproximatedPosition > -1 && freqPosition > 60 && freqPosition < 600 &&
+                        candidates.Count > 4/* && (rOne > FrequencyEnergyLineBorder)*/)
                     {
                         var acfPosition = sampleFrequency/freqPosition; //aproximated time value
 
@@ -183,7 +182,6 @@ namespace HelpersLibrary.DspAlgorithms
 #endif
                         globalCandidates.Add(candidates);
                     }
-                    prevCandidate = freqPosition;
                 }
                 prevStop = curentMark.Item2 + 1;
             }
@@ -200,10 +198,8 @@ namespace HelpersLibrary.DspAlgorithms
         private void ExtractPitch(IReadOnlyList<double[]> img, IReadOnlyList<List<Tuple<int, double>>> globalCandidates, int sampleRate, double furieSize, int jumpSize, Tuple<int,int>[] voicedSpeechMarks)
         {
             var searchWindow = Math.Ceiling(sampleRate*1.2/furieSize);
-            var prevVal = 0.0;
             for (int i = 0; i < img.Count; i++)
             {
-                var acfsCandidate = img[i][0];
                 if (img[i][0] > 0.0 && globalCandidates[i].Any(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow))
                 {
                     var nearest =
@@ -216,19 +212,9 @@ namespace HelpersLibrary.DspAlgorithms
                             .First(x => x.Item2 >= nearest)
                             .Item1;
                 }
-                if (prevVal > 0.0 && Math.Abs(prevVal - img[i][0])/prevVal > MaxFrequencyJumpPercents && Math.Abs(prevVal - acfsCandidate)/prevVal > MaxFrequencyJumpPercents && globalCandidates[i].Any())
-                {
-                    var max = globalCandidates[i].Max(x => x.Item2);
-                    var newCandidate = globalCandidates[i].First(x => x.Item2 >= max).Item1;
-                    if (Math.Abs(newCandidate - prevVal)/prevVal <= MaxFrequencyJumpPercents)
-                    {
-                        img[i][0] = newCandidate;
-                    }
-                }
-                prevVal = img[i][0];
             }
 
-            prevVal = 0.0;
+            var prevVal = 0.0;
             for (int i = FilterDiameter/2; i < img.Count-FilterDiameter/2; i++)
             {
                 //use median filter to cath the errors
@@ -239,10 +225,12 @@ namespace HelpersLibrary.DspAlgorithms
                 }
                 var arr = itemsToSort.ToArray();
                 Array.Sort(arr);
-                if (Math.Abs(arr[FilterDiameter/2] - prevVal)/prevVal > MaxFrequencyJumpPercents && prevVal > 0.0)
+                if (Math.Abs(arr[FilterDiameter/2] - prevVal)/Math.Max(prevVal, arr[FilterDiameter/2]) >
+                    MaxFrequencyJumpPercents && prevVal > 0.0)
                 {
-                    var nearestSpeechEnd = voicedSpeechMarks.OrderBy(x=> x.Item2).First(x => x.Item2/jumpSize >= i);
-                    for (int j = i; j < nearestSpeechEnd.Item2/jumpSize && j < img.Count; j++)
+                    var nearestSpeechEnd =
+                        voicedSpeechMarks.OrderBy(x => x.Item2).First(x => x.Item2/jumpSize >= i).Item2;
+                    for (int j = i; j < nearestSpeechEnd/jumpSize && j < img.Count; j++)
                     {
                         img[j][0] = 0.0;
                     }
