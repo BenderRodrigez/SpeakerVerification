@@ -17,6 +17,7 @@ namespace HelpersLibrary.DspAlgorithms
         public double SignalCentralLimitationBorder;
         public float HighPassFilterBorder;
         public float LowPassFilterBorder;
+        public double MinimalVoicedSpeechLength;
 
         public Corellation()
         {
@@ -26,6 +27,7 @@ namespace HelpersLibrary.DspAlgorithms
             SignalCentralLimitationBorder = 0.3;
             HighPassFilterBorder = 60.0f;
             LowPassFilterBorder = 600.0f;
+            MinimalVoicedSpeechLength = 0.05;
         }
 
         public WindowFunctions.WindowType UsedWindowType { private get; set; }
@@ -228,9 +230,7 @@ namespace HelpersLibrary.DspAlgorithms
                 if (Math.Abs(arr[FilterDiameter/2] - prevVal)/Math.Max(prevVal, arr[FilterDiameter/2]) >
                     MaxFrequencyJumpPercents && prevVal > 0.0)
                 {
-                    var nearestSpeechEnd =
-                        voicedSpeechMarks.OrderBy(x => x.Item2).First(x => x.Item2/jumpSize >= i).Item2;
-                    for (int j = i; j < nearestSpeechEnd/jumpSize && j < img.Count; j++)
+                    for (int j = i; j < (i+(sampleRate*MinimalVoicedSpeechLength)/jumpSize) && j < img.Count; j++)
                     {
                         img[j][0] = 0.0;
                     }
@@ -240,6 +240,57 @@ namespace HelpersLibrary.DspAlgorithms
                     img[i][0] = arr[FilterDiameter/2];
                 }
                 prevVal = img[i][0];
+            }
+            for (int i = img.Count - FilterDiameter / 2; i < img.Count; i++)
+            {
+                //use median filter to cath the errors
+                var itemsToSort = new List<double>(FilterDiameter);
+                for (int j = -FilterDiameter / 2; j <= FilterDiameter / 2; j++)
+                {
+                    if(i+j < img.Count)
+                        itemsToSort.Add(img[i + j][0]);
+                    else
+                    {
+                        itemsToSort.Add(0.0);
+                    }
+                }
+                var arr = itemsToSort.ToArray();
+                Array.Sort(arr);
+                if (Math.Abs(arr[FilterDiameter / 2] - prevVal) / Math.Max(prevVal, arr[FilterDiameter / 2]) >
+                    MaxFrequencyJumpPercents && prevVal > 0.0)
+                {
+                    for (int j = i; j < (i + (sampleRate * MinimalVoicedSpeechLength) / jumpSize) && j < img.Count; j++)
+                    {
+                        img[j][0] = 0.0;
+                    }
+                }
+                else
+                {
+                    img[i][0] = arr[FilterDiameter / 2];
+                }
+                prevVal = img[i][0];
+            }
+
+            for (int i = 0; i < img.Count; i++)
+            {
+                var size = 0;
+                if (img[i][0] > 0.0)
+                {
+                    var j = 0;
+                    while ( i+j < img.Count && img[i+j][0] > 0.0)
+                    {
+                        j++;
+                    }
+
+                    if (j < sampleRate*MinimalVoicedSpeechLength/jumpSize)
+                    {
+                        for (int k = 0; k < j && k+i < img.Count; k++)
+                        {
+                            img[i][0] = 0.0;
+                        }
+                    }
+                    i += j;
+                }
             }
         }
 

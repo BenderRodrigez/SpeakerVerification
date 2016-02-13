@@ -151,7 +151,7 @@ namespace SpeakerVerification
                 ReadWavFile(wavFileOpenDialog.FileName, out speechFileFormat, out speechFile);
                 
                 var tonalSpeechSelector = new TonalSpeechSelector();
-                tonalSpeechSelector.InitData(speechFile, (float) analysisIntervalUpDown.Value*2.0f,
+                tonalSpeechSelector.InitData(speechFile, (float) analysisIntervalUpDown.Value,
                     (float) overlappingUpDown.Value/100.0f, speechFileFormat.SampleRate);
 
                 var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
@@ -253,8 +253,8 @@ namespace SpeakerVerification
             corellation.PitchImage(ref speechFile,
                 (int) Math.Round(analysisIntervalUpDown.Value*speechFileFormat.SampleRate),
                 (1.0f - (float) overlappingUpDown.Value/100.0f), out trainDataAcf, windowType,
-                speechFileFormat.SampleRate, new[] { new Tuple<int, int>(0, speechFile.Length) });
-            return trainDataAcf.Where(x=> x[0] > 0.0).Select(x => new[] {speechFileFormat.SampleRate/x[0]}).ToArray();
+                speechFileFormat.SampleRate, speechMarks);
+            return trainDataAcf.Select(x => new[] {x[0]>0.0?speechFileFormat.SampleRate/x[0]:0.0}).ToArray();
         }
 
         private bool IsPowerOfTwo(uint val)
@@ -338,6 +338,8 @@ namespace SpeakerVerification
                 }
                 speechFileFormat = reader.WaveFormat;
             }
+            var max = speechFile.Max(x => Math.Abs(x));
+            speechFile = speechFile.Select(x => x / max).ToArray();
         }
 
         private void PlotTestFeatureMatrix(double[][] featureSet)
@@ -504,7 +506,7 @@ namespace SpeakerVerification
                 ReadWavFile(wavFileOpenDialog.FileName, out speechFileFormat, out speechFile);
 
                 var tonalSpeechSelector = new TonalSpeechSelector();
-                tonalSpeechSelector.InitData(speechFile, (float)analysisIntervalUpDown.Value * 2.0f,
+                tonalSpeechSelector.InitData(speechFile, (float)analysisIntervalUpDown.Value,
                     (float)overlappingUpDown.Value / 100.0f, speechFileFormat.SampleRate);
                 var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
                 speechStartPosition = 0;

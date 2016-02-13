@@ -89,7 +89,11 @@ namespace ExperimentalProcessing
         public double MinimalVoicedSpeechLength
         {
             get { return _tonalSpeechSelector.MinimalVoicedSpeechLength; }
-            set { _tonalSpeechSelector.MinimalVoicedSpeechLength = value; }
+            set
+            {
+                _tonalSpeechSelector.MinimalVoicedSpeechLength = value;
+                _corellation.MinimalVoicedSpeechLength = value;
+            }
         }
 
         private readonly Corellation _corellation;
@@ -202,7 +206,7 @@ namespace ExperimentalProcessing
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             var handler = PropertyChanged;
-            handler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            if (handler != null) handler.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         internal void OpenFileButton()
@@ -299,7 +303,7 @@ namespace ExperimentalProcessing
             acfs = _corellation.Acfs;
             _jump = (int)Math.Round(windowSize * 0.05f);
             _windowSize = windowSize;
-            MaxSize = $" из {speechFile.Length - 1}";
+            MaxSize = " из " + (speechFile.Length - 1);
             OnPropertyChanged("MaxSize");
             return trainDataAcf;
         }
