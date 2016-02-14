@@ -103,5 +103,10 @@ namespace ExperimentalProcessing
         {
             OwnerWindow = (Owner as MainWindow);
         }
+
+        private void AlgorithmTestButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            OwnerWindow.TestAlogorithm();
+        }
     }
 }

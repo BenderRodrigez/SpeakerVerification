@@ -1,0 +1,9 @@
+﻿<Window x:Class="ExperimentalProcessing.ResultsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ResultsWindow" Height="241.353" Width="442.105" x:Name="ResultWindow">
+    <Grid>
+        <TextBox TextWrapping="Wrap" Text="{Binding Results, ElementName=ResultWindow}"/>
+
+    </Grid>
+</Window>

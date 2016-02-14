@@ -3,7 +3,7 @@
         xmlns:oxy="http://oxyplot.org/wpf"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="{Binding FileName, ElementName=MainWind, Mode=OneWay}" Height="670" Width="939"
-        x:Name="MainWind" Background="Aquamarine" Cursor="{Binding WindowCursor, ElementName=MainWind}" ForceCursor="True" KeyDown="MainWindow_OnKeyDown" ContentRendered="MainWindow_OnContentRendered">
+        x:Name="MainWind" Background="Aquamarine" Cursor="{Binding WindowCursor, ElementName=MainWind}" ForceCursor="True" KeyDown="MainWindow_OnKeyDown" ContentRendered="MainWindow_OnContentRendered" WindowState="Maximized">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="204*"/>

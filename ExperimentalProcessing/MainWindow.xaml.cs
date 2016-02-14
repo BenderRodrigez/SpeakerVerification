@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -7,6 +9,7 @@ using System.Windows;
 using System.Windows.Input;
 using ExperimentalProcessing.Annotations;
 using HelpersLibrary.DspAlgorithms;
+using HelpersLibrary.Experiment;
 using Microsoft.Win32;
 using NAudio.Wave;
 using OxyPlot;
@@ -216,6 +219,100 @@ namespace ExperimentalProcessing
             openFileDlg.ShowDialog(this);
         }
 
+        internal void TestAlogorithm()
+        {
+            var openFileDlg = new OpenFileDialog();
+            openFileDlg.FileOk += (sender, a) =>
+            {
+                var fileName = ((OpenFileDialog)sender).FileName;
+                var fileInfo = new FileInfo(fileName);
+                FileName = fileInfo.Name.Replace(fileInfo.Extension, string.Empty);
+                var args = new string[2];
+                if (fileInfo.Extension.ToLower() == ".lst")
+                {
+                    args[0] = fileName.ToLower().Replace(".lst", ".dat");
+                    args[1] = fileName;
+                }
+                else
+                {
+                    args[0] = fileName;
+                    args[1] = fileName.ToLower().Replace(".dat", ".lst");
+                }
+
+                var task = new Task(OpenEtalonFile, args);
+                task.Start();
+                OnPropertyChanged("FileName");
+            };
+            openFileDlg.ShowDialog(this);
+        }
+
+        private void OpenEtalonFile(object fileName)
+        {
+            WindowCursor = Cursors.Wait;
+            OnPropertyChanged("WindowCursor");
+            var args = (string[]) fileName;
+            
+            var expDataReader = new ExperimentalDataParser(args[0],args[1]);
+            _inputFile = new float[expDataReader.SignalData.Length];
+            Array.Copy(expDataReader.SignalData, _inputFile, expDataReader.SignalData.Length);
+            _sampleFreq = expDataReader.SampleRate;
+
+            var max = _inputFile.Max(x=> Math.Abs(x));
+            _inputFile = _inputFile.Select(x => x/max).ToArray();
+
+            _tonalSpeechSelector.InitData(_inputFile, 0.04f, 0.95f, expDataReader.SampleRate);
+
+            var speechMarks = _tonalSpeechSelector.GetTonalSpeechMarks();
+            var trainDataAcf = GetAcfImage(_inputFile, expDataReader.SampleRate, speechMarks, out _acf, out _acfs);
+            SamplePosition = 0;
+            _pitch = trainDataAcf;
+            var distortion = CalcDistortion(trainDataAcf, expDataReader.PitchTrajectory);
+            var results =
+                string.Format(
+                    "Несущественных ошибок: {0:##.###}%\r\nМалых ошибок: \t{1:##.###}%\r\nБольших ошибок: \t{2:##.###}%\r\nСреднее: \t{3:##.###}%\r\nКоличество 100% ошибок: \t{4:##.###}%\r\n",
+                    distortion.Where(x => x > 0.0 && x <= 0.05).Count()*100.0/distortion.Count(),
+                    distortion.Where(x => x > 0.05 && x <= 0.15).Count()*100.0/distortion.Count(),
+                    distortion.Where(x => x > 0.15).Count()*100.0/distortion.Count(),
+                    distortion.Where(x => x > 0.0).Average()*100.0,
+                    distortion.Where(x => x >= 1.0).Count()*100.0/distortion.Count());
+            Dispatcher.InvokeAsync(() =>
+            {
+                var resultsWindow = new ResultsWindow
+                {
+                    Results = results,
+                    Owner = this
+                };
+                resultsWindow.Show();
+            });
+
+            PlotPitch(trainDataAcf, expDataReader.PitchTrajectory, distortion);
+            PlotAcfPreview();
+            PlotAcfsPreview();
+            WindowCursor = Cursors.Arrow;
+            OnPropertyChanged("WindowCursor");
+        }
+
+        private double[] CalcDistortion(double[][] pitch, double[] etalon)
+        {
+            var distortion = new List<double>();
+            for (int i = 0; i * _jump + _jump * 3 / 4 < etalon.Length; i++)
+            {
+                var etalon1 = etalon[i * _jump + _jump / 4];
+                var etalon2 = etalon[i * _jump + _jump * 3 / 4];
+                if (i >= pitch.Length)
+                {
+                    distortion.Add(etalon1 > 0.0 ? 1.0 : 0.0);
+                    distortion.Add(etalon2 > 0.0 ? 1.0 : 0.0);
+                    continue;
+                }
+                distortion.Add(etalon1 > 0.0?(
+                    Math.Abs((pitch[i][0] > 0.0 ? _sampleFreq/pitch[i][0] : 0.0) - etalon1)/etalon1): 0.0);
+                distortion.Add(etalon2 > 0.0?(
+                    Math.Abs((pitch[i][0] > 0.0 ? _sampleFreq/pitch[i][0] : 0.0) - etalon2)/etalon2): 0.0);
+            }
+            return distortion.ToArray();
+        }
+
         private void OpenFileDlgOnFileOk(object sender, CancelEventArgs cancelEventArgs)
         {
             var fileName = ((OpenFileDialog) sender).FileName;
@@ -308,6 +405,22 @@ namespace ExperimentalProcessing
             return trainDataAcf;
         }
 
+        private double[][] GetAcfImage(float[] speechFile, int sampleRate, Tuple<int, int>[] speechMarks,
+            out double[][] acf, out double[][] acfs)
+        {
+            double[][] trainDataAcf;
+            var windowSize = (int)Math.Round(sampleRate * 0.04);
+            _corellation.PitchImage(ref speechFile, windowSize, 0.05f, out trainDataAcf,
+                WindowFunctions.WindowType.Blackman, sampleRate, speechMarks);
+            acf = _corellation.Acf;
+            acfs = _corellation.Acfs;
+            _jump = (int)Math.Round(windowSize * 0.05f);
+            _windowSize = windowSize;
+            MaxSize = " из " + (speechFile.Length - 1);
+            OnPropertyChanged("MaxSize");
+            return trainDataAcf;
+        }
+
         private void PlotAcfSample(int pos)
         {
             var heatMap = new LineSeries();
@@ -351,6 +464,52 @@ namespace ExperimentalProcessing
             PitchPlotModel.Series.Clear();
             PitchPlotModel.Series.Add(signal);
             PitchPlotModel.Series.Add(lineSeries);
+            PitchPlotModel.InvalidatePlot(true);
+        }
+
+        private void PlotPitch(double[][] featureSet, double[] etalonPitch, double[] distortion)
+        {
+            var lineSeries = new LineSeries();
+            for (int i = 0; i < featureSet.Length; i++)
+            {
+                lineSeries.Points.Add(_useHz
+                    ? new DataPoint(i * _jump, featureSet[i][0] > 0.0 ? _sampleFreq / featureSet[i][0] : 0.0)
+                    : new DataPoint(i * _jump, featureSet[i][0] / _sampleFreq));
+            }
+
+            var etlonSeries = new LineSeries{TrackerKey = "etalon"};
+            for (int i = 0; i < etalonPitch.Length; i++)
+            {
+                etlonSeries.Points.Add(new DataPoint(i, etalonPitch[i]));
+            }
+
+            var signal = new LineSeries { Color = OxyColors.Aqua, Selectable = false, TrackerKey = "signal" };
+            var signalYAxes = new LinearAxis { Key = "signalY", Position = AxisPosition.Right };
+            signal.YAxisKey = "signalY";
+            for (int i = 0; i < _inputFile.Length; i++)
+            {
+                signal.Points.Add(new DataPoint(i, _inputFile[i]));
+            }
+
+            var distortionSeries = new LineSeries { Color = OxyColors.Red, Selectable = false, TrackerKey = "distortion" };
+            var distortionYAxes = new LinearAxis { Key = "distortionY", Position = AxisPosition.None };
+            distortionSeries.YAxisKey = "distortionY";
+            for (int i = 0; i < distortion.Length; i++)
+            {
+                distortionSeries.Points.Add(new DataPoint(i*_jump/2+_jump/4, distortion[i]));
+            }
+
+
+            if (PitchPlotModel.Axes.FirstOrDefault(x => x.Key == "signalY") == null)
+                PitchPlotModel.Axes.Add(signalYAxes);
+            if (PitchPlotModel.Axes.FirstOrDefault(x => x.Key == "distortionY") == null)
+                PitchPlotModel.Axes.Add(distortionYAxes);
+
+            PitchPlotModel.Series.Clear();
+            PitchPlotModel.Series.Add(signal);
+            PitchPlotModel.Series.Add(lineSeries);
+            PitchPlotModel.Series.Add(etlonSeries);
+            PitchPlotModel.Series.Add(distortionSeries);
             PitchPlotModel.InvalidatePlot(true);
         }
 
