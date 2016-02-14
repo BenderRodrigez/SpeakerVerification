@@ -187,7 +187,7 @@ namespace HelpersLibrary.DspAlgorithms
                 }
                 prevStop = curentMark.Item2 + 1;
             }
-            ExtractPitch(resultImg, globalCandidates, sampleFrequency, furieSize, jump, speechMarks);
+            ExtractPitch(resultImg, globalCandidates, sampleFrequency, furieSize, jump);
 #if DEBUG
             Acf = acfImg.ToArray();
             Acfs = acfsImg.ToArray();
@@ -197,10 +197,10 @@ namespace HelpersLibrary.DspAlgorithms
             SaveTmpImage(rOneList.Select(x=> new[]{x}).ToArray());
         }
 
-        private void ExtractPitch(IReadOnlyList<double[]> img, IReadOnlyList<List<Tuple<int, double>>> globalCandidates, int sampleRate, double furieSize, int jumpSize, Tuple<int,int>[] voicedSpeechMarks)
+        private void ExtractPitch(IReadOnlyList<double[]> img, IReadOnlyList<List<Tuple<int, double>>> globalCandidates, int sampleRate, double furieSize, int jumpSize)
         {
             var searchWindow = Math.Ceiling(sampleRate*1.2/furieSize);
-            for (int i = 0; i < img.Count; i++)
+            for (int i = 0; i < img.Count; i++)//find value by approximation
             {
                 if (img[i][0] > 0.0 && globalCandidates[i].Any(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow))
                 {
@@ -217,9 +217,8 @@ namespace HelpersLibrary.DspAlgorithms
             }
 
             var prevVal = 0.0;
-            for (int i = FilterDiameter/2; i < img.Count-FilterDiameter/2; i++)
+            for (int i = FilterDiameter / 2; i < img.Count - FilterDiameter / 2; i++)//use median filter to cath the errors
             {
-                //use median filter to cath the errors
                 var itemsToSort = new List<double>(FilterDiameter);
                 for (int j = -FilterDiameter/2; j <= FilterDiameter/2; j++)
                 {
@@ -241,18 +240,16 @@ namespace HelpersLibrary.DspAlgorithms
                 }
                 prevVal = img[i][0];
             }
-            for (int i = img.Count - FilterDiameter / 2; i < img.Count; i++)
-            {
-                //use median filter to cath the errors
+
+            for (int i = img.Count - FilterDiameter / 2; i < img.Count; i++)//use median filter to cath the errors in the last points
+            {       
                 var itemsToSort = new List<double>(FilterDiameter);
                 for (int j = -FilterDiameter / 2; j <= FilterDiameter / 2; j++)
                 {
                     if(i+j < img.Count)
                         itemsToSort.Add(img[i + j][0]);
                     else
-                    {
                         itemsToSort.Add(0.0);
-                    }
                 }
                 var arr = itemsToSort.ToArray();
                 Array.Sort(arr);
@@ -271,25 +268,24 @@ namespace HelpersLibrary.DspAlgorithms
                 prevVal = img[i][0];
             }
 
-            for (int i = 0; i < img.Count; i++)
+            for (int i = 0; i < img.Count; i++)//remove too small pitch intervals, if they shorter than it's physicaly possible
             {
-                var size = 0;
                 if (img[i][0] > 0.0)
                 {
-                    var j = 0;
-                    while ( i+j < img.Count && img[i+j][0] > 0.0)
+                    var size = 0;
+                    while ( i+size < img.Count && img[i+size][0] > 0.0)
                     {
-                        j++;
+                        size++;
                     }
 
-                    if (j < sampleRate*MinimalVoicedSpeechLength/jumpSize)
+                    if (size < sampleRate*MinimalVoicedSpeechLength/jumpSize)
                     {
-                        for (int k = 0; k < j && k+i < img.Count; k++)
+                        for (int k = 0; k < size && k+i < img.Count; k++)
                         {
-                            img[i][0] = 0.0;
+                            img[i+k][0] = 0.0;
                         }
                     }
-                    i += j;
+                    i += size;
                 }
             }
         }

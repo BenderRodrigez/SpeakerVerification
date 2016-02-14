@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using HelpersLibrary.DspAlgorithms;
 using HelpersLibrary.DspAlgorithms.Filters;
+using HelpersLibrary.Experiment;
 using HelpersLibrary.LearningAlgorithms;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NAudio.Wave;
@@ -27,6 +28,8 @@ namespace Tests
         private float[] _signal1;
         private float[] _signal2;
         private string _impulseFileName;
+        private string _mrksFileName;
+        private string _rawDataFileName;
 
         [TestInitialize]
         public void Set()
@@ -84,9 +87,39 @@ namespace Tests
 
             _praatSamplesFolderPath = "C:\\Users\\Bender\\Desktop\\LPC_temp_records";
             _praatTrainingSet = "ГРР1_lpc.mat.txt";
+            _rawDataFileName = "D:\\YandexDisk\\YandexDisk\\Documents\\Сигналы\\aio\\AIOGU100.DAT";
+            _mrksFileName = "D:\\YandexDisk\\YandexDisk\\Documents\\Сигналы\\aio\\AIOGU100.LST";
         }
 
         private double[][] _vqTrain;
+
+        [TestMethod]
+        public void TestDataReading()
+        {
+            var expData = new ExperimentalDataParser(_rawDataFileName, _mrksFileName);
+            using (
+                var writer =
+                    new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                        "pitch_exp.txt")))
+            {
+                foreach (var d in expData.PitchTrajectory)
+                {
+                    writer.WriteLine(d);
+                }
+            }
+
+            using (
+                var writer =
+                    new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                        "signal.txt")))
+            {
+                foreach (var d in expData.SignalData)
+                {
+                    writer.WriteLine(d);
+                }
+            }
+        }
+
 
         [TestMethod]
         public void TestAcfFunction()

@@ -70,6 +70,7 @@
     <Compile Include="DspAlgorithms\SpeechSearch.cs" />
     <Compile Include="DspAlgorithms\TonalSpeechSelector.cs" />
     <Compile Include="DspAlgorithms\WindowFunctions.cs" />
+    <Compile Include="Experiment\ExperimentalDataParser.cs" />
     <Compile Include="Experiment\PhraseCube.cs" />
     <Compile Include="LearningAlgorithms\VectorQuantization.cs" />
     <Compile Include="Logger.cs" />
