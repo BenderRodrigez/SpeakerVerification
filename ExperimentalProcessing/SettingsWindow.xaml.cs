@@ -1,19 +1,44 @@
 ﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows;
+using ExperimentalProcessing.Annotations;
 
 namespace ExperimentalProcessing
 {
     /// <summary>
     /// Логика взаимодействия для SettingsWindow.xaml
     /// </summary>
-    public partial class SettingsWindow
+    public partial class SettingsWindow: INotifyPropertyChanged
     {
-        private MainWindow OwnerWindow { get; set; }
+        public MainWindow OwnerWindow { get; set; }
+
+        public string SignalNoiseRaito
+        {
+            get { return OwnerWindow.SignalNoiseRaito; }
+        }
+
+        public double NoiseAmplitude
+        {
+            get { return OwnerWindow.NoiseAmplitude; }
+            set { OwnerWindow.NoiseAmplitude = value; }
+        }
 
         public bool UseHz
         {
             get { return OwnerWindow.UseHz; }
             set { OwnerWindow.UseHz = value; }
+        }
+
+        public bool UseNoise
+        {
+            get { return OwnerWindow.UseNoise; }
+            set { OwnerWindow.UseNoise = value; }
+        }
+
+        public string MaxEnergyInterval
+        {
+            get { return OwnerWindow.MaxEnergyInterval; }
+            set { OwnerWindow.MaxEnergyInterval = value; }
         }
 
         public float HighPassFilterBorder
@@ -23,6 +48,15 @@ namespace ExperimentalProcessing
                 return OwnerWindow.HighPassFilterBorder;
             }
             set { OwnerWindow.HighPassFilterBorder = value; }
+        }
+
+        public bool SimulatePhoneChanel
+        {
+            get
+            {
+                return OwnerWindow.SimulatePhoneCnanel;
+            }
+            set { OwnerWindow.SimulatePhoneCnanel = value; }
         }
 
         public float LowPassFilterBorder
@@ -77,6 +111,8 @@ namespace ExperimentalProcessing
         {
             OwnerWindow = (Application.Current.MainWindow as MainWindow);
             InitializeComponent();
+            if (OwnerWindow != null)
+                OwnerWindow.PropertyChanged += (sender, args) => OnPropertyChanged(args.PropertyName);
         }
 
         private void RenewCalculationsButton_OnClick(object sender, RoutedEventArgs e)
@@ -107,6 +143,14 @@ namespace ExperimentalProcessing
         private void AlgorithmTestButton_OnClick(object sender, RoutedEventArgs e)
         {
             OwnerWindow.TestAlogorithm();
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        [NotifyPropertyChangedInvocator]
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

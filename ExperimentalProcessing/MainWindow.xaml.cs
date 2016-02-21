@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Input;
 using ExperimentalProcessing.Annotations;
 using HelpersLibrary.DspAlgorithms;
+using HelpersLibrary.DspAlgorithms.Filters;
 using HelpersLibrary.Experiment;
 using Microsoft.Win32;
 using NAudio.Wave;
@@ -38,6 +39,27 @@ namespace ExperimentalProcessing
         public string MaxSize { get; private set; }
         public string FileName { get; private set; }
 
+        public bool UseNoise { get; set; }
+        public double NoiseAmplitude { get; set; }
+        public string SignalNoiseRaito { get; private set; }
+
+        private Tuple<int, int> _maxEnergyInterval = new Tuple<int, int>(0,0);
+
+        public string MaxEnergyInterval
+        {
+            get { return _maxEnergyInterval.Item1 + " " + _maxEnergyInterval.Item2; }
+            set
+            {
+                var vals = value.Split('-');
+                var start = 0;
+                var stop = 0;
+                if (vals.Length == 2 && int.TryParse(vals[0], out start) && int.TryParse(vals[1], out stop))
+                {
+                    _maxEnergyInterval = new Tuple<int, int>(start, stop);
+                }
+            }
+        }
+
         public float HighPassFilterBorder
         {
             get
@@ -46,6 +68,8 @@ namespace ExperimentalProcessing
             }
             set { _corellation.HighPassFilterBorder = value; }
         }
+
+        public bool SimulatePhoneCnanel { get; set; }
 
         public float LowPassFilterBorder
         {
@@ -260,6 +284,24 @@ namespace ExperimentalProcessing
             var max = _inputFile.Max(x=> Math.Abs(x));
             _inputFile = _inputFile.Select(x => x/max).ToArray();
 
+            if (SimulatePhoneCnanel)
+            {
+//                var bpf = new Bpf(300.0f, 3400.0f, expDataReader.SampleRate);
+//                _inputFile = bpf.Filter(_inputFile);
+                var lpf = new Lpf(3400.0f, expDataReader.SampleRate);
+                _inputFile = lpf.StartFilter(_inputFile);
+                var hpf = new Hpf(300.0f, expDataReader.SampleRate);
+                _inputFile = hpf.Filter(_inputFile);
+            }
+
+            if (UseNoise)
+            {
+                var noise = new NoiseGenerator(_inputFile, _inputFile.Length, NoiseAmplitude, _maxEnergyInterval);
+                SignalNoiseRaito = "ОСШ = " + noise.SNR.ToString("##0.#");
+                OnPropertyChanged("SignalNoiseRaito");
+                _inputFile = noise.ApplyNoise(_inputFile);
+            }
+
             _tonalSpeechSelector.InitData(_inputFile, 0.04f, 0.95f, expDataReader.SampleRate);
 
             var speechMarks = _tonalSpeechSelector.GetTonalSpeechMarks();
@@ -267,14 +309,22 @@ namespace ExperimentalProcessing
             SamplePosition = 0;
             _pitch = trainDataAcf;
             var distortion = CalcDistortion(trainDataAcf, expDataReader.PitchTrajectory);
-            var results =
-                string.Format(
-                    "Несущественных ошибок: {0:##.###}%\r\nМалых ошибок: \t{1:##.###}%\r\nБольших ошибок: \t{2:##.###}%\r\nСреднее: \t{3:##.###}%\r\nКоличество 100% ошибок: \t{4:##.###}%\r\n",
-                    distortion.Where(x => x > 0.0 && x <= 0.05).Count()*100.0/distortion.Count(),
-                    distortion.Where(x => x > 0.05 && x <= 0.15).Count()*100.0/distortion.Count(),
-                    distortion.Where(x => x > 0.15).Count()*100.0/distortion.Count(),
-                    distortion.Where(x => x > 0.0).Average()*100.0,
-                    distortion.Where(x => x >= 1.0).Count()*100.0/distortion.Count());
+            var results = string.Empty;
+            if (distortion.Length > 0)
+            {
+                results = string.Format(
+                    "{5}\r\n\r\nНесущественных ошибок: {0:#0.###}%\r\nМалых ошибок: {1:#0.###}%\r\nБольших ошибок: {2:#0.###}%\r\nСреднее: {3:#0.###}\r\nКоличество ошибка выделителя тональных участков: {4:#0.###}%\r\n",
+                    distortion.Where(x => x > 0.0 && x <= 0.05).Count()*100.0/
+                    distortion.Where(x => (x >= 0.0 && x < 1.0) || x >= 2.0).Count(), //unimpotant errors
+                    distortion.Where(x => x > 0.05 && x <= 0.15).Count()*100.0/
+                    distortion.Where(x => (x >= 0.0 && x < 1.0) || x >= 2.0).Count(), //small errors
+                    distortion.Where(x => x > 0.15 && x < 1.0).Count()*100.0/
+                    distortion.Where(x => (x >= 0.0 && x < 1.0) || x >= 2.0).Count(), //big errors
+                    distortion/*.Where(x => x < 1.0)*/.Average(), //total average
+                    distortion.Where(x => x >= 1.0 && x < 2.0).Count()*100.0/distortion.Where(x => x > 0.0).Count(),
+                    //voiced speech selecting error
+                    args[0]); //filename
+            }
             Dispatcher.InvokeAsync(() =>
             {
                 var resultsWindow = new ResultsWindow
@@ -301,14 +351,41 @@ namespace ExperimentalProcessing
                 var etalon2 = etalon[i * _jump + _jump * 3 / 4];
                 if (i >= pitch.Length)
                 {
-                    distortion.Add(etalon1 > 0.0 ? 1.0 : 0.0);
-                    distortion.Add(etalon2 > 0.0 ? 1.0 : 0.0);
+                    distortion.Add(etalon1 > 0.0 ? 1.0 : 2.0);
+                    distortion.Add(etalon2 > 0.0 ? 1.0 : 2.0);
                     continue;
                 }
-                distortion.Add(etalon1 > 0.0?(
-                    Math.Abs((pitch[i][0] > 0.0 ? _sampleFreq/pitch[i][0] : 0.0) - etalon1)/etalon1): 0.0);
-                distortion.Add(etalon2 > 0.0?(
-                    Math.Abs((pitch[i][0] > 0.0 ? _sampleFreq/pitch[i][0] : 0.0) - etalon2)/etalon2): 0.0);
+
+                var bothAreTonal1 = etalon1 > 0.0 && pitch[i][0] > 0.0;
+                var bothAreTonal2 = etalon2 > 0.0 && pitch[i][0] > 0.0;
+                var lessOneIsTonal1 = etalon1 > 0.0 || pitch[i][0] > 0.0;
+                var lessOneIsTonal2 = etalon2 > 0.0 || pitch[i][0] > 0.0;
+
+                if (bothAreTonal1)
+                {
+                    distortion.Add(Math.Abs((pitch[i][0] > 0.0 ? _sampleFreq/pitch[i][0] : 0.0) - etalon1)/etalon1);
+                }
+                else if (lessOneIsTonal1 && !bothAreTonal1)
+                {
+                    distortion.Add(1.0);
+                }
+                else
+                {
+                    distortion.Add(2.0);
+                }
+
+                if (bothAreTonal2)
+                {
+                    distortion.Add(Math.Abs((pitch[i][0] > 0.0 ? _sampleFreq / pitch[i][0] : 0.0) - etalon2) / etalon2);
+                }
+                else if (lessOneIsTonal2 && !bothAreTonal2)
+                {
+                    distortion.Add(1.0);
+                }
+                else
+                {
+                    distortion.Add(2.0);
+                }
             }
             return distortion.ToArray();
         }
@@ -347,46 +424,52 @@ namespace ExperimentalProcessing
 
         private void PlotAcfsPreview()
         {
-            var heatMap = new HeatMapSeries
+            if (_acfs.Length > 0)
             {
-                Data = new double[_acfs.Length, _acfs[0].Length],
-                X0 = 0,
-                X1 = _acfs.Length*_jump,
-                Y0 = 0,
-                Y1 = _acfs[0].Length*(_sampleFreq/ Math.Pow(2, Math.Ceiling(Math.Log(_windowSize, 2) + 1))),
-                Interpolate = false
-            };
-            for (int i = 0; i < _acfs.Length; i++)
-                for (int j = 0; j < _acfs[i].Length; j++)
+                var heatMap = new HeatMapSeries
                 {
-                    heatMap.Data[i, j] = _acfs[i][j];
-                }
-            AcfsPreview.Series.Clear();
-            AcfsPreview.Series.Add(heatMap);
-            AcfsPreview.InvalidatePlot(true);
-            OnPropertyChanged("AcfsPreview");
+                    Data = new double[_acfs.Length, _acfs[0].Length],
+                    X0 = 0,
+                    X1 = _acfs.Length*_jump,
+                    Y0 = 0,
+                    Y1 = _acfs[0].Length*(_sampleFreq/Math.Pow(2, Math.Ceiling(Math.Log(_windowSize, 2) + 1))),
+                    Interpolate = false
+                };
+                for (int i = 0; i < _acfs.Length; i++)
+                    for (int j = 0; j < _acfs[i].Length; j++)
+                    {
+                        heatMap.Data[i, j] = _acfs[i][j];
+                    }
+                AcfsPreview.Series.Clear();
+                AcfsPreview.Series.Add(heatMap);
+                AcfsPreview.InvalidatePlot(true);
+                OnPropertyChanged("AcfsPreview");
+            }
         }
 
         private void PlotAcfPreview()
         {
-            var heatMap = new HeatMapSeries
+            if (_acf.Length > 0)
             {
-                Data = new double[_acf.Length, _acf[0].Length],
-                X0 = 0,
-                X1 = _acf.Length*_jump,
-                Y0 = 0,
-                Y1 = _acf[0].Length/_sampleFreq,
-                Interpolate = false
-            };
-            for (int i = 0; i < _acf.Length; i++)
-                for (int j = 0; j < _acf[i].Length; j++)
+                var heatMap = new HeatMapSeries
                 {
-                    heatMap.Data[i, j] = _acf[i][j];
-                }
-            AcfPreview.Series.Clear();
-            AcfPreview.Series.Add(heatMap);
-            AcfPreview.InvalidatePlot(true);
-            OnPropertyChanged("AcfPreview");
+                    Data = new double[_acf.Length, _acf[0].Length],
+                    X0 = 0,
+                    X1 = _acf.Length*_jump,
+                    Y0 = 0,
+                    Y1 = _acf[0].Length/_sampleFreq,
+                    Interpolate = false
+                };
+                for (int i = 0; i < _acf.Length; i++)
+                    for (int j = 0; j < _acf[i].Length; j++)
+                    {
+                        heatMap.Data[i, j] = _acf[i][j];
+                    }
+                AcfPreview.Series.Clear();
+                AcfPreview.Series.Add(heatMap);
+                AcfPreview.InvalidatePlot(true);
+                OnPropertyChanged("AcfPreview");
+            }
         }
 
         private double[][] GetAcfImage(float[] speechFile, WaveFormat speechFileFormat, Tuple<int, int>[] speechMarks,

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using HelpersLibrary.DspAlgorithms.Filters;
+
 namespace HelpersLibrary.DspAlgorithms
 {
     // ReSharper disable once InconsistentNaming
@@ -86,14 +88,13 @@ namespace HelpersLibrary.DspAlgorithms
             }
         }
  
-        public static void AutoCorrelation(int size, float[] data, out double[] result, out double rOne)
+        public static void AutoCorrelation(int size, float[] data, out double[] result)
         {
             var complexData = Array.ConvertAll(data, input => new ComplexNumber(input));
             AutoCorrelation(ref complexData);
             result = new double[size];
             Array.Copy(complexData.Select(x => x.RealPart).ToArray(), result, size);
             var k = result[0];
-            rOne = k;
             result = result.Select(x => x/k).ToArray();
         }
 
@@ -112,12 +113,8 @@ namespace HelpersLibrary.DspAlgorithms
             
             var logSpectrum = complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray();
 
-            var max = double.NegativeInfinity;
-            for (int i = 1; i < logSpectrum.Length-1; i++)
-            {
-                if (logSpectrum[i] > logSpectrum[i - 1] && logSpectrum[i] > logSpectrum[i + 1] && logSpectrum[i] > max)
-                    max = logSpectrum[i];
-            }
+            var gaussianBlur = new GaussianBlur();
+            logSpectrum = gaussianBlur.GetBlur(logSpectrum, 5);
 
             var avg = logSpectrum.Average();
             complexData = logSpectrum.Select(x => new ComplexNumber(x-avg)).ToArray();

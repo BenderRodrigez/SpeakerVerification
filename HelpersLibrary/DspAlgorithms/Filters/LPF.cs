@@ -2,7 +2,7 @@
 
 namespace HelpersLibrary.DspAlgorithms.Filters
 {
-    class Lpf
+    public class Lpf
     {
         /// <summary>
         /// Количество звеньев 2-го порядка

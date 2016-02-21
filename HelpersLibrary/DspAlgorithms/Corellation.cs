@@ -104,7 +104,6 @@ namespace HelpersLibrary.DspAlgorithms
             var furieSize = Math.Pow(2, Math.Ceiling(Math.Log(size, 2) + 1));
             var resultImg = new List<double[]>(inputSignal.Length);
             var prevStop = 0;
-            var rOneList = new List<double>();
             var globalCandidates = new List<List<Tuple<int, double>>>();
             foreach (var curentMark in speechMarks)
             {
@@ -135,9 +134,7 @@ namespace HelpersLibrary.DspAlgorithms
                     filterdData = filterdData.Select(x => Math.Abs(x) > maxSignal ? x : 0.0f).ToArray();//provide central cut
 
                     double[] acf;
-                    double rOne;
-                    FFT.AutoCorrelation(size, filterdData, out acf, out rOne);
-                    rOneList.Add(rOne);
+                    FFT.AutoCorrelation(size, filterdData, out acf);
 
                     double[] acfsSample;
                     FFT.SpectrumAutoCorrelation(size, data, out acfsSample);
@@ -152,7 +149,9 @@ namespace HelpersLibrary.DspAlgorithms
                         }
                     }
 
-                    for (int i = 17; i < acf.Length && i < 184; i++)
+                    var lower = (int)Math.Round(sampleFrequency/60.0);//60 Hz in ACF values array border
+                    var higher = (int) Math.Round(sampleFrequency/600.0);//600 Hz in ACF values array border
+                    for (int i = higher; i < acf.Length && i < lower; i++)
                     {
                         if (acf[i - 1] > acf[i - 2] && acf[i - 1] > acf[i])
                         {
@@ -163,8 +162,7 @@ namespace HelpersLibrary.DspAlgorithms
                     var aproximatedPosition = acfsCandidates.Any() ? acfsCandidates[0].Item1 : -1;
                     var freqPosition = (sampleFrequency / furieSize) * aproximatedPosition;//aproximated frequency value
 
-                    if (acfsCandidates.Count > 4 && aproximatedPosition > -1 && freqPosition > 60 && freqPosition < 600 &&
-                        candidates.Count > 4/* && (rOne > FrequencyEnergyLineBorder)*/)
+                    if (aproximatedPosition > -1 && freqPosition > 60 && freqPosition < 600)
                     {
                         var acfPosition = sampleFrequency/freqPosition; //aproximated time value
 
@@ -193,12 +191,15 @@ namespace HelpersLibrary.DspAlgorithms
             Acfs = acfsImg.ToArray();
 #endif
             image = resultImg.ToArray();
-
-            SaveTmpImage(rOneList.Select(x=> new[]{x}).ToArray());
         }
 
         private void ExtractPitch(IReadOnlyList<double[]> img, IReadOnlyList<List<Tuple<int, double>>> globalCandidates, int sampleRate, double furieSize, int jumpSize)
         {
+            if (img.Count == 0)
+            {
+                return;
+            }
+
             var searchWindow = Math.Ceiling(sampleRate*1.2/furieSize);
             for (int i = 0; i < img.Count; i++)//find value by approximation
             {

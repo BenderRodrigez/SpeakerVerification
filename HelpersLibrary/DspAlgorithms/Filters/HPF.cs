@@ -59,9 +59,9 @@ namespace HelpersLibrary.DspAlgorithms.Filters
                 var y2 = 0.0f;
                 var y3 = 0.0f;
                 FilterElementPass(0, ref x, ref y);
-                FilterElementPass(0, ref y, ref y1);
-                FilterElementPass(0, ref y1, ref y2);
-                FilterElementPass(0, ref y2, ref y3);
+                FilterElementPass(1, ref y, ref y1);
+                FilterElementPass(2, ref y1, ref y2);
+                FilterElementPass(3, ref y2, ref y3);
                 resSignal[i] = y3;
             }
             return resSignal;
