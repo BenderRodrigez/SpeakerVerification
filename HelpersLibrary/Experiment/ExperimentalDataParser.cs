@@ -12,11 +12,14 @@ namespace HelpersLibrary.Experiment
         public float[] SignalData { get; private set; }
         public double[] PitchTrajectory { get; private set; }
         public int SampleRate { get; private set; }
-
-        private short[] _rawSignalData;
+        public string DictorName { get; private set; }
+        public string Phrase { get; private set; }
 
         public ExperimentalDataParser(string binaryDataFileName, string markersDataFileName)
         {
+            var fileInfo = new FileInfo(binaryDataFileName);
+            DictorName = fileInfo.Name.Substring(0, 3);
+            Phrase = fileInfo.Name.Substring(3, 2);
             var samples = new List<short>();
             using (var binReader = new BinaryReader(new FileStream(binaryDataFileName, FileMode.Open)))
             {
@@ -26,8 +29,6 @@ namespace HelpersLibrary.Experiment
                     samples.Add(binReader.ReadInt16());
                 }
             }
-
-            _rawSignalData = samples.ToArray();
             SignalData = samples.Select(x => (float) x/short.MaxValue).ToArray();
 
             var markers = new List<Tuple<int,int,short>>();//1st = number, 2nd = position, 3rd = value
@@ -40,9 +41,9 @@ namespace HelpersLibrary.Experiment
                     {
                         var currentString = line
                             .Split(new[] {' ', '\t'}, StringSplitOptions.RemoveEmptyEntries);
-
-                        markers.Add(new Tuple<int, int, short>(int.Parse(currentString[0]), int.Parse(currentString[1]),
-                            short.Parse(currentString[2])));
+                        if(currentString.Length == 3)
+                            markers.Add(new Tuple<int, int, short>(int.Parse(currentString[0]), int.Parse(currentString[1]),
+                                short.Parse(currentString[2])));
                     }
                 }
             }

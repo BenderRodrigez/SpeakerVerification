@@ -40,14 +40,20 @@ namespace ExperimentalProcessing
         public string FileName { get; private set; }
 
         public bool UseNoise { get; set; }
-        public double NoiseAmplitude { get; set; }
+
+        public double NoiseAmplitude
+        {
+            get { return _noiseAmplitude; }
+            set { _noiseAmplitude = value; }
+        }
+
         public string SignalNoiseRaito { get; private set; }
 
         private Tuple<int, int> _maxEnergyInterval = new Tuple<int, int>(0,0);
 
         public string MaxEnergyInterval
         {
-            get { return _maxEnergyInterval.Item1 + " " + _maxEnergyInterval.Item2; }
+            get { return _maxEnergyInterval.Item1 + "-" + _maxEnergyInterval.Item2; }
             set
             {
                 var vals = value.Split('-');
@@ -162,6 +168,8 @@ namespace ExperimentalProcessing
         int _windowSize = 441;
         private float[] _inputFile;
         private readonly TonalSpeechSelector _tonalSpeechSelector;
+        private double _noiseAmplitude = 0.02;
+        private Result _results;
 
         public MainWindow()
         {
@@ -250,7 +258,7 @@ namespace ExperimentalProcessing
             {
                 var fileName = ((OpenFileDialog)sender).FileName;
                 var fileInfo = new FileInfo(fileName);
-                FileName = fileInfo.Name.Replace(fileInfo.Extension, string.Empty);
+                FileName = fileName;
                 var args = new string[2];
                 if (fileInfo.Extension.ToLower() == ".lst")
                 {
@@ -270,12 +278,17 @@ namespace ExperimentalProcessing
             openFileDlg.ShowDialog(this);
         }
 
+        public void GenerateReport()
+        {
+            Result.MakeReport();
+        }
+
         private void OpenEtalonFile(object fileName)
         {
             WindowCursor = Cursors.Wait;
             OnPropertyChanged("WindowCursor");
             var args = (string[]) fileName;
-            
+            _results = new Result();
             var expDataReader = new ExperimentalDataParser(args[0],args[1]);
             _inputFile = new float[expDataReader.SignalData.Length];
             Array.Copy(expDataReader.SignalData, _inputFile, expDataReader.SignalData.Length);
@@ -293,14 +306,16 @@ namespace ExperimentalProcessing
                 var hpf = new Hpf(300.0f, expDataReader.SampleRate);
                 _inputFile = hpf.Filter(_inputFile);
             }
-
+            _results.IsPhoneChanel = SimulatePhoneCnanel;
             if (UseNoise)
             {
                 var noise = new NoiseGenerator(_inputFile, _inputFile.Length, NoiseAmplitude, _maxEnergyInterval);
-                SignalNoiseRaito = "ОСШ = " + noise.SNR.ToString("##0.#");
+                SignalNoiseRaito = "ОСШ = " + noise.SNR.ToString("##0.#")+"дБ";
+                _results.SignalToNoiseRaito = noise.SNR;
                 OnPropertyChanged("SignalNoiseRaito");
                 _inputFile = noise.ApplyNoise(_inputFile);
             }
+            _results.IsNoised = UseNoise;
 
             _tonalSpeechSelector.InitData(_inputFile, 0.04f, 0.95f, expDataReader.SampleRate);
 
@@ -312,17 +327,45 @@ namespace ExperimentalProcessing
             var results = string.Empty;
             if (distortion.Length > 0)
             {
+                var unimportantErrors = 100.0;
+                var smallErrors = 100.0;
+                var bigErrors = 100.0;
+                var bothTonalIntervals = 0;
+                var voicedSpeechDetectionErrors = 100.0;
+
+                if (distortion.Any(x => (x >= 0.0 && x < 1.0)))
+                {
+                    bothTonalIntervals = distortion.Where(x => (x >= 0.0 && x < 1.0)).Count();
+
+                    if (distortion.Any(x => x >= 0.0 && x <= 0.05))
+                    {
+                        unimportantErrors = distortion.Where(x => x >= 0.0 && x <= 0.05).Count()*100.0/bothTonalIntervals;
+                    }
+
+                    if (distortion.Any(x => x > 0.05 && x <= 0.15))
+                    {
+                        smallErrors = _results.SmallErrorsRate = distortion.Where(x => x > 0.05 && x <= 0.15).Count()*100.0/
+                                                   bothTonalIntervals;
+                    }
+
+                    if (distortion.Any(x => x > 0.15 && x < 1.0))
+                    {
+                        bigErrors = _results.BigErrorsRate = distortion.Where(x => x > 0.15 && x < 1.0).Count()*100.0/bothTonalIntervals;
+                    }
+
+                    if (distortion.Any(x => x >= 1.0 && x < 2.0))
+                    {
+                        voicedSpeechDetectionErrors = _results.VoicedSpeechDetectorErrorRate = distortion.Where(x => x >= 1.0 && x < 2.0).Count()*100.0/distortion.Length;
+                    }
+                }
+
                 results = string.Format(
                     "{5}\r\n\r\nНесущественных ошибок: {0:#0.###}%\r\nМалых ошибок: {1:#0.###}%\r\nБольших ошибок: {2:#0.###}%\r\nСреднее: {3:#0.###}\r\nКоличество ошибка выделителя тональных участков: {4:#0.###}%\r\n",
-                    distortion.Where(x => x > 0.0 && x <= 0.05).Count()*100.0/
-                    distortion.Where(x => (x >= 0.0 && x < 1.0) || x >= 2.0).Count(), //unimpotant errors
-                    distortion.Where(x => x > 0.05 && x <= 0.15).Count()*100.0/
-                    distortion.Where(x => (x >= 0.0 && x < 1.0) || x >= 2.0).Count(), //small errors
-                    distortion.Where(x => x > 0.15 && x < 1.0).Count()*100.0/
-                    distortion.Where(x => (x >= 0.0 && x < 1.0) || x >= 2.0).Count(), //big errors
-                    distortion/*.Where(x => x < 1.0)*/.Average(), //total average
-                    distortion.Where(x => x >= 1.0 && x < 2.0).Count()*100.0/distortion.Where(x => x > 0.0).Count(),
-                    //voiced speech selecting error
+                    unimportantErrors, //unimpotant errors
+                    smallErrors, //small errors
+                    bigErrors, //big errors
+                    double.NaN, //total average
+                    voicedSpeechDetectionErrors,//voiced speech selecting error
                     args[0]); //filename
             }
             Dispatcher.InvokeAsync(() =>
@@ -334,12 +377,28 @@ namespace ExperimentalProcessing
                 };
                 resultsWindow.Show();
             });
+            _results.FileName = FileName;
+            _results.IsNoised = UseNoise;
+            _results.IsPhoneChanel = SimulatePhoneCnanel;
+            _results.PitchData = _pitch.Select(x => x[0] > 0 ? _sampleFreq / x[0] : 0.0).ToArray();
+            _results.DistortionData = distortion;
+            _results.EthalonPitchData = expDataReader.PitchTrajectory;
+            _results.SampleRate = (int)_sampleFreq;
+            _results.DictorName = expDataReader.DictorName;
+            _results.Phrase = expDataReader.Phrase;
+            _results.SignalData = _inputFile;
 
             PlotPitch(trainDataAcf, expDataReader.PitchTrajectory, distortion);
             PlotAcfPreview();
             PlotAcfsPreview();
             WindowCursor = Cursors.Arrow;
             OnPropertyChanged("WindowCursor");
+        }
+
+        public void SaveResults()
+        {
+            if(_results != null)
+                _results.SaveToDb();
         }
 
         private double[] CalcDistortion(double[][] pitch, double[] etalon)
@@ -664,7 +723,19 @@ namespace ExperimentalProcessing
 
         internal void RenewCalculations()
         {
-            var task = new Task(OpenFile, FileName);
+            var args = new string[2];
+            var fileInfo = new FileInfo(FileName);
+            if (fileInfo.Extension.ToLower() == ".lst")
+            {
+                args[0] = FileName.ToLower().Replace(".lst", ".dat");
+                args[1] = FileName;
+            }
+            else
+            {
+                args[0] = FileName;
+                args[1] = FileName.ToLower().Replace(".dat", ".lst");
+            }
+            var task = (FileName.IndexOf(".wav", StringComparison.InvariantCultureIgnoreCase) > -1)?new Task(OpenFile, FileName): new Task(OpenEtalonFile, args);
             task.Start();
             OnPropertyChanged("FileName");
         }

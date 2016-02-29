@@ -3,7 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="ResultsWindow" Height="241.353" Width="442.105" x:Name="ResultWindow">
     <Grid>
-        <TextBox TextWrapping="Wrap" Text="{Binding Results, ElementName=ResultWindow}"/>
+        <TextBox TextWrapping="Wrap" Text="{Binding Results, ElementName=ResultWindow}" Margin="0,35,0,0"/>
+        <Button Content="Сохранить" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Click="SaveButton_OnClick"/>
+        <Button Content="Сгенерировать отчёт" HorizontalAlignment="Left" Margin="90,10,0,0" VerticalAlignment="Top" Width="131" Click="GenerateReport_OnClick"/>
 
     </Grid>
 </Window>

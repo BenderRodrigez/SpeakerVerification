@@ -152,5 +152,10 @@ namespace ExperimentalProcessing
         {
             if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        private void GenerateReport_OnClick(object sender, RoutedEventArgs e)
+        {
+            OwnerWindow.GenerateReport();
+        }
     }
 }

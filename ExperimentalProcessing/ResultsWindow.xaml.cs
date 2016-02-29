@@ -34,5 +34,17 @@ namespace ExperimentalProcessing
         {
             if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        private void SaveButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            var mainWindow = Owner as MainWindow;
+            if (mainWindow != null) mainWindow.SaveResults();
+        }
+
+        private void GenerateReport_OnClick(object sender, RoutedEventArgs e)
+        {
+            var mainWindow = Owner as MainWindow;
+            if (mainWindow != null) mainWindow.GenerateReport();
+        }
     }
 }

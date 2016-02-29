@@ -13,32 +13,33 @@
         </Grid.ColumnDefinitions>
         <Button Content="Сброс масштаба" Grid.Row="0" Margin="10,38,10,0" VerticalAlignment="Top" Click="RestButton_OnClick" Height="20"/>
         <CheckBox Content="Отобр. график ОТ в Гц" Grid.Row="0" Grid.Column="1" Margin="10,10,10,0" VerticalAlignment="Top" IsChecked="{Binding Path=UseHz, ElementName=SettingsWind}" Height="15"/>
-        <TextBox x:Name="CentralLimitTextBox" HorizontalAlignment="Left" Height="23" Margin="10,61,0,0" TextWrapping="Wrap" Text="{Binding Path=CentralLimit,ElementName=SettingsWind}" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
-        <TextBox Grid.Column="0" x:Name="MaxFreqJumpsTextBox" HorizontalAlignment="Left" Height="23" Margin="10,194,0,0" TextWrapping="Wrap" Text="{Binding Path=MaxFreqJumps,ElementName=SettingsWind}" VerticalAlignment="Top" Width="152"/>
-        <TextBox Grid.Column="0" x:Name="FilterRadiusTextBox" HorizontalAlignment="Left" Height="23" Margin="10,248,0,0" TextWrapping="Wrap" Text="{Binding Path=FilterDiameter,ElementName=SettingsWind}" VerticalAlignment="Top" Width="152"/>
-        <TextBox x:Name="LowPassFilterBorderTextBox" HorizontalAlignment="Left" Height="23" Margin="10,169,0,0" TextWrapping="Wrap" Text="{Binding Path=LowPassFilterBorder,ElementName=SettingsWind}" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
-        <TextBox x:Name="HighPassFilterBorderTextBox" HorizontalAlignment="Left" Height="23" Margin="10,223,0,0" TextWrapping="Wrap" Text="{Binding Path=HighPassFilterBorder,ElementName=SettingsWind}" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
-        <Label Content="Порог Центр. Огр.:" HorizontalAlignment="Left" Margin="10,35,0,0" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
-        <Label Grid.Column="0" Content="Макс. Δf (в %):" HorizontalAlignment="Left" Margin="10,169,0,0" VerticalAlignment="Top" Width="152"/>
-        <Label Grid.Column="0" Content="D медианого фильтра:" HorizontalAlignment="Left" Margin="10,222,0,0" VerticalAlignment="Top" Width="152"/>
-        <Label Content="Частота среза ФНЧ:" HorizontalAlignment="Left" Margin="10,143,0,0" VerticalAlignment="Top" Width="152" Height="25" Grid.Column="1"/>
-        <Label Content="Частота среза ФВЧ:" HorizontalAlignment="Left" Margin="10,197,0,0" VerticalAlignment="Top" Width="152" Height="25" Grid.Column="1"/>
+        <TextBox x:Name="CentralLimitTextBox" HorizontalAlignment="Left" Height="23" Margin="10,56,0,0" TextWrapping="Wrap" Text="{Binding Path=CentralLimit,ElementName=SettingsWind}" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
+        <TextBox Grid.Column="0" x:Name="MaxFreqJumpsTextBox" HorizontalAlignment="Left" Height="23" Margin="10,210,0,0" TextWrapping="Wrap" Text="{Binding Path=MaxFreqJumps,ElementName=SettingsWind}" VerticalAlignment="Top" Width="152"/>
+        <TextBox Grid.Column="0" x:Name="FilterRadiusTextBox" HorizontalAlignment="Left" Height="23" Margin="10,259,0,0" TextWrapping="Wrap" Text="{Binding Path=FilterDiameter,ElementName=SettingsWind}" VerticalAlignment="Top" Width="152"/>
+        <TextBox x:Name="LowPassFilterBorderTextBox" HorizontalAlignment="Left" Height="23" Margin="10,153,0,0" TextWrapping="Wrap" Text="{Binding Path=LowPassFilterBorder,ElementName=SettingsWind}" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
+        <TextBox x:Name="HighPassFilterBorderTextBox" HorizontalAlignment="Left" Height="23" Margin="10,201,0,0" TextWrapping="Wrap" Text="{Binding Path=HighPassFilterBorder,ElementName=SettingsWind}" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
+        <Label Content="Порог Центр. Огр.:" HorizontalAlignment="Left" Margin="10,30,0,0" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
+        <Label Grid.Column="0" Content="Макс. Δf (в %):" HorizontalAlignment="Left" Margin="10,184,0,0" VerticalAlignment="Top" Width="152"/>
+        <Label Grid.Column="0" Content="D медианого фильтра:" HorizontalAlignment="Left" Margin="10,233,0,0" VerticalAlignment="Top" Width="152"/>
+        <Label Content="Частота среза ФНЧ:" HorizontalAlignment="Left" Margin="10,128,0,0" VerticalAlignment="Top" Width="152" Height="25" Grid.Column="1"/>
+        <Label Content="Частота среза ФВЧ:" HorizontalAlignment="Left" Margin="10,176,0,0" VerticalAlignment="Top" Width="152" Height="25" Grid.Column="1"/>
         <Button Grid.Column="0" x:Name="RenewCalculationsButton" Content="Перерасчёт" Margin="10,64,10,0" VerticalAlignment="Top" Click="RenewCalculationsButton_OnClick"/>
-        <TextBox HorizontalAlignment="Left" Height="23" Margin="10,115,0,0" TextWrapping="Wrap" Text="{Binding Path=TonalSpeechSelectorBorder, ElementName=SettingsWind}" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
-        <TextBox HorizontalAlignment="Left" Height="23" Margin="10,277,0,0" TextWrapping="Wrap" Text="{Binding Path=AdditveNoiseLevel, ElementName=SettingsWind}" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
-        <TextBox Grid.Column="0" HorizontalAlignment="Left" Height="23" Margin="10,303,0,0" TextWrapping="Wrap" Text="{Binding Path=MinimalVoicedSpeechLength, ElementName=SettingsWind }" VerticalAlignment="Top" Width="152"/>
-        <Label Content="Порог ТОН / НЕ ТОН:" HorizontalAlignment="Left" Margin="10,89,0,0" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
-        <Label Grid.Column="0" Content="Мин. тональный участок:" HorizontalAlignment="Left" Margin="10,276,0,0" VerticalAlignment="Top" Width="152"/>
-        <Label Content="Аддитивный шум:" HorizontalAlignment="Left" Margin="10,251,0,0" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
+        <TextBox HorizontalAlignment="Left" Height="23" Margin="10,105,0,0" TextWrapping="Wrap" Text="{Binding Path=TonalSpeechSelectorBorder, ElementName=SettingsWind}" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
+        <TextBox HorizontalAlignment="Left" Height="23" Margin="10,250,0,0" TextWrapping="Wrap" Text="{Binding Path=AdditveNoiseLevel, ElementName=SettingsWind}" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
+        <TextBox Grid.Column="0" HorizontalAlignment="Left" Height="23" Margin="10,308,0,0" TextWrapping="Wrap" Text="{Binding Path=MinimalVoicedSpeechLength, ElementName=SettingsWind }" VerticalAlignment="Top" Width="152"/>
+        <Label Content="Порог ТОН / НЕ ТОН:" HorizontalAlignment="Left" Margin="10,79,0,0" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
+        <Label Grid.Column="0" Content="Мин. тональный участок:" HorizontalAlignment="Left" Margin="10,282,0,0" VerticalAlignment="Top" Width="152"/>
+        <Label Content="Аддитивный шум ВТУ:" HorizontalAlignment="Left" Margin="10,224,0,0" VerticalAlignment="Top" Width="152" Grid.Column="1"/>
         <Button Content="Открыть файл" Margin="10,10,10,0" VerticalAlignment="Top" Click="OpenFileButton_OnClick" Grid.Row="0"
                 Height="20"/>
         <Button Grid.Column="0" Content="Тест алгоритма" Margin="10,89,10,0" VerticalAlignment="Top" Click="AlgorithmTestButton_OnClick"/>
-        <CheckBox Grid.Column="0" Content="Симуляция тел. канала" Margin="10,123,10,0" VerticalAlignment="Top" IsChecked="{Binding SimulatePhoneChanel, ElementName=SettingsWind}"/>
+        <CheckBox Grid.Column="0" Content="Симуляция тел. канала" Margin="10,144,10,0" VerticalAlignment="Top" IsChecked="{Binding SimulatePhoneChanel, ElementName=SettingsWind}"/>
         <Label Grid.Column="0" Content="Интервал макс. энергии:" Margin="10,331,10,0" VerticalAlignment="Top"/>
         <TextBox Grid.Column="0" Height="23" Margin="10,357,10,0" TextWrapping="Wrap" Text="{Binding MaxEnergyInterval, ElementName=SettingsWind}" VerticalAlignment="Top"/>
-        <CheckBox Grid.Column="0" Content="Добавить шум" Margin="10,143,10,0" VerticalAlignment="Top" Height="15" IsChecked="{Binding UseNoise, ElementName=SettingsWind}"/>
-        <Label Content="Амплитуда шума:" Grid.Column="1" HorizontalAlignment="Left" Margin="10,305,0,0" VerticalAlignment="Top" Width="152"/>
-        <TextBox Grid.Column="1" Height="23" Margin="10,331,10,0" TextWrapping="Wrap" Text="{Binding NoiseAmplitude, ElementName=SettingsWind}" VerticalAlignment="Top"/>
-        <Label Content="{Binding SignalNoiseRaito, ElementName=SettingsWind}" Grid.Column="1" HorizontalAlignment="Left" Margin="10,359,0,0" VerticalAlignment="Top" Width="152" Height="25"/>
+        <CheckBox Grid.Column="0" Content="Добавить шум" Margin="10,164,10,0" VerticalAlignment="Top" Height="15" IsChecked="{Binding UseNoise, ElementName=SettingsWind}"/>
+        <Label Content="Амп. шума в экс-те:" Grid.Column="1" HorizontalAlignment="Left" Margin="10,273,0,0" VerticalAlignment="Top" Width="152"/>
+        <TextBox Grid.Column="1" Height="23" Margin="10,299,10,0" TextWrapping="Wrap" Text="{Binding NoiseAmplitude, ElementName=SettingsWind}" VerticalAlignment="Top"/>
+        <Label Content="{Binding SignalNoiseRaito, ElementName=SettingsWind, TargetNullValue='ОСШ = --.-дБ'}" Grid.Column="1" HorizontalAlignment="Left" Margin="10,331,0,0" VerticalAlignment="Top" Width="152" Height="26"/>
+        <Button Content="Создать отчёт" Margin="10,114,10,0" VerticalAlignment="Top" Click="GenerateReport_OnClick"/>
     </Grid>
 </Window>
