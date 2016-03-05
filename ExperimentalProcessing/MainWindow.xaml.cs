@@ -344,20 +344,24 @@ namespace ExperimentalProcessing
 
                     if (distortion.Any(x => x > 0.05 && x <= 0.15))
                     {
-                        smallErrors = _results.SmallErrorsRate = distortion.Where(x => x > 0.05 && x <= 0.15).Count()*100.0/
+                        smallErrors = distortion.Where(x => x > 0.05 && x <= 0.15).Count()*100.0/
                                                    bothTonalIntervals;
                     }
 
                     if (distortion.Any(x => x > 0.15 && x < 1.0))
                     {
-                        bigErrors = _results.BigErrorsRate = distortion.Where(x => x > 0.15 && x < 1.0).Count()*100.0/bothTonalIntervals;
+                        bigErrors = distortion.Where(x => x > 0.15 && x < 1.0).Count()*100.0/bothTonalIntervals;
                     }
 
                     if (distortion.Any(x => x >= 1.0 && x < 2.0))
                     {
-                        voicedSpeechDetectionErrors = _results.VoicedSpeechDetectorErrorRate = distortion.Where(x => x >= 1.0 && x < 2.0).Count()*100.0/distortion.Length;
+                        voicedSpeechDetectionErrors = distortion.Where(x => x >= 1.0 && x < 2.0).Count()*100.0/distortion.Length;
                     }
                 }
+
+                _results.VoicedSpeechDetectorErrorRate = voicedSpeechDetectionErrors;
+                _results.SmallErrorsRate = smallErrors;
+                _results.BigErrorsRate = bigErrors;
 
                 results = string.Format(
                     "{5}\r\n\r\nНесущественных ошибок: {0:#0.###}%\r\nМалых ошибок: {1:#0.###}%\r\nБольших ошибок: {2:#0.###}%\r\nСреднее: {3:#0.###}\r\nКоличество ошибка выделителя тональных участков: {4:#0.###}%\r\n",
