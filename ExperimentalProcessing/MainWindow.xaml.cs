@@ -449,7 +449,7 @@ namespace ExperimentalProcessing
             WindowCursor = Cursors.Wait;
             OnPropertyChanged("WindowCursor");
             int signalFormat;
-            var signal = FileReader.ReadFile(fileName.ToString(), out signalFormat);
+            var signal = FileReader.ReadFileNormalized(fileName.ToString(), out signalFormat);
             _inputFile = new float[signal.Length];
             Array.Copy(signal, _inputFile, signal.Length);
             _sampleFreq = signalFormat;
