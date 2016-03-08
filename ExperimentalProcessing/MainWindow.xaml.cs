@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using ExperimentalProcessing.Annotations;
+using HelpersLibrary;
 using HelpersLibrary.DspAlgorithms;
 using HelpersLibrary.DspAlgorithms.Filters;
 using HelpersLibrary.Experiment;
 using Microsoft.Win32;
-using NAudio.Wave;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
@@ -220,21 +220,6 @@ namespace ExperimentalProcessing
             }
         }
 
-        private static float[] ReadSpeechFile(string filePath, out WaveFormat speechFileFormat)
-        {
-            float[] speechFile;
-            using (var reader = new WaveFileReader(filePath))
-            {
-                var sampleProvider = reader.ToSampleProvider();
-                speechFile = new float[reader.SampleCount];
-                sampleProvider.Read(speechFile, 0, (int)reader.SampleCount);
-                speechFileFormat = reader.WaveFormat;
-            }
-            var max = speechFile.Max(x => Math.Abs(x));
-            speechFile = speechFile.Select(x => x/max).ToArray();
-            return speechFile;
-        }
-
         public event PropertyChangedEventHandler PropertyChanged;
 
         [NotifyPropertyChangedInvocator]
@@ -299,8 +284,6 @@ namespace ExperimentalProcessing
 
             if (SimulatePhoneCnanel)
             {
-//                var bpf = new Bpf(300.0f, 3400.0f, expDataReader.SampleRate);
-//                _inputFile = bpf.Filter(_inputFile);
                 var lpf = new Lpf(3400.0f, expDataReader.SampleRate);
                 _inputFile = lpf.StartFilter(_inputFile);
                 var hpf = new Hpf(300.0f, expDataReader.SampleRate);
@@ -401,8 +384,7 @@ namespace ExperimentalProcessing
 
         public void SaveResults()
         {
-            if(_results != null)
-                _results.SaveToDb();
+            if (_results != null) _results.SaveToDb();
         }
 
         private double[] CalcDistortion(double[][] pitch, double[] etalon)
@@ -428,7 +410,7 @@ namespace ExperimentalProcessing
                 {
                     distortion.Add(Math.Abs((pitch[i][0] > 0.0 ? _sampleFreq/pitch[i][0] : 0.0) - etalon1)/etalon1);
                 }
-                else if (lessOneIsTonal1 && !bothAreTonal1)
+                else if (lessOneIsTonal1)
                 {
                     distortion.Add(1.0);
                 }
@@ -441,7 +423,7 @@ namespace ExperimentalProcessing
                 {
                     distortion.Add(Math.Abs((pitch[i][0] > 0.0 ? _sampleFreq / pitch[i][0] : 0.0) - etalon2) / etalon2);
                 }
-                else if (lessOneIsTonal2 && !bothAreTonal2)
+                else if (lessOneIsTonal2)
                 {
                     distortion.Add(1.0);
                 }
@@ -466,13 +448,13 @@ namespace ExperimentalProcessing
         {
             WindowCursor = Cursors.Wait;
             OnPropertyChanged("WindowCursor");
-            WaveFormat signalFormat;
-            var signal = ReadSpeechFile(fileName.ToString(), out signalFormat);
+            int signalFormat;
+            var signal = FileReader.ReadFile(fileName.ToString(), out signalFormat);
             _inputFile = new float[signal.Length];
             Array.Copy(signal, _inputFile, signal.Length);
-            _sampleFreq = signalFormat.SampleRate;
+            _sampleFreq = signalFormat;
 
-            _tonalSpeechSelector.InitData(signal, 0.04f, 0.95f, signalFormat.SampleRate);
+            _tonalSpeechSelector.InitData(signal, 0.04f, 0.95f, signalFormat);
 
             var speechMarks = _tonalSpeechSelector.GetTonalSpeechMarks();
             var trainDataAcf = GetAcfImage(signal, signalFormat, speechMarks, out _acf, out _acfs);
@@ -533,22 +515,6 @@ namespace ExperimentalProcessing
                 AcfPreview.InvalidatePlot(true);
                 OnPropertyChanged("AcfPreview");
             }
-        }
-
-        private double[][] GetAcfImage(float[] speechFile, WaveFormat speechFileFormat, Tuple<int, int>[] speechMarks,
-            out double[][] acf, out double[][] acfs)
-        {
-            double[][] trainDataAcf;
-            var windowSize = (int)Math.Round(speechFileFormat.SampleRate*0.04);
-            _corellation.PitchImage(ref speechFile, windowSize, 0.05f, out trainDataAcf,
-                WindowFunctions.WindowType.Blackman, speechFileFormat.SampleRate, speechMarks);
-            acf = _corellation.Acf;
-            acfs = _corellation.Acfs;
-            _jump = (int)Math.Round(windowSize * 0.05f);
-            _windowSize = windowSize;
-            MaxSize = " из " + (speechFile.Length - 1);
-            OnPropertyChanged("MaxSize");
-            return trainDataAcf;
         }
 
         private double[][] GetAcfImage(float[] speechFile, int sampleRate, Tuple<int, int>[] speechMarks,
