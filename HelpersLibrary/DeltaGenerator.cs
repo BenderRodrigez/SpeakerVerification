@@ -4,7 +4,7 @@ namespace HelpersLibrary
 {
     public static class DeltaGenerator
     {
-        public static double[][] AddDelta(double[][] data)
+        public static double[][] AddDelta(double[][] data)//todo: it's wrong way. We have other spliting inside data :(
         {
             var delta = new List<double[]>(data.Length*2);
             foreach (var d in data)
