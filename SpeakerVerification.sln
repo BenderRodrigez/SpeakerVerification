@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "NeuronDotNet\Core\C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExperimentalProcessing", "ExperimentalProcessing\ExperimentalProcessing.csproj", "{B39FEB8A-3082-40CC-92A0-E02071D07E83}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpeakerVerificationExperiments", "SpeakerVerificationExperiments\SpeakerVerificationExperiments.csproj", "{AC8255D0-079E-4E9C-91B3-19D2E476DBB9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,6 +44,10 @@ Global
 		{B39FEB8A-3082-40CC-92A0-E02071D07E83}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B39FEB8A-3082-40CC-92A0-E02071D07E83}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B39FEB8A-3082-40CC-92A0-E02071D07E83}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC8255D0-079E-4E9C-91B3-19D2E476DBB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC8255D0-079E-4E9C-91B3-19D2E476DBB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC8255D0-079E-4E9C-91B3-19D2E476DBB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC8255D0-079E-4E9C-91B3-19D2E476DBB9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

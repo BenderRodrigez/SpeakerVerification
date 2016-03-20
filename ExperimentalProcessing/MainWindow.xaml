@@ -16,13 +16,23 @@
             <ColumnDefinition Width="461.5*"/>
         </Grid.ColumnDefinitions>
         <oxy:PlotView Model="{Binding AcfsPlotModel, ElementName=MainWind}" Margin="10,5,3,2" Grid.Row="2" x:Name="AcfsSamplePlotView"/>
-        <oxy:PlotView Model="{Binding AcfPlotModel, ElementName=MainWind}" Margin="3,5,10,2" Grid.Column="2" Grid.Row="2" x:Name="AcfSamplePlotView"/>
-        <oxy:PlotView Model="{Binding PitchPlotModel, ElementName=MainWind}" Margin="10,10,10,2" Grid.ColumnSpan="4" x:Name="PitchPlotView"/>
-        <Button Content="&lt;&lt;" HorizontalAlignment="Left" Margin="10,3,0,0" Width="45" Click="ToStart_OnClick" Grid.Row="1" Height="20" VerticalAlignment="Top"/>
-        <Button Content="&gt;&gt;" Margin="0,4,10,0" VerticalAlignment="Top" Click="ToEnd_OnClick" HorizontalAlignment="Right" Width="45" Grid.Column="3" Grid.Row="1" Height="20"/>
-        <Button Content="&lt;" HorizontalAlignment="Left" Margin="60,3,0,0" VerticalAlignment="Top" Width="45" Click="GoBackward_OnClick" Grid.Row="1" Height="20"/>
-        <Button Content="&gt;" Margin="0,4,60,0" VerticalAlignment="Top" Click="GoForward_OnClick" HorizontalAlignment="Right" Width="45" Grid.Column="3" Grid.Row="1" Height="20"/>
-        <Label Content="Отсчёт: " Margin="0,0,3,0" VerticalAlignment="Top" HorizontalContentAlignment="Right" Grid.Row="1" HorizontalAlignment="Right" Width="57" Height="26"/>
+        <oxy:PlotView Model="{Binding AcfPlotModel, ElementName=MainWind}" Margin="3,5,10,2" Grid.Column="1" Grid.Row="2" x:Name="AcfSamplePlotView"/>
+        <oxy:PlotView Model="{Binding PitchPlotModel, ElementName=MainWind}" Margin="10,10,10,2" Grid.Row="0"
+                      Grid.ColumnSpan="2" Grid.Column="0" x:Name="PitchPlotView">
+            <oxy:PlotView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Click="SavePitchPlotContextMenuButton_OnClick" Header="Сохранить график" />
+                </ContextMenu>
+            </oxy:PlotView.ContextMenu>
+        </oxy:PlotView>
+        <Button Content="&lt;&lt;" HorizontalAlignment="Left" Margin="10,3,0,0" Width="45" Click="ToStart_OnClick" Grid.Row="1"
+                Grid.Column="0" Height="20" VerticalAlignment="Top"/>
+        <Button Content="&gt;&gt;" Margin="0,4,10,0" VerticalAlignment="Top" Click="ToEnd_OnClick" HorizontalAlignment="Right" Width="45" Grid.Column="1" Grid.Row="1" Height="20"/>
+        <Button Content="&lt;" HorizontalAlignment="Left" Margin="60,3,0,0" VerticalAlignment="Top" Width="45" Click="GoBackward_OnClick" Grid.Row="1"
+                Grid.Column="0" Height="20"/>
+        <Button Content="&gt;" Margin="0,4,60,0" VerticalAlignment="Top" Click="GoForward_OnClick" HorizontalAlignment="Right" Width="45" Grid.Column="1" Grid.Row="1" Height="20"/>
+        <Label Content="Отсчёт: " Margin="0,0,3,0" VerticalAlignment="Top" HorizontalContentAlignment="Right" Grid.Row="1"
+               Grid.Column="0" HorizontalAlignment="Right" Width="57" Height="26"/>
         <TextBox x:Name="SampleNumberTextBox" Height="26" Margin="3,0,0,0" TextWrapping="Wrap" Text="{Binding SamplePosition,ElementName=MainWind, Mode=TwoWay}" VerticalAlignment="Top" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" KeyDown="SampleNumberTextBox_OnKeyDown" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Width="88"/>
         <Label Content="{Binding MaxSize,ElementName=MainWind}" Margin="96,0,0,0" VerticalAlignment="Top" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Left" Width="99" Height="26"/>
         <oxy:PlotView Model="{Binding AcfPreview,ElementName=MainWind}" Margin="3,3,10,15" Grid.Column="1" Grid.Row="3" x:Name="AcfPlotView"/>

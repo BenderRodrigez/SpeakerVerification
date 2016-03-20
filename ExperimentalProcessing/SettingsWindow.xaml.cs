@@ -122,7 +122,7 @@ namespace ExperimentalProcessing
 
         private void RestButton_OnClick(object sender, RoutedEventArgs e)
         {
-            OwnerWindow.RestButton();
+            OwnerWindow.ResetButton();
         }
 
         private void SettingsWindow_OnClosing(object sender, CancelEventArgs e)

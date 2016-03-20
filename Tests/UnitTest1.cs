@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using HelpersLibrary;
 using HelpersLibrary.DspAlgorithms;
 using HelpersLibrary.DspAlgorithms.Filters;
 using HelpersLibrary.Experiment;
@@ -30,6 +31,7 @@ namespace Tests
         private string _impulseFileName;
         private string _mrksFileName;
         private string _rawDataFileName;
+        private double[][] _someSignal;
 
         [TestInitialize]
         public void Set()
@@ -89,9 +91,20 @@ namespace Tests
             _praatTrainingSet = "ГРР1_lpc.mat.txt";
             _rawDataFileName = "D:\\YandexDisk\\YandexDisk\\Documents\\Сигналы\\aio\\AIOGU100.DAT";
             _mrksFileName = "D:\\YandexDisk\\YandexDisk\\Documents\\Сигналы\\aio\\AIOGU100.LST";
+
+            _someSignal = new[] {new[] {0.0, 1.0, -1.0, 1.0, -1.0, 0.0, 0.0, -1.0, 1.0}};
         }
 
         private double[][] _vqTrain;
+
+        [TestMethod]
+        public void TestDeltaGenerator()
+        {
+            var signalWithDelta = DeltaGenerator.AddDelta(_someSignal);
+
+            Assert.IsTrue(signalWithDelta.Length == _someSignal.Length*2 &&
+                          signalWithDelta[0].Length == _someSignal[0].Length);
+        }
 
         [TestMethod]
         public void TestDataReading()

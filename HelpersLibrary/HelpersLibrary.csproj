@@ -59,6 +59,7 @@
   <ItemGroup>
     <Compile Include="DataVisualisation\MatrixDataPlot.cs" />
     <Compile Include="DataVisualisation\WaveOscilationsPlot.cs" />
+    <Compile Include="DeltaGenerator.cs" />
     <Compile Include="DspAlgorithms\Cepstrum.cs" />
     <Compile Include="DspAlgorithms\ComplexNumber.cs" />
     <Compile Include="DspAlgorithms\Corellation.cs" />

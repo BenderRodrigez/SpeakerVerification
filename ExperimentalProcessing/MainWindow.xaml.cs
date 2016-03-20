@@ -57,8 +57,8 @@ namespace ExperimentalProcessing
             set
             {
                 var vals = value.Split('-');
-                var start = 0;
-                var stop = 0;
+                int start;
+                int stop;
                 if (vals.Length == 2 && int.TryParse(vals[0], out start) && int.TryParse(vals[1], out stop))
                 {
                     _maxEnergyInterval = new Tuple<int, int>(start, stop);
@@ -313,12 +313,11 @@ namespace ExperimentalProcessing
                 var unimportantErrors = 100.0;
                 var smallErrors = 100.0;
                 var bigErrors = 100.0;
-                var bothTonalIntervals = 0;
                 var voicedSpeechDetectionErrors = 100.0;
 
                 if (distortion.Any(x => (x >= 0.0 && x < 1.0)))
                 {
-                    bothTonalIntervals = distortion.Where(x => (x >= 0.0 && x < 1.0)).Count();
+                    var bothTonalIntervals = distortion.Where(x => (x >= 0.0 && x < 1.0)).Count();
 
                     if (distortion.Any(x => x >= 0.0 && x <= 0.05))
                     {
@@ -449,15 +448,28 @@ namespace ExperimentalProcessing
             WindowCursor = Cursors.Wait;
             OnPropertyChanged("WindowCursor");
             int signalFormat;
-            var signal = FileReader.ReadFileNormalized(fileName.ToString(), out signalFormat);
-            _inputFile = new float[signal.Length];
-            Array.Copy(signal, _inputFile, signal.Length);
+            _inputFile = FileReader.ReadFileNormalized(fileName.ToString(), out signalFormat);
             _sampleFreq = signalFormat;
 
-            _tonalSpeechSelector.InitData(signal, 0.04f, 0.95f, signalFormat);
+            if (SimulatePhoneCnanel)
+            {
+                var lpf = new Lpf(3400.0f, signalFormat);
+                _inputFile = lpf.StartFilter(_inputFile);
+                var hpf = new Hpf(300.0f, signalFormat);
+                _inputFile = hpf.Filter(_inputFile);
+            }
+            if (UseNoise)
+            {
+                var noise = new NoiseGenerator(_inputFile, _inputFile.Length, NoiseAmplitude, _maxEnergyInterval);
+                SignalNoiseRaito = "ОСШ = " + noise.SNR.ToString("##0.#") + "дБ";
+                OnPropertyChanged("SignalNoiseRaito");
+                _inputFile = noise.ApplyNoise(_inputFile);
+            }
+
+            _tonalSpeechSelector.InitData(_inputFile, 0.04f, 0.95f, signalFormat);
 
             var speechMarks = _tonalSpeechSelector.GetTonalSpeechMarks();
-            var trainDataAcf = GetAcfImage(signal, signalFormat, speechMarks, out _acf, out _acfs);
+            var trainDataAcf = GetAcfImage(_inputFile, signalFormat, speechMarks, out _acf, out _acfs);
             SamplePosition = 0;
             _pitch = trainDataAcf;
             PlotPitch(trainDataAcf);
@@ -682,7 +694,7 @@ namespace ExperimentalProcessing
             }
         }
 
-        internal void RestButton()
+        internal void ResetButton()
         {
             AcfsPlotView.ResetAllAxes();
             AcfsSamplePlotView.ResetAllAxes();
@@ -705,7 +717,9 @@ namespace ExperimentalProcessing
                 args[0] = FileName;
                 args[1] = FileName.ToLower().Replace(".dat", ".lst");
             }
-            var task = (FileName.IndexOf(".wav", StringComparison.InvariantCultureIgnoreCase) > -1)?new Task(OpenFile, FileName): new Task(OpenEtalonFile, args);
+            var task = (FileName.IndexOf(".wav", StringComparison.InvariantCultureIgnoreCase) > -1)
+                ? new Task(OpenFile, FileName)
+                : new Task(OpenEtalonFile, args);
             task.Start();
             OnPropertyChanged("FileName");
         }
@@ -714,6 +728,19 @@ namespace ExperimentalProcessing
         {
             var settings = new SettingsWindow { Owner = this };
             settings.Show();
+        }
+
+        private void SavePitchPlotContextMenuButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            var saveDialog = new SaveFileDialog { Filter = "PNG изображения|*.png" };
+            saveDialog.FileOk += (o, args) =>
+            {
+                var dialog = o as SaveFileDialog;
+                if (dialog == null) return;
+                var fileName = dialog.FileName;
+                PitchPlotView.SaveBitmap(fileName, (int) PitchPlotView.ActualWidth, (int) (PitchPlotView.ActualHeight*1.6), OxyColors.Transparent);
+            };
+            saveDialog.ShowDialog(this);
         }
     }
 }
