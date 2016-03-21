@@ -82,13 +82,8 @@ namespace SpeakerVerificationExperiments
         private const float Overlaping = 0.95f;
         private const float AnalysisInterval = 0.04f;
         private SelectedFeature _selectedFeature = SelectedFeature.Pitch;
-        private bool _addDeltaToFeatures;
+        public bool AddDeltaToFeatures { get; private set; }
         private UsedQuatizationAlgorithm _uesdAlgorithm = UsedQuatizationAlgorithm.Lbg;
-
-        private void AddDeltaCheckBox_OnClick(object sender, RoutedEventArgs e)
-        {
-            _addDeltaToFeatures = AddDeltaCheckBox.IsChecked.HasValue && AddDeltaCheckBox.IsChecked.Value;
-        }
 
         private void SelectLpcModeRadioButton_OnClick(object sender, RoutedEventArgs e)
         {
@@ -146,16 +141,16 @@ namespace SpeakerVerificationExperiments
                     trainDataAcf = GetAcfImage(inputFile, sampleRate, speechMarks);//use pitch
                     break;
                 case SelectedFeature.Lpc:
-                    trainDataAcf = GetAcfImage(inputFile, sampleRate, speechMarks);//use LPC
+                    trainDataAcf = GetLpcImage(inputFile, sampleRate, speechMarks);//use LPC
                     break;
                 case SelectedFeature.Combine:
-                    trainDataAcf = GetAcfImage(inputFile, sampleRate, speechMarks);//use both features
+                    trainDataAcf = GetCombineImage(inputFile, sampleRate, speechMarks);//use both features
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
 
-            if (_addDeltaToFeatures)
+            if (AddDeltaToFeatures)
             {
                 trainDataAcf = DeltaGenerator.AddDelta(trainDataAcf);
             }
@@ -223,6 +218,40 @@ namespace SpeakerVerificationExperiments
             var corellation = new Corellation();
             corellation.PitchImage(ref speechFile, windowSize, 1.0f - Overlaping, out trainDataAcf, WindowFunctions.WindowType.Blackman, sampleRate, speechMarks);
             return trainDataAcf;
+        }
+
+        private double[][] GetLpcImage(float[] speechFile, int sampleRate, Tuple<int, int>[] speechMarks)
+        {
+            double[][] featureMatrix;
+            var lpc = new LinearPredictCoefficient
+            {
+                SamleFrequency = sampleRate,
+                UsedAcfWindowSizeTime = AnalysisInterval,
+                UsedNumberOfCoeficients = 10,
+                UsedWindowType = WindowFunctions.WindowType.Blackman,
+                Overlapping = Overlaping
+            };
+            lpc.GetLpcImage(ref speechFile, out featureMatrix, speechMarks[0].Item1, speechMarks[speechMarks.Length -1].Item2);
+            return featureMatrix;
+        }
+
+        private double[][] GetCombineImage(float[] speechFile, int sampleRate, Tuple<int, int>[] speechMarks)
+        {
+            double[][] featureMatrix;
+            var lpc = new LinearPredictCoefficient
+            {
+                SamleFrequency = sampleRate,
+                UsedAcfWindowSizeTime = AnalysisInterval,
+                UsedNumberOfCoeficients = 10,
+                UsedWindowType = WindowFunctions.WindowType.Blackman,
+                Overlapping = Overlaping
+            };
+            lpc.GetLpcImage(ref speechFile, out featureMatrix, speechMarks[0].Item1, speechMarks[speechMarks.Length - 1].Item2);
+            double[][] trainDataAcf;
+            var windowSize = (int)Math.Round(sampleRate * AnalysisInterval);
+            var corellation = new Corellation();
+            corellation.PitchImage(ref speechFile, windowSize, 1.0f - Overlaping, out trainDataAcf, WindowFunctions.WindowType.Blackman, sampleRate, speechMarks);
+            return featureMatrix;//todo: find method to combine two type of features in one.
         }
 
         private void SelectLbgVqModeRadioButton_OnClick(object sender, RoutedEventArgs e)

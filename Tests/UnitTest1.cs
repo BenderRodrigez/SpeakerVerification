@@ -92,7 +92,11 @@ namespace Tests
             _rawDataFileName = "D:\\YandexDisk\\YandexDisk\\Documents\\Сигналы\\aio\\AIOGU100.DAT";
             _mrksFileName = "D:\\YandexDisk\\YandexDisk\\Documents\\Сигналы\\aio\\AIOGU100.LST";
 
-            _someSignal = new[] {new[] {0.0, 1.0, -1.0, 1.0, -1.0, 0.0, 0.0, -1.0, 1.0}};
+            _someSignal = new[]
+            {
+                new[] {0.0}, new[] {1.0}, new[] {-1.0}, new[] {1.0}, new[] {-1.0}, new[] {0.0}, new[] {0.0}, new[] {-1.0},
+                new[] {1.0}
+            };
         }
 
         private double[][] _vqTrain;
@@ -102,8 +106,8 @@ namespace Tests
         {
             var signalWithDelta = DeltaGenerator.AddDelta(_someSignal);
 
-            Assert.IsTrue(signalWithDelta.Length == _someSignal.Length*2 &&
-                          signalWithDelta[0].Length == _someSignal[0].Length);
+            Assert.IsTrue(signalWithDelta.Length == _someSignal.Length &&
+                          signalWithDelta[0].Length == _someSignal[0].Length*2);
         }
 
         [TestMethod]

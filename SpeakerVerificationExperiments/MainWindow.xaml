@@ -18,7 +18,7 @@
         <RadioButton x:Name="SelectLpcModeRadioButton" Content="только LPC" Grid.Column="1" Grid.Row="1" Height="18" Margin="2,21,0,0" VerticalAlignment="Top" Click="SelectLpcModeRadioButton_OnClick" GroupName="FeatureStyle"/>
         <RadioButton x:Name="SelectPitchModeRadioButton" Content="только ОТ" Grid.Row="1" Height="18" Margin="2,2,0,0" Grid.Column="1" VerticalAlignment="Top" IsChecked="True" Click="SelectPitchModeRadioButton_OnClick" GroupName="FeatureStyle"/>
         <RadioButton x:Name="SelectCombinedModeRadioButton" Content="LPC и ОТ" Grid.Row="1" Height="18" Margin="2,39,0,0" Grid.Column="1" VerticalAlignment="Top" Click="SelectCombinedModeRadioButton_OnClick" GroupName="FeatureStyle"/>
-        <CheckBox x:Name="AddDeltaCheckBox" Content="Добавить Δ-канал" Grid.Column="1" Margin="2,62,0,0" Grid.Row="1" VerticalAlignment="Top" Click="AddDeltaCheckBox_OnClick"/>
+        <CheckBox x:Name="AddDeltaCheckBox" Content="Добавить Δ-канал" Grid.Column="1" Margin="2,62,0,0" Grid.Row="1" VerticalAlignment="Top" IsChecked="{Binding ElementName=MainWind, Path=AddDeltaToFeatures}"/>
         <RadioButton x:Name="SelectLbgVqModeRadioButton" Content="Квантование по алг. LBG" Grid.Column="1" Margin="2,82,0,0" Grid.Row="1" VerticalAlignment="Top" GroupName="VqAlgorithms" IsChecked="True" Click="SelectLbgVqModeRadioButton_OnClick"/>
         <RadioButton x:Name="SelectKohonenModeRadioButton" Content="Квантование н/с Кохонена" Grid.Column="1" Margin="2,97,0,0" Grid.Row="1" VerticalAlignment="Top" GroupName="VqAlgorithms" Click="SelectKohonenModeRadioButton_OnClick"/>
         <Button x:Name="SelectTrainSampleButton" Content="Обуч. выборка" Grid.Column="1" Margin="10,117,10,0" Grid.Row="1" VerticalAlignment="Top" Click="SelectTrainSampleButton_OnClick"/>
