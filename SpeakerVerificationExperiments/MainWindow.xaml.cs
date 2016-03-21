@@ -39,7 +39,7 @@ namespace SpeakerVerificationExperiments
                 Palette = OxyPalettes.Hot(200),
             };
             TrainDataModel.Axes.Add(linearColorAxis);
-            OnPropertyChanged(nameof(TrainDataModel));
+            OnPropertyChanged("TrainDataModel");
 
             TestDataModel = new PlotModel {Title = "Тестовый образец", TitleFontSize = 10.0};
             TestDataModel.Series.Add(new FunctionSeries(Math.Sin, 0, 10, 0.1));
@@ -51,7 +51,7 @@ namespace SpeakerVerificationExperiments
                 Palette = OxyPalettes.Hot(200),
             };
             TestDataModel.Axes.Add(linearColorAxisTest);
-            OnPropertyChanged(nameof(TestDataModel));
+            OnPropertyChanged("TestDataModel");
 
             CodeBookModel = new PlotModel {Title = "Кодовая книга", TitleFontSize = 10.0};
             CodeBookModel.Series.Add(new FunctionSeries(Math.Acos, 0, 10, 0.1));
@@ -63,7 +63,7 @@ namespace SpeakerVerificationExperiments
                 Palette = OxyPalettes.Hot(200),
             };
             CodeBookModel.Axes.Add(linearColorAxisCodeBook);
-            OnPropertyChanged(nameof(CodeBookModel));
+            OnPropertyChanged("CodeBookModel");
         }
 
         private enum SelectedFeature
@@ -125,7 +125,7 @@ namespace SpeakerVerificationExperiments
         private void OpenFile(object fileName)
         {
             WindowCursor = Cursors.Wait;
-            OnPropertyChanged(nameof(WindowCursor));
+            OnPropertyChanged("WindowCursor");
             int sampleRate;
             var inputFile = FileReader.ReadFileNormalized(fileName.ToString(), out sampleRate);
 
@@ -170,7 +170,7 @@ namespace SpeakerVerificationExperiments
             }
 
             WindowCursor = Cursors.Arrow;
-            OnPropertyChanged(nameof(WindowCursor));
+            OnPropertyChanged("WindowCursor");
         }
 
         private void PlotPitch(double[][] trainDataAcf, int jump, double sampleRate, PlotModel model, bool isCodeBook = false)
@@ -269,7 +269,7 @@ namespace SpeakerVerificationExperiments
         [NotifyPropertyChangedInvocator]
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            if(PropertyChanged != null) PropertyChanged.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
