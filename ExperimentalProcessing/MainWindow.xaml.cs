@@ -742,5 +742,31 @@ namespace ExperimentalProcessing
             };
             saveDialog.ShowDialog(this);
         }
+
+        private void SaveAcfsPlotContextMenuButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            var saveDialog = new SaveFileDialog { Filter = "PNG изображения|*.png" };
+            saveDialog.FileOk += (o, args) =>
+            {
+                var dialog = o as SaveFileDialog;
+                if (dialog == null) return;
+                var fileName = dialog.FileName;
+                AcfsSamplePlotView.SaveBitmap(fileName, (int)AcfsSamplePlotView.ActualWidth, (int)(AcfsSamplePlotView.ActualHeight), OxyColors.Transparent);
+            };
+            saveDialog.ShowDialog(this);
+        }
+
+        private void SaveAcfPlotContextMenuNutton_OnClick(object sender, RoutedEventArgs e)
+        {
+            var saveDialog = new SaveFileDialog { Filter = "PNG изображения|*.png" };
+            saveDialog.FileOk += (o, args) =>
+            {
+                var dialog = o as SaveFileDialog;
+                if (dialog == null) return;
+                var fileName = dialog.FileName;
+                AcfSamplePlotView.SaveBitmap(fileName, (int)AcfSamplePlotView.ActualWidth, (int)(AcfSamplePlotView.ActualHeight), OxyColors.Transparent);
+            };
+            saveDialog.ShowDialog(this);
+        }
     }
 }

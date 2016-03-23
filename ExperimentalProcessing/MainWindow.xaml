@@ -15,8 +15,20 @@
             <ColumnDefinition Width="461.5*"/>
             <ColumnDefinition Width="461.5*"/>
         </Grid.ColumnDefinitions>
-        <oxy:PlotView Model="{Binding AcfsPlotModel, ElementName=MainWind}" Margin="10,5,3,2" Grid.Row="2" x:Name="AcfsSamplePlotView"/>
-        <oxy:PlotView Model="{Binding AcfPlotModel, ElementName=MainWind}" Margin="3,5,10,2" Grid.Column="1" Grid.Row="2" x:Name="AcfSamplePlotView"/>
+        <oxy:PlotView Model="{Binding AcfsPlotModel, ElementName=MainWind}" Margin="10,5,3,2" Grid.Row="2" x:Name="AcfsSamplePlotView">
+            <oxy:PlotView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Click="SaveAcfsPlotContextMenuButton_OnClick"  Header="Сохранить график" />
+                </ContextMenu>
+            </oxy:PlotView.ContextMenu>
+        </oxy:PlotView>
+        <oxy:PlotView Model="{Binding AcfPlotModel, ElementName=MainWind}" Margin="3,5,10,2" Grid.Column="1" Grid.Row="2" x:Name="AcfSamplePlotView">
+            <oxy:PlotView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Click="SaveAcfPlotContextMenuNutton_OnClick"  Header="Сохранить график" />
+                </ContextMenu>
+            </oxy:PlotView.ContextMenu>
+        </oxy:PlotView>
         <oxy:PlotView Model="{Binding PitchPlotModel, ElementName=MainWind}" Margin="10,10,10,2" Grid.Row="0"
                       Grid.ColumnSpan="2" Grid.Column="0" x:Name="PitchPlotView">
             <oxy:PlotView.ContextMenu>
