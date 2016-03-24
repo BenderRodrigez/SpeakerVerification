@@ -22,7 +22,7 @@
         <RadioButton x:Name="SelectLbgVqModeRadioButton" Content="Квантование по алг. LBG" Grid.Column="1" Margin="2,82,0,0" Grid.Row="1" VerticalAlignment="Top" GroupName="VqAlgorithms" IsChecked="True" Click="SelectLbgVqModeRadioButton_OnClick"/>
         <RadioButton x:Name="SelectKohonenModeRadioButton" Content="Квантование н/с Кохонена" Grid.Column="1" Margin="2,97,0,0" Grid.Row="1" VerticalAlignment="Top" GroupName="VqAlgorithms" Click="SelectKohonenModeRadioButton_OnClick"/>
         <Button x:Name="SelectTrainSampleButton" Content="Обуч. выборка" Grid.Column="1" Margin="10,117,10,0" Grid.Row="1" VerticalAlignment="Top" Click="SelectTrainSampleButton_OnClick"/>
-        <Button x:Name="SelectTestSampleButton" Content="Тест. выборка" Grid.Column="1" Margin="10,142,10,0" Grid.Row="1" VerticalAlignment="Top" Click="SelectTestSampleButton_OnClick"/>
+        <Button x:Name="SelectTestSampleButton" Content="Тест. выборка" Grid.Column="1" Margin="10,142,10,0" Grid.Row="1" VerticalAlignment="Top" Click="SelectTestSampleButton_OnClick" IsEnabled="{Binding ElementName=MainWind, Path=IsTestButtonEnabled}"/>
         <Button x:Name="GenerateReportButton" Content="Создать отчёт" Grid.Column="1" Margin="10,167,10,0" Grid.Row="1" VerticalAlignment="Top" Click="GenerateReportButton_OnClick"/>
     </Grid>
 </Window>

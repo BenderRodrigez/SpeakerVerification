@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -24,6 +25,8 @@ namespace SpeakerVerificationExperiments
         public PlotModel TestDataModel { get; set; }
         public PlotModel CodeBookModel { get; set; }
         public Cursor WindowCursor { get; private set; }
+        private VectorQuantization VqCodeBook { get; set; }
+        public bool IsTestButtonEnabled { get; private set; }
 
         public MainWindow()
         {
@@ -63,6 +66,8 @@ namespace SpeakerVerificationExperiments
                 Palette = OxyPalettes.Hot(200),
             };
             CodeBookModel.Axes.Add(linearColorAxisCodeBook);
+            AddDeltaToFeatures = false;
+            IsTestButtonEnabled = false;
             OnPropertyChanged("CodeBookModel");
         }
 
@@ -107,22 +112,17 @@ namespace SpeakerVerificationExperiments
 
         private void SelectTestSampleButton_OnClick(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
-        }
-
-        private void SelectTrainSampleButton_OnClick(object sender, RoutedEventArgs e)
-        {
             var openFileDlg = new OpenFileDialog();
             openFileDlg.FileOk += (o, args) =>
             {
-                var fileName = ((OpenFileDialog) o).FileName;
-                var task = new Task(OpenFile, fileName);
+                var fileName = ((OpenFileDialog)o).FileName;
+                var task = new Task(OpenTestFile, fileName);
                 task.Start();
             };
             openFileDlg.ShowDialog(this);
         }
 
-        private void OpenFile(object fileName)
+        private void OpenTestFile(object fileName)
         {
             WindowCursor = Cursors.Wait;
             OnPropertyChanged("WindowCursor");
@@ -155,15 +155,18 @@ namespace SpeakerVerificationExperiments
                 trainDataAcf = DeltaGenerator.AddDelta(trainDataAcf);
             }
 
-            PlotPitch(trainDataAcf, (int) Math.Round(sampleRate*AnalysisInterval*(1.0 - Overlaping)), sampleRate, TrainDataModel);
+            PlotData(trainDataAcf, (int)Math.Round(sampleRate * AnalysisInterval * (1.0 - Overlaping)), sampleRate, TestDataModel);
 
             switch (_uesdAlgorithm)
             {
                 case UsedQuatizationAlgorithm.Lbg:
-                    var vqCodeBook = new VectorQuantization(trainDataAcf, trainDataAcf[0].Length, 64);
-                    PlotPitch(vqCodeBook.CodeBook, (int)Math.Round(sampleRate * AnalysisInterval * (1.0 - Overlaping)), sampleRate, CodeBookModel);
+                    //todo: place distortion energy calculation
+                    SaveDistortionEnergyToFile(
+                        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                            "distortionMeasure.txt"), trainDataAcf);
                     break;
                 case UsedQuatizationAlgorithm.Kohonen:
+                    //todo: place distortion energy calculation
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -173,7 +176,110 @@ namespace SpeakerVerificationExperiments
             OnPropertyChanged("WindowCursor");
         }
 
-        private void PlotPitch(double[][] trainDataAcf, int jump, double sampleRate, PlotModel model, bool isCodeBook = false)
+        private void SaveDistortionEnergyToFile(string fileName, double[][] testData)
+        {
+            using (var writer = new StreamWriter(fileName))
+            {
+//                if (!useNeuronNetworkCeckBox.Checked)
+//                {
+                for (int i = 0; i < testData.Length; i++)
+                {
+                    var distortion = VqCodeBook.QuantizationErrorNormal(VqCodeBook.Quantazation(testData[i]),
+                        testData[i]);
+                    writer.WriteLine(distortion);
+                }
+                writer.WriteLine("---------------");
+                writer.WriteLine(VqCodeBook.DistortionMeasureEnergy(ref testData));
+//                }
+//                else
+//                {
+//                    var energy = 0.0;
+//                    for (int i = 0; i < testData.Length; i++)
+//                    {
+//                        _network.Run(testData[i]);
+//                        var place = new double[testData[0].Length];
+//                        for (int j = 0; j < _network.Winner.SourceSynapses.Count; j++)
+//                        {
+//                            place[j] = _network.Winner.SourceSynapses[j].Weight;
+//                        }
+//                        var distortion = VectorQuantization.QuantizationError(place, testData[i]);
+//                        writer.WriteLine(distortion);
+//                        energy += Math.Pow(distortion, 2);
+//                    }
+//                    energy /= testData.Length;
+//                    writer.WriteLine("---------------");
+//                    writer.WriteLine(energy);
+//                }
+            }
+        }
+
+        private void SelectTrainSampleButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            var openFileDlg = new OpenFileDialog();
+            openFileDlg.FileOk += (o, args) =>
+            {
+                var fileName = ((OpenFileDialog) o).FileName;
+                var task = new Task(OpenTrainFile, fileName);
+                task.Start();
+            };
+            openFileDlg.ShowDialog(this);
+        }
+
+        private void OpenTrainFile(object fileName)
+        {
+            WindowCursor = Cursors.Wait;
+            OnPropertyChanged("WindowCursor");
+            int sampleRate;
+            var inputFile = FileReader.ReadFileNormalized(fileName.ToString(), out sampleRate);
+
+            var tonalSpeechSelector = new TonalSpeechSelector();
+            tonalSpeechSelector.InitData(inputFile, AnalysisInterval, Overlaping, sampleRate);
+
+            var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
+            double[][] trainDataAcf;
+
+            switch (_selectedFeature)
+            {
+                case SelectedFeature.Pitch:
+                    trainDataAcf = GetAcfImage(inputFile, sampleRate, speechMarks);//use pitch
+                    break;
+                case SelectedFeature.Lpc:
+                    trainDataAcf = GetLpcImage(inputFile, sampleRate, speechMarks);//use LPC
+                    break;
+                case SelectedFeature.Combine:
+                    trainDataAcf = GetCombineImage(inputFile, sampleRate, speechMarks);//use both features
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            if (AddDeltaToFeatures)
+            {
+                trainDataAcf = DeltaGenerator.AddDelta(trainDataAcf);
+            }
+
+            PlotData(trainDataAcf, (int) Math.Round(sampleRate*AnalysisInterval*(1.0 - Overlaping)), sampleRate, TrainDataModel);
+
+            switch (_uesdAlgorithm)
+            {
+                case UsedQuatizationAlgorithm.Lbg:
+                    VqCodeBook = new VectorQuantization(trainDataAcf, trainDataAcf[0].Length, 64);
+                    PlotData(VqCodeBook.CodeBook, (int)Math.Round(sampleRate * AnalysisInterval * (1.0 - Overlaping)), sampleRate, CodeBookModel);
+                    break;
+                case UsedQuatizationAlgorithm.Kohonen:
+                    //todo: place codebook calculation
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            WindowCursor = Cursors.Arrow;
+            OnPropertyChanged("WindowCursor");
+            IsTestButtonEnabled = true;
+            OnPropertyChanged("IsTestButtonEnabled");
+        }
+
+        private void PlotData(double[][] trainDataAcf, int jump, double sampleRate, PlotModel model, bool isCodeBook = false)
         {
             if (trainDataAcf[0].Length == 1)
             {
