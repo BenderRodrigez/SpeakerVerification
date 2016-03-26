@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -9,6 +11,10 @@ using HelpersLibrary;
 using HelpersLibrary.DspAlgorithms;
 using HelpersLibrary.LearningAlgorithms;
 using Microsoft.Win32;
+using NeuronDotNet.Core;
+using NeuronDotNet.Core.Initializers;
+using NeuronDotNet.Core.SOM;
+using NeuronDotNet.Core.SOM.NeighborhoodFunctions;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
@@ -89,6 +95,7 @@ namespace SpeakerVerificationExperiments
         private SelectedFeature _selectedFeature = SelectedFeature.Pitch;
         public bool AddDeltaToFeatures { get; private set; }
         private UsedQuatizationAlgorithm _uesdAlgorithm = UsedQuatizationAlgorithm.Lbg;
+        private KohonenNetwork _network;
 
         private void SelectLpcModeRadioButton_OnClick(object sender, RoutedEventArgs e)
         {
@@ -160,13 +167,14 @@ namespace SpeakerVerificationExperiments
             switch (_uesdAlgorithm)
             {
                 case UsedQuatizationAlgorithm.Lbg:
-                    //todo: place distortion energy calculation
                     SaveDistortionEnergyToFile(
                         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                             "distortionMeasure.txt"), trainDataAcf);
                     break;
                 case UsedQuatizationAlgorithm.Kohonen:
-                    //todo: place distortion energy calculation
+                    SaveDistortionEnergyToFileNeuron(
+                        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                            "distortionMeasure.txt"), trainDataAcf);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -176,12 +184,33 @@ namespace SpeakerVerificationExperiments
             OnPropertyChanged("WindowCursor");
         }
 
+        private void SaveDistortionEnergyToFileNeuron(string fileName, double[][] testData)
+        {
+            using (var writer = new StreamWriter(fileName))
+            {
+                var energy = 0.0;
+                for (int i = 0; i < testData.Length; i++)
+                {
+                    _network.Run(testData[i]);
+                    var place = new double[testData[0].Length];
+                    for (int j = 0; j < _network.Winner.SourceSynapses.Count; j++)
+                    {
+                        place[j] = _network.Winner.SourceSynapses[j].Weight;
+                    }
+                    var distortion = VectorQuantization.QuantizationError(place, testData[i]);
+                    writer.WriteLine(distortion);
+                    energy += Math.Pow(distortion, 2);
+                }
+                energy /= testData.Length;
+                writer.WriteLine("---------------");
+                writer.WriteLine(energy);
+            }
+        }
+
         private void SaveDistortionEnergyToFile(string fileName, double[][] testData)
         {
             using (var writer = new StreamWriter(fileName))
             {
-//                if (!useNeuronNetworkCeckBox.Checked)
-//                {
                 for (int i = 0; i < testData.Length; i++)
                 {
                     var distortion = VqCodeBook.QuantizationErrorNormal(VqCodeBook.Quantazation(testData[i]),
@@ -190,26 +219,6 @@ namespace SpeakerVerificationExperiments
                 }
                 writer.WriteLine("---------------");
                 writer.WriteLine(VqCodeBook.DistortionMeasureEnergy(ref testData));
-//                }
-//                else
-//                {
-//                    var energy = 0.0;
-//                    for (int i = 0; i < testData.Length; i++)
-//                    {
-//                        _network.Run(testData[i]);
-//                        var place = new double[testData[0].Length];
-//                        for (int j = 0; j < _network.Winner.SourceSynapses.Count; j++)
-//                        {
-//                            place[j] = _network.Winner.SourceSynapses[j].Weight;
-//                        }
-//                        var distortion = VectorQuantization.QuantizationError(place, testData[i]);
-//                        writer.WriteLine(distortion);
-//                        energy += Math.Pow(distortion, 2);
-//                    }
-//                    energy /= testData.Length;
-//                    writer.WriteLine("---------------");
-//                    writer.WriteLine(energy);
-//                }
             }
         }
 
@@ -267,7 +276,7 @@ namespace SpeakerVerificationExperiments
                     PlotData(VqCodeBook.CodeBook, (int)Math.Round(sampleRate * AnalysisInterval * (1.0 - Overlaping)), sampleRate, CodeBookModel);
                     break;
                 case UsedQuatizationAlgorithm.Kohonen:
-                    //todo: place codebook calculation
+                    ProvideKohonenCom(trainDataAcf);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -277,6 +286,70 @@ namespace SpeakerVerificationExperiments
             OnPropertyChanged("WindowCursor");
             IsTestButtonEnabled = true;
             OnPropertyChanged("IsTestButtonEnabled");
+        }
+
+        private void ProvideKohonenCom(double[][] trainingSet)
+        {
+            var outputLayerSize = 8;
+            var isWinner = new bool[outputLayerSize, outputLayerSize];
+            var learningRadius = outputLayerSize / 2;
+            var neigborhoodFunction = new GaussianFunction(learningRadius);
+            const LatticeTopology topology = LatticeTopology.Hexagonal;
+            var max = trainingSet.Max(x => x.Max());
+            var min = trainingSet.Min(x => x.Min());
+            var inputLayer = new KohonenLayer(trainingSet[0].Length);
+            var outputLayer = new KohonenLayer(new System.Drawing.Size(outputLayerSize, outputLayerSize), neigborhoodFunction, topology);
+            new KohonenConnector(inputLayer, outputLayer) { Initializer = new RandomFunction(min, max) };
+            outputLayer.SetLearningRate(0.2, 0.05d);
+            outputLayer.IsRowCircular = false;
+            outputLayer.IsColumnCircular = false;
+            _network = new KohonenNetwork(inputLayer, outputLayer);
+
+            _network.BeginEpochEvent += (senderNetwork, args) => Array.Clear(isWinner, 0, isWinner.Length);
+
+            _network.EndSampleEvent += delegate
+            {
+                isWinner[_network.Winner.Coordinate.X, _network.Winner.Coordinate.Y] =
+                    true;
+            };
+
+            _network.EndEpochEvent += delegate
+            {
+                PlotWinnersNeurons(isWinner);
+            };
+            var trSet = new TrainingSet(trainingSet[0].Length);
+            foreach (var x in trainingSet)
+            {
+                trSet.Add(new TrainingSample(x));
+            }
+            _network.Learn(trSet, 500);
+            PlotWinnersNeurons(isWinner);
+        }
+
+        private void PlotWinnersNeurons(bool[,] winners)
+        {
+            var outputLayerSize = 8;
+            var heatMap = new HeatMapSeries
+            {
+                Data = new double[outputLayerSize, outputLayerSize],
+                X0 = 0,
+                X1 = outputLayerSize,
+                Y0 = 0,
+                Y1 = outputLayerSize,
+                Interpolate = false
+            };
+            for (int i = 0; i < outputLayerSize; i++)
+                for (int j = 0; j < outputLayerSize; j++)
+                {
+                    heatMap.Data[i, j] = winners[i, j] ? 1.0 : 0.0;
+                }
+
+            CodeBookPlotView.Dispatcher.Invoke(() =>
+            {
+                CodeBookPlotView.Model.Series.Clear();
+                CodeBookPlotView.Model.Series.Add(heatMap);
+                CodeBookPlotView.Model.InvalidatePlot(true);
+            });
         }
 
         private void PlotData(double[][] trainDataAcf, int jump, double sampleRate, PlotModel model, bool isCodeBook = false)
@@ -357,7 +430,27 @@ namespace SpeakerVerificationExperiments
             var windowSize = (int)Math.Round(sampleRate * AnalysisInterval);
             var corellation = new Corellation();
             corellation.PitchImage(ref speechFile, windowSize, 1.0f - Overlaping, out trainDataAcf, WindowFunctions.WindowType.Blackman, sampleRate, speechMarks);
-            return featureMatrix;//todo: find method to combine two type of features in one.
+
+            return MixFeatures(featureMatrix, trainDataAcf, speechMarks[0].Item1,
+                    (int)Math.Round((1.0 - Overlaping) * windowSize));
+        }
+
+        private double[][] MixFeatures(double[][] lpcFeature, double[][] pitchFeature, int speechStartPosition, int jumpSize)
+        {
+            var pitchSkiping = (int) Math.Round(speechStartPosition/(double) jumpSize);
+            var newFeature = new List<double[]>();
+            for (int i = 0; i - pitchSkiping < lpcFeature.Length || i < pitchFeature.Length; i++)
+            {
+                var feature = new List<double>();
+                feature.AddRange(i - pitchSkiping < lpcFeature.Length && i - pitchSkiping > -1
+                    ? lpcFeature[i - pitchSkiping]
+                    : new double[lpcFeature[0].Length]);
+
+                feature.AddRange(i < pitchFeature.Length ? pitchFeature[i] : new double[pitchFeature[0].Length]);
+
+                newFeature.Add(feature.ToArray());
+            }
+            return newFeature.ToArray();
         }
 
         private void SelectLbgVqModeRadioButton_OnClick(object sender, RoutedEventArgs e)
