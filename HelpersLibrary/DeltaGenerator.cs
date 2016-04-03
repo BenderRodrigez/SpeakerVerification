@@ -14,9 +14,9 @@ namespace HelpersLibrary
                 var deltas = new double[prev.Length];
                 for (int j = 0; j < d.Length; j++)
                 {
-                    deltas[j] = d[j] - prev[j];
-                    prev = d;
+                    deltas[j] = prev[j] != 0.0 && d[j] !=0.0 ? d[j] - prev[j] : 0.0;
                 }
+                prev = d;
                 Array.Resize(ref deltas, deltas.Length*2);
                 Array.Copy(d, 0, deltas, d.Length, d.Length);
                 delta.Add(deltas);
