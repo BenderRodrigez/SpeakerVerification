@@ -6,11 +6,10 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
+using System.Windows.Forms;
 using HelpersLibrary;
 using HelpersLibrary.DspAlgorithms;
 using HelpersLibrary.LearningAlgorithms;
-using Microsoft.Win32;
 using NeuronDotNet.Core;
 using NeuronDotNet.Core.Initializers;
 using NeuronDotNet.Core.SOM;
@@ -19,6 +18,9 @@ using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using SpeakerVerificationExperiments.Annotations;
+using Cursor = System.Windows.Input.Cursor;
+using Cursors = System.Windows.Input.Cursors;
+using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
 namespace SpeakerVerificationExperiments
 {
@@ -114,8 +116,101 @@ namespace SpeakerVerificationExperiments
 
         private void GenerateReportButton_OnClick(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            var selectFolder = new FolderBrowserDialog {ShowNewFolderButton = false};
+            if (selectFolder.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                var subFolders = Directory.GetDirectories(selectFolder.SelectedPath);
+                if (subFolders.Any(x => Directory.GetFiles(x, "*.wav").Any()))
+                {
+                    var pitchImagesDictionary = new Dictionary<string, double[][]>();
+                    var lpcImagesDictionary = new Dictionary<string, double[][]>();
+                    var pitchDeltaImagesDictionary = new Dictionary<string, double[][]>();
+                    var lpcDeltaImagesDictionary = new Dictionary<string, double[][]>();
+                    var pitchLpcImagesDictionary = new Dictionary<string, double[][]>();
+                    var pitchLpcDeltaImagesDictionary = new Dictionary<string, double[][]>();
+
+                    foreach (var dir in subFolders)
+                    {
+                        foreach (var fileName in Directory.GetFiles(dir, "*.wav"))
+                        {
+                            int sampleRate;
+                            var inputFile = FileReader.ReadFileNormalized(fileName, out sampleRate);
+
+                            var tonalSpeechSelector = new TonalSpeechSelector();
+                            tonalSpeechSelector.InitData(inputFile, AnalysisInterval, Overlaping, sampleRate);
+
+                            var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
+
+                            var pitchImage = GetPitchImage(inputFile, sampleRate, speechMarks);
+                            pitchImagesDictionary.Add(fileName, pitchImage);
+
+                            var pitchWithDelta = DeltaGenerator.AddDelta(pitchImage);
+                            pitchDeltaImagesDictionary.Add(fileName, pitchWithDelta);
+
+                            var lpcImage = GetLpcImage(inputFile, sampleRate, speechMarks);
+                            lpcImagesDictionary.Add(fileName, lpcImage);
+
+                            var lpcWithDelta = DeltaGenerator.AddDelta(lpcImage);
+                            lpcDeltaImagesDictionary.Add(fileName, lpcWithDelta);
+
+                            var pitchLpcImage = GetCombineImage(inputFile, sampleRate, speechMarks);
+                            pitchLpcImagesDictionary.Add(fileName, pitchLpcImage);
+
+                            var pitchLpcWithDelta = DeltaGenerator.AddDelta(pitchImage);
+                            pitchLpcDeltaImagesDictionary.Add(fileName, pitchLpcWithDelta);
+                        }
+                    }
+                    ProcessSamples(pitchImagesDictionary, "pitch");
+                    ProcessSamples(pitchDeltaImagesDictionary, "pitchDelta");
+                    ProcessSamples(lpcImagesDictionary, "lpc");
+                    ProcessSamples(lpcDeltaImagesDictionary, "lpcDelta");
+                    ProcessSamples(pitchLpcImagesDictionary, "pitchLpc");
+                    ProcessSamples(pitchLpcDeltaImagesDictionary, "pitchLpcDelta");
+                    return;
+                }
+                //wrong
+                System.Windows.MessageBox.Show("Выберете папку, содержащую корректно оформленную БД записей речи.",
+                    "Некорректная БД образцов.", MessageBoxButton.OK);
+            }
         }
+
+        private void ProcessSamples(Dictionary<string, double[][]> features, string featureType)
+        {
+            foreach (var codeBookFileName in features.Keys)
+            {
+                var cb = new VectorQuantization(features[codeBookFileName], features[codeBookFileName][0].Length, 64);
+                foreach (var testFileName in features.Keys)
+                {
+                    var distortionSignal = new double[features[testFileName].Length];
+                    for (int i = 0; i < features[testFileName].Length; i++)
+                    {
+                        var distortion =
+                            cb.QuantizationErrorNormal(cb.Quantazation(features[testFileName][i]),
+                                features[testFileName][i]);
+                        distortionSignal[i] = distortion;
+                    }
+                    var energy = cb.DistortionMeasureEnergy(features[testFileName]);
+
+                    var testFileInfo = new FileInfo(testFileName);
+                    var codeBookFileInfo = new FileInfo(codeBookFileName);
+                    var report = new ReportElement
+                    {
+                        FileName = testFileName,
+                        CodeBookFileName = codeBookFileName,
+                        DistortionSignal = distortionSignal,
+                        DistortionEnergy = energy,
+                        DictorName = testFileInfo.Name.Substring(0, 3),
+                        Phrase = testFileInfo.Directory.Name,
+                        CodeBookDictorName = codeBookFileInfo.Name.Substring(0, 3),
+                        CodeBookPhrase = codeBookFileInfo.Directory.Name,
+                        FeatureType = featureType
+                    };
+
+                    report.SaveToDb();
+                }
+            }
+        }
+
 
         private void SelectTestSampleButton_OnClick(object sender, RoutedEventArgs e)
         {
@@ -145,7 +240,7 @@ namespace SpeakerVerificationExperiments
             switch (_selectedFeature)
             {
                 case SelectedFeature.Pitch:
-                    trainDataAcf = GetAcfImage(inputFile, sampleRate, speechMarks);//use pitch
+                    trainDataAcf = GetPitchImage(inputFile, sampleRate, speechMarks);//use pitch
                     break;
                 case SelectedFeature.Lpc:
                     trainDataAcf = GetLpcImage(inputFile, sampleRate, speechMarks);//use LPC
@@ -218,7 +313,7 @@ namespace SpeakerVerificationExperiments
                     writer.WriteLine(distortion);
                 }
                 writer.WriteLine("---------------");
-                writer.WriteLine(VqCodeBook.DistortionMeasureEnergy(ref testData));
+                writer.WriteLine(VqCodeBook.DistortionMeasureEnergy(testData));
             }
         }
 
@@ -250,7 +345,7 @@ namespace SpeakerVerificationExperiments
             switch (_selectedFeature)
             {
                 case SelectedFeature.Pitch:
-                    trainDataAcf = GetAcfImage(inputFile, sampleRate, speechMarks);//use pitch
+                    trainDataAcf = GetPitchImage(inputFile, sampleRate, speechMarks);//use pitch
                     break;
                 case SelectedFeature.Lpc:
                     trainDataAcf = GetLpcImage(inputFile, sampleRate, speechMarks);//use LPC
@@ -390,13 +485,13 @@ namespace SpeakerVerificationExperiments
             }
         }
 
-        private double[][] GetAcfImage(float[] speechFile, int sampleRate, Tuple<int, int>[] speechMarks)
+        private double[][] GetPitchImage(float[] speechFile, int sampleRate, Tuple<int, int>[] speechMarks)
         {
             double[][] trainDataAcf;
             var windowSize = (int) Math.Round(sampleRate*AnalysisInterval);
             var corellation = new Corellation();
             corellation.PitchImage(ref speechFile, windowSize, 1.0f - Overlaping, out trainDataAcf, WindowFunctions.WindowType.Blackman, sampleRate, speechMarks);
-            return trainDataAcf;
+            return trainDataAcf/*.Select(x => x.Select(y => y == 0 ? -1 : y).ToArray()).ToArray()*/;
         }
 
         private double[][] GetLpcImage(float[] speechFile, int sampleRate, Tuple<int, int>[] speechMarks)
@@ -416,20 +511,9 @@ namespace SpeakerVerificationExperiments
 
         private double[][] GetCombineImage(float[] speechFile, int sampleRate, Tuple<int, int>[] speechMarks)
         {
-            double[][] featureMatrix;
-            var lpc = new LinearPredictCoefficient
-            {
-                SamleFrequency = sampleRate,
-                UsedAcfWindowSizeTime = AnalysisInterval,
-                UsedNumberOfCoeficients = 10,
-                UsedWindowType = WindowFunctions.WindowType.Blackman,
-                Overlapping = Overlaping
-            };
-            lpc.GetLpcImage(ref speechFile, out featureMatrix, speechMarks[0].Item1, speechMarks[speechMarks.Length - 1].Item2);
-            double[][] trainDataAcf;
-            var windowSize = (int)Math.Round(sampleRate * AnalysisInterval);
-            var corellation = new Corellation();
-            corellation.PitchImage(ref speechFile, windowSize, 1.0f - Overlaping, out trainDataAcf, WindowFunctions.WindowType.Blackman, sampleRate, speechMarks);
+            var featureMatrix = GetLpcImage(speechFile, sampleRate, speechMarks);
+            var windowSize = Math.Round(sampleRate*0.04);
+            var trainDataAcf = GetPitchImage(speechFile, sampleRate, speechMarks);
 
             return MixFeatures(featureMatrix, trainDataAcf, speechMarks[0].Item1,
                     (int)Math.Round((1.0 - Overlaping) * windowSize));
@@ -469,6 +553,11 @@ namespace SpeakerVerificationExperiments
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             if(PropertyChanged != null) PropertyChanged.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private void GenerateReport_OnClick(object sender, RoutedEventArgs e)
+        {
+            ReportElement.MakeReport();
         }
     }
 }
