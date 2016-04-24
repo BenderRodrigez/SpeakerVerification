@@ -491,7 +491,7 @@ namespace SpeakerVerificationExperiments
             var windowSize = (int) Math.Round(sampleRate*AnalysisInterval);
             var corellation = new Corellation();
             corellation.PitchImage(ref speechFile, windowSize, 1.0f - Overlaping, out trainDataAcf, WindowFunctions.WindowType.Blackman, sampleRate, speechMarks);
-            return trainDataAcf/*.Select(x => x.Select(y => y == 0 ? -1 : y).ToArray()).ToArray()*/;
+            return trainDataAcf;
         }
 
         private double[][] GetLpcImage(float[] speechFile, int sampleRate, Tuple<int, int>[] speechMarks)

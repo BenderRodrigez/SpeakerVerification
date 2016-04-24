@@ -148,15 +148,15 @@ namespace SpeakerVerificationExperiments
             var genderSummary = experiments.GroupBy(x => MansList.Contains(x["CodeBookDictorName"].AsString) ? "1" : "2");
 
             var report = new List<string> {"ФРАЗЫ"};
-            var enumerable = phrasesSummary as IGrouping<string, BsonDocument>[] ?? phrasesSummary.ToArray();
+            var enumerable = phrasesSummary as IGrouping<string, BsonDocument>[] ?? phrasesSummary.OrderBy(x=> x.Key).ToArray();
             report.AddRange(GetSubReportFromExperiments(enumerable));
             MakeGraphs(enumerable, "phrases_" + experimentType);
             report.Add("ДИКТОР");
-            var summary = dictorSummary as IGrouping<string, BsonDocument>[] ?? dictorSummary.ToArray();
+            var summary = dictorSummary as IGrouping<string, BsonDocument>[] ?? dictorSummary.OrderBy(x => x.Key).ToArray();
             report.AddRange(GetSubReportFromExperiments(summary));
             MakeGraphs(summary, "dictors_" + experimentType);
             report.Add("ПОЛ");
-            var genderSummary1 = genderSummary as IGrouping<string, BsonDocument>[] ?? genderSummary.ToArray();
+            var genderSummary1 = genderSummary as IGrouping<string, BsonDocument>[] ?? genderSummary.OrderBy(x => x.Key).ToArray();
             report.AddRange(GetSubReportFromExperiments(genderSummary1));
             MakeGraphs(genderSummary1, "gender_" + experimentType);
 
@@ -183,7 +183,7 @@ namespace SpeakerVerificationExperiments
             var plot = GetPlot(experiments);
 
             plot.SaveBitmap(
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),"Reports",
                     "report_" + featureGrouping + ".png"), 1000, 500, OxyColors.Transparent);
         }
 
