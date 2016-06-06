@@ -21,13 +21,13 @@ namespace HelpersLibrary.DspAlgorithms
 
         public Corellation()
         {
-            MaxFrequencyJumpPercents = 0.27;
+            MaxFrequencyJumpPercents = 0.15;
             FrequencyEnergyLineBorder = 0.00005;
             FilterDiameter = 9;
             SignalCentralLimitationBorder = 0.3;
             HighPassFilterBorder = 60.0f;
             LowPassFilterBorder = 600.0f;
-            MinimalVoicedSpeechLength = 0.05;
+            MinimalVoicedSpeechLength = 0.04;
         }
 
         public WindowFunctions.WindowType UsedWindowType { private get; set; }

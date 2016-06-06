@@ -82,7 +82,7 @@ namespace HelpersLibrary.DspAlgorithms
                     UsedWindowType = UsedWindowType
                 };
             var step = (int)Math.Round(_usedAcfWindowSize*(1.0 - Overlapping));
-            for (int i = startPoint; i < inputAudio.Length - step && i < stopPoint; i += step)
+            for (int i = startPoint; i < inputAudio.Length - _usedAcfWindowSize && i < stopPoint; i += step)
             {
                 double[] lpc;
                 double[] acf;

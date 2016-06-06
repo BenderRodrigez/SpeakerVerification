@@ -42,8 +42,8 @@ namespace HelpersLibrary.DspAlgorithms
         {
             LowPassFilterBorder = 300;
             AdditiveNoiseLevel = 0.2f;
-            MinimalVoicedSpeechLength = 0.05;
-            Border = 10.0;
+            MinimalVoicedSpeechLength = 0.04;
+            Border = 5.0;
         }
 
         public Tuple<int, int>[] GetTonalSpeechMarks()

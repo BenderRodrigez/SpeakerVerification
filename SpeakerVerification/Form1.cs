@@ -470,7 +470,7 @@ namespace SpeakerVerification
                         writer.WriteLine(distortion);
                     }
                     writer.WriteLine("---------------");
-                    writer.WriteLine(_vqCodeBook.DistortionMeasureEnergy(ref testData));
+                    writer.WriteLine(_vqCodeBook.DistortionMeasureEnergy(testData));
                 }
                 else
                 {

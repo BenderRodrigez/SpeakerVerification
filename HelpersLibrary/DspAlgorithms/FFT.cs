@@ -114,7 +114,7 @@ namespace HelpersLibrary.DspAlgorithms
             var logSpectrum = complexData.Select(x => Math.Sqrt(x.Sqr)).ToArray();
 
             var gaussianBlur = new GaussianBlur();
-            logSpectrum = gaussianBlur.GetBlur(logSpectrum, 5);
+            logSpectrum = gaussianBlur.GetBlur(logSpectrum, 9);
 
             var avg = logSpectrum.Average();
             complexData = logSpectrum.Select(x => new ComplexNumber(x-avg)).ToArray();

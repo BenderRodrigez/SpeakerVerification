@@ -282,7 +282,7 @@ namespace HelpersLibrary.LearningAlgorithms
 		    throw new Exception("Вектора разной длины!");
         }
 
-        public double DistortionMeasureEnergy(ref double[][] testImage)
+        public double DistortionMeasureEnergy(double[][] testImage)
         {
             double res = 0;
             for(int i = 0; i < testImage.Length; i++)

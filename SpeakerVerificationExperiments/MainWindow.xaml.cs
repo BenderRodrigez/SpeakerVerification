@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
+using FLS;
 using HelpersLibrary;
 using HelpersLibrary.DspAlgorithms;
 using HelpersLibrary.LearningAlgorithms;
@@ -160,12 +161,13 @@ namespace SpeakerVerificationExperiments
                             pitchLpcDeltaImagesDictionary.Add(fileName, pitchLpcWithDelta);
                         }
                     }
-                    ProcessSamples(pitchImagesDictionary, "pitch");
-                    ProcessSamples(pitchDeltaImagesDictionary, "pitchDelta");
-                    ProcessSamples(lpcImagesDictionary, "lpc");
-                    ProcessSamples(lpcDeltaImagesDictionary, "lpcDelta");
-                    ProcessSamples(pitchLpcImagesDictionary, "pitchLpc");
-                    ProcessSamples(pitchLpcDeltaImagesDictionary, "pitchLpcDelta");
+                    var factory = new TaskFactory();
+                    factory.StartNew(() => ProcessSamples(pitchImagesDictionary, "pitch"));
+                    factory.StartNew(() => ProcessSamples(pitchDeltaImagesDictionary, "pitchDelta"));
+                    factory.StartNew(() => ProcessSamples(lpcImagesDictionary, "lpc"));
+                    factory.StartNew(() => ProcessSamples(lpcDeltaImagesDictionary, "lpcDelta"));
+                    factory.StartNew(() => ProcessSamples(pitchLpcImagesDictionary, "pitchLpc"));
+                    factory.StartNew(() => ProcessSamples(pitchLpcDeltaImagesDictionary, "pitchLpcDelta"));
                     return;
                 }
                 //wrong
@@ -174,21 +176,58 @@ namespace SpeakerVerificationExperiments
             }
         }
 
+        private KohonenNetwork ProvideKohonenNetwork(double[][] trainingSet)
+        {
+            var outputLayerSize = 8;
+            var learningRadius = outputLayerSize/2;
+            var neigborhoodFunction = new GaussianFunction(learningRadius);
+            const LatticeTopology topology = LatticeTopology.Hexagonal;
+            var max = trainingSet.Max(x => x.Max());
+            var min = trainingSet.Min(x => x.Min());
+            var inputLayer = new KohonenLayer(trainingSet[0].Length);
+            var outputLayer = new KohonenLayer(new System.Drawing.Size(outputLayerSize, outputLayerSize),
+                neigborhoodFunction, topology);
+            new KohonenConnector(inputLayer, outputLayer) {Initializer = new RandomFunction(min, max)};
+            outputLayer.SetLearningRate(0.2, 0.05d);
+            outputLayer.IsRowCircular = false;
+            outputLayer.IsColumnCircular = false;
+            var network = new KohonenNetwork(inputLayer, outputLayer);
+
+            var trSet = new TrainingSet(trainingSet[0].Length);
+            foreach (var x in trainingSet)
+            {
+                trSet.Add(new TrainingSample(x));
+            }
+            network.Learn(trSet, 500);
+            return network;
+        }
+
         private void ProcessSamples(Dictionary<string, double[][]> features, string featureType)
         {
             foreach (var codeBookFileName in features.Keys)
             {
-                var cb = new VectorQuantization(features[codeBookFileName], features[codeBookFileName][0].Length, 64);
+                var cb = new VectorQuantization(features[codeBookFileName], features[codeBookFileName][0].Length, 128);
+//                var neuron = ProvideKohonenNetwork(features[codeBookFileName]);
                 foreach (var testFileName in features.Keys)
                 {
+//                    var energy = 0.0;
                     var distortionSignal = new double[features[testFileName].Length];
                     for (int i = 0; i < features[testFileName].Length; i++)
                     {
                         var distortion =
                             cb.QuantizationErrorNormal(cb.Quantazation(features[testFileName][i]),
                                 features[testFileName][i]);
-                        distortionSignal[i] = distortion;
+//                        neuron.Run(features[testFileName][i]);
+//                        var place = new double[features[testFileName][i].Length];
+//                        for (int j = 0; j < neuron.Winner.SourceSynapses.Count; j++)
+//                        {
+//                            place[j] = neuron.Winner.SourceSynapses[j].Weight;
+//                        }
+//                        var distortion = VectorQuantization.QuantizationError(place, features[testFileName][i]);
+//                        distortionSignal[i] = distortion;
+//                        energy += distortion;
                     }
+//                    energy /= features[testFileName].Length;
                     var energy = cb.DistortionMeasureEnergy(features[testFileName]);
 
                     var testFileInfo = new FileInfo(testFileName);
@@ -208,6 +247,9 @@ namespace SpeakerVerificationExperiments
 
                     report.SaveToDb();
                 }
+                cb = null;
+//                neuron = null;
+                GC.Collect();
             }
         }
 
@@ -455,8 +497,7 @@ namespace SpeakerVerificationExperiments
                 var lineSeries = new LineSeries();
                 for (int i = 0; i < trainDataAcf.Length; i++)
                 {
-                    lineSeries.Points.Add(new DataPoint(isCodeBook ? i : i*jump,
-                        trainDataAcf[i][0] > 0.0 ? sampleRate/trainDataAcf[i][0] : 0.0));
+                    lineSeries.Points.Add(new DataPoint(isCodeBook ? i : i*jump, trainDataAcf[i][0]));
                 }
                 model.Series.Clear();
                 model.Series.Add(lineSeries);
@@ -491,6 +532,7 @@ namespace SpeakerVerificationExperiments
             var windowSize = (int) Math.Round(sampleRate*AnalysisInterval);
             var corellation = new Corellation();
             corellation.PitchImage(ref speechFile, windowSize, 1.0f - Overlaping, out trainDataAcf, WindowFunctions.WindowType.Blackman, sampleRate, speechMarks);
+            trainDataAcf.ForEach(x=> x[0] = x[0] > 0.0? sampleRate/x[0]:0.0);
             return trainDataAcf;
         }
 
@@ -558,6 +600,7 @@ namespace SpeakerVerificationExperiments
         private void GenerateReport_OnClick(object sender, RoutedEventArgs e)
         {
             ReportElement.MakeReport();
+            ReportElement.MakeVerificationReport();
         }
     }
 }
