@@ -190,7 +190,7 @@ namespace ExperimentalProcessing
             AcfsPlotModel.Series.Add(new FunctionSeries(Math.Cos, 0, 10, 0.1));
             OnPropertyChanged("AcfsPlotModel");
 
-            AcfPreview = new PlotModel {Title = "Кореллограмма АКФ", TitleFontSize = 10.0 };
+            AcfPreview = new PlotModel {Title = "Коррелограмма АКФ", TitleFontSize = 10.0 };
             var linearColorAxis = new LinearColorAxis
             {
                 HighColor = OxyColors.White,
@@ -201,7 +201,7 @@ namespace ExperimentalProcessing
             AcfPreview.Axes.Add(linearColorAxis);
             AcfPreview.Series.Add(new FunctionSeries(Math.Cosh, 0, 10, 0.1));
             OnPropertyChanged("AcfPreview");
-            AcfsPreview = new PlotModel { Title = "Кореллограмма АКФС", TitleFontSize = 10.0 };
+            AcfsPreview = new PlotModel { Title = "Коррелограмма АКФС", TitleFontSize = 10.0 };
             var linearColorAxis1 = new LinearColorAxis
             {
                 HighColor = OxyColors.White,
