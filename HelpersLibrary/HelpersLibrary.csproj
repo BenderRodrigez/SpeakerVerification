@@ -83,6 +83,7 @@
     <Compile Include="DspAlgorithms\WindowFunctions.cs" />
     <Compile Include="Experiment\ExperimentalDataParser.cs" />
     <Compile Include="Experiment\PhraseCube.cs" />
+    <Compile Include="FileExporter.cs" />
     <Compile Include="FileReader.cs" />
     <Compile Include="FuzzySolver.cs" />
     <Compile Include="LearningAlgorithms\VectorQuantization.cs" />

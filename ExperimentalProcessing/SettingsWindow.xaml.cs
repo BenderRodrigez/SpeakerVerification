@@ -157,5 +157,10 @@ namespace ExperimentalProcessing
         {
             OwnerWindow.GenerateReport();
         }
+
+        private void SaveFileButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            OwnerWindow.SaveFile();
+        }
     }
 }
