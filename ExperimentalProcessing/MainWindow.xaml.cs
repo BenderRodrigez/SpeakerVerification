@@ -190,7 +190,7 @@ namespace ExperimentalProcessing
             AcfsPlotModel.Series.Add(new FunctionSeries(Math.Cos, 0, 10, 0.1));
             OnPropertyChanged("AcfsPlotModel");
 
-            AcfPreview = new PlotModel {Title = "Кореллограмма АКФ", TitleFontSize = 10.0 };
+            AcfPreview = new PlotModel {Title = "Коррелограмма АКФ", TitleFontSize = 10.0 };
             var linearColorAxis = new LinearColorAxis
             {
                 HighColor = OxyColors.White,
@@ -201,7 +201,7 @@ namespace ExperimentalProcessing
             AcfPreview.Axes.Add(linearColorAxis);
             AcfPreview.Series.Add(new FunctionSeries(Math.Cosh, 0, 10, 0.1));
             OnPropertyChanged("AcfPreview");
-            AcfsPreview = new PlotModel { Title = "Кореллограмма АКФС", TitleFontSize = 10.0 };
+            AcfsPreview = new PlotModel { Title = "Коррелограмма АКФС", TitleFontSize = 10.0 };
             var linearColorAxis1 = new LinearColorAxis
             {
                 HighColor = OxyColors.White,
@@ -460,10 +460,13 @@ namespace ExperimentalProcessing
             }
             if (UseNoise)
             {
-                var noise = new NoiseGenerator(_inputFile, _inputFile.Length, NoiseAmplitude, _maxEnergyInterval);
-                SignalNoiseRaito = "ОСШ = " + noise.SNR.ToString("##0.#") + "дБ";
-                OnPropertyChanged("SignalNoiseRaito");
-                _inputFile = noise.ApplyNoise(_inputFile);
+                if (_inputFile.Length > _maxEnergyInterval.Item2)
+                {
+                    var noise = new NoiseGenerator(_inputFile, _inputFile.Length, NoiseAmplitude, _maxEnergyInterval);
+                    SignalNoiseRaito = "ОСШ = " + noise.SNR.ToString("##0.#") + "дБ";
+                    OnPropertyChanged("SignalNoiseRaito");
+                    _inputFile = noise.ApplyNoise(_inputFile);
+                }
             }
 
             _tonalSpeechSelector.InitData(_inputFile, 0.04f, 0.95f, signalFormat);
@@ -765,6 +768,21 @@ namespace ExperimentalProcessing
                 if (dialog == null) return;
                 var fileName = dialog.FileName;
                 AcfSamplePlotView.SaveBitmap(fileName, (int)AcfSamplePlotView.ActualWidth, (int)(AcfSamplePlotView.ActualHeight), OxyColors.Transparent);
+            };
+            saveDialog.ShowDialog(this);
+        }
+
+        internal void SaveFile()
+        {
+            var fileInfo = new FileInfo(FileName);
+            var saveDialog = new SaveFileDialog {Filter = "WAV файл|*.wav", FileName = fileInfo.Name};
+            saveDialog.FileOk += (sender, args) => {
+                var dialog = sender as SaveFileDialog;
+                if (dialog == null) return;
+                var fileName = dialog.FileName;
+
+                var exporter = new FileExporter {SampleRate = (int)_sampleFreq, Data = _inputFile};
+                exporter.SaveAsWav(fileName);
             };
             saveDialog.ShowDialog(this);
         }

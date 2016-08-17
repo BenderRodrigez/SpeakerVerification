@@ -22,6 +22,7 @@ using OxyPlot.Series;
 using SpeakerVerificationExperiments.Annotations;
 using Cursor = System.Windows.Input.Cursor;
 using Cursors = System.Windows.Input.Cursors;
+using MessageBox = System.Windows.MessageBox;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
 namespace SpeakerVerificationExperiments
@@ -324,6 +325,20 @@ namespace SpeakerVerificationExperiments
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
+            }
+
+            var solver = new FuzzySolver();
+            var energy = VqCodeBook.DistortionMeasureEnergy(trainDataAcf);
+
+            if (solver.GetSolution(energy) == SolutionState.SameDictor)
+            {
+                MessageBox.Show("Верификация успешно пройдена.", "Система верификации.", MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show("Верификация не пройдена.", "Система верификации.", MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
 
             WindowCursor = Cursors.Arrow;

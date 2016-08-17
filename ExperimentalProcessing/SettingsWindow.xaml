@@ -39,7 +39,8 @@
         <CheckBox Grid.Column="0" Content="Добавить шум" Margin="10,164,10,0" VerticalAlignment="Top" Height="15" IsChecked="{Binding UseNoise, ElementName=SettingsWind}"/>
         <Label Content="Амп. шума в экс-те:" Grid.Column="1" HorizontalAlignment="Left" Margin="10,273,0,0" VerticalAlignment="Top" Width="152"/>
         <TextBox Grid.Column="1" Height="23" Margin="10,299,10,0" TextWrapping="Wrap" Text="{Binding NoiseAmplitude, ElementName=SettingsWind}" VerticalAlignment="Top"/>
-        <Label Content="{Binding SignalNoiseRaito, ElementName=SettingsWind, TargetNullValue='ОСШ = --.-дБ'}" Grid.Column="1" HorizontalAlignment="Left" Margin="10,331,0,0" VerticalAlignment="Top" Width="152" Height="26"/>
+        <Label Content="{Binding SignalNoiseRaito, ElementName=SettingsWind, TargetNullValue='ОСШ = --.-дБ'}" Grid.Column="1" Margin="10,331,10,0" VerticalAlignment="Top" Height="26"/>
         <Button Content="Создать отчёт" Margin="10,114,10,0" VerticalAlignment="Top" Click="GenerateReport_OnClick"/>
+        <Button x:Name="button" Content="Сохранить файл" Grid.Column="1" Margin="10,362,10,0" VerticalAlignment="Top" Click="SaveFileButton_OnClick"/>
     </Grid>
 </Window>
