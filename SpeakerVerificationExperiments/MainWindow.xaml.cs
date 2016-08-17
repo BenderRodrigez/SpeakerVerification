@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using FLS;
 using HelpersLibrary;
 using HelpersLibrary.DspAlgorithms;
+using HelpersLibrary.DspAlgorithms.Filters;
 using HelpersLibrary.LearningAlgorithms;
 using NeuronDotNet.Core;
 using NeuronDotNet.Core.Initializers;
@@ -136,11 +137,19 @@ namespace SpeakerVerificationExperiments
                         {
                             int sampleRate;
                             var inputFile = FileReader.ReadFileNormalized(fileName, out sampleRate);
+                            var lpf = new Lpf(3400.0f, sampleRate);
+                            inputFile = lpf.StartFilter(inputFile);
+                            var hpf = new Hpf(300.0f, sampleRate);
+                            inputFile = hpf.Filter(inputFile);
 
                             var tonalSpeechSelector = new TonalSpeechSelector();
                             tonalSpeechSelector.InitData(inputFile, AnalysisInterval, Overlaping, sampleRate);
 
                             var speechMarks = tonalSpeechSelector.GetTonalSpeechMarks();
+                            if (speechMarks.Length == 0)
+                            {
+                                speechMarks = new[] {new Tuple<int, int>(0, inputFile.Length)};
+                            }
 
                             var pitchImage = GetPitchImage(inputFile, sampleRate, speechMarks);
                             pitchImagesDictionary.Add(fileName, pitchImage);
@@ -355,7 +364,23 @@ namespace SpeakerVerificationExperiments
                     writer.WriteLine(distortion);
                 }
                 writer.WriteLine("---------------");
+                var solver = new FuzzySolver();
                 writer.WriteLine(VqCodeBook.DistortionMeasureEnergy(testData));
+
+                var solution = solver.GetSolution(VqCodeBook.DistortionMeasureEnergy(testData));
+
+                switch (solution)
+                {
+                        case SolutionState.ForeignDictor:
+                        System.Windows.MessageBox.Show("Verification not sucessful");
+                        break;
+                        case SolutionState.SameDictor:
+                        System.Windows.MessageBox.Show("Verification sucessful");
+                        break;
+                        case SolutionState.NoClearSolution:
+                        System.Windows.MessageBox.Show("Verification not sucessful");
+                        break;
+                }
             }
         }
 

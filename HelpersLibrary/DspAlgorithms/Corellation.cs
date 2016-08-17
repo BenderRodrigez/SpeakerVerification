@@ -141,9 +141,11 @@ namespace HelpersLibrary.DspAlgorithms
 
                     //extract candidates
                     var acfsCandidates = new List<Tuple<int, double>>();
+                    var min = acfsSample.Min();
                     for (int i = 1; i < acfsSample.Length-1; i++)
                     {
-                        if (acfsSample[i] > acfsSample[i - 1] && acfsSample[i] > acfsSample[i + 1])
+                        //0.4 means more than 40 persents larger value than minimal value 
+                        if (acfsSample[i] > min - min*0.4  && acfsSample[i] > acfsSample[i - 1] && acfsSample[i] > acfsSample[i + 1])
                         {
                             acfsCandidates.Add(new Tuple<int, double>(i, acfsSample[i]));
                         }
@@ -214,6 +216,10 @@ namespace HelpersLibrary.DspAlgorithms
                             .Where(x => Math.Abs(x.Item1 - img[i][0]) < searchWindow)
                             .First(x => x.Item2 >= nearest)
                             .Item1;
+                }
+                else
+                {
+                    img[i][0] = 0.0;//if we dont have enouth data
                 }
             }
 

@@ -69,7 +69,7 @@ namespace SpeakerVerificationExperiments
                     {"FeatureType", FeatureType}
                 };
 
-                await database.GetCollection<BsonDocument>("Verification_Kohonnen").InsertOneAsync(newDocument);
+                await database.GetCollection<BsonDocument>("Verification_Phone").InsertOneAsync(newDocument);
             }
             catch (Exception e)
             {
@@ -81,7 +81,7 @@ namespace SpeakerVerificationExperiments
         {
             var client = new MongoClient(ConfigurationManager.ConnectionStrings["MongoDB"].ConnectionString);
             var database = client.GetDatabase("experiments");
-            var db = database.GetCollection<BsonDocument>("Verification_Kohonnen");
+            var db = database.GetCollection<BsonDocument>("Verification_Phone");
 
             using (var writer = new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "report3.csv")))
             {
@@ -253,7 +253,7 @@ namespace SpeakerVerificationExperiments
             using (var writer = new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "report2.csv")))
             {
                 writer.WriteLine("pitchExperiments");
-                var docs = client.GetDatabase("experiments").GetCollection<BsonDocument>("Verification_Kohonnen").Find(
+                var docs = client.GetDatabase("experiments").GetCollection<BsonDocument>("Verification_Phone").Find(
                     new BsonDocumentFilterDefinition<BsonDocument>(
                         new BsonDocument(new BsonElement("FeatureType", "pitch")))).ToList();
                 var repo =
@@ -268,7 +268,7 @@ namespace SpeakerVerificationExperiments
                 repo = null;
                 GC.Collect();
                 writer.WriteLine("pitchDeltaExperiments");
-                docs = client.GetDatabase("experiments").GetCollection<BsonDocument>("Verification_Kohonnen").Find(
+                docs = client.GetDatabase("experiments").GetCollection<BsonDocument>("Verification_Phone").Find(
                     new BsonDocumentFilterDefinition<BsonDocument>(
                         new BsonDocument(new BsonElement("FeatureType", "pitchDelta")))).ToList();
                 repo =
@@ -282,7 +282,7 @@ namespace SpeakerVerificationExperiments
                 docs = null;
                 repo = null;
                 GC.Collect();
-                docs = client.GetDatabase("experiments").GetCollection<BsonDocument>("Verification_Kohonnen").Find(
+                docs = client.GetDatabase("experiments").GetCollection<BsonDocument>("Verification_Phone").Find(
                     new BsonDocumentFilterDefinition<BsonDocument>(
                         new BsonDocument(new BsonElement("FeatureType", "lpc")))).ToList();
                 writer.WriteLine("lpcExperiments");
@@ -298,7 +298,7 @@ namespace SpeakerVerificationExperiments
                 repo = null;
                 GC.Collect();
                 writer.WriteLine("lpcDeltaExperiments");
-                docs = client.GetDatabase("experiments").GetCollection<BsonDocument>("Verification_Kohonnen").Find(
+                docs = client.GetDatabase("experiments").GetCollection<BsonDocument>("Verification_Phone").Find(
                     new BsonDocumentFilterDefinition<BsonDocument>(
                         new BsonDocument(new BsonElement("FeatureType", "lpcDelta")))).ToList();
                 repo =
@@ -312,7 +312,7 @@ namespace SpeakerVerificationExperiments
                 repo = null;
                 GC.Collect();
                 writer.WriteLine("pitchLpcExperiments");
-                docs = client.GetDatabase("experiments").GetCollection<BsonDocument>("Verification_Kohonnen").Find(
+                docs = client.GetDatabase("experiments").GetCollection<BsonDocument>("Verification_Phone").Find(
                     new BsonDocumentFilterDefinition<BsonDocument>(
                         new BsonDocument(new BsonElement("FeatureType", "pitchLpc")))).ToList();
                 repo =
@@ -327,7 +327,7 @@ namespace SpeakerVerificationExperiments
                 repo = null;
                 GC.Collect();
                 writer.WriteLine("pitchLpcDeltaExperiments");
-                docs = client.GetDatabase("experiments").GetCollection<BsonDocument>("Verification_Kohonnen").Find(
+                docs = client.GetDatabase("experiments").GetCollection<BsonDocument>("Verification_Phone").Find(
                     new BsonDocumentFilterDefinition<BsonDocument>(
                         new BsonDocument(new BsonElement("FeatureType", "pitchLpcDelta")))).ToList();
                 repo =

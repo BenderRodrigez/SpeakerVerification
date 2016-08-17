@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace HelpersLibrary.DspAlgorithms
@@ -90,7 +91,10 @@ namespace HelpersLibrary.DspAlgorithms
                 DurbinAlgLpcCoefficients(ref acf, out lpc);
                 lpcImageList.Add(lpc);
             }
-            lpcImage = lpcImageList.ToArray();
+
+            var ampVal = lpcImageList.Max(x => x.Max());
+            lpcImage = lpcImageList.Select(x => x.Select(y => 3.0*y/ampVal).ToArray()).ToArray();
+            /*lpcImage = lpcImageList.ToArray();*/
         }
 
         /// <summary>
