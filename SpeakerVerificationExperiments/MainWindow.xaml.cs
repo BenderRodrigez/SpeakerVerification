@@ -379,23 +379,7 @@ namespace SpeakerVerificationExperiments
                     writer.WriteLine(distortion);
                 }
                 writer.WriteLine("---------------");
-                var solver = new FuzzySolver();
                 writer.WriteLine(VqCodeBook.DistortionMeasureEnergy(testData));
-
-                var solution = solver.GetSolution(VqCodeBook.DistortionMeasureEnergy(testData));
-
-                switch (solution)
-                {
-                        case SolutionState.ForeignDictor:
-                        System.Windows.MessageBox.Show("Verification not sucessful");
-                        break;
-                        case SolutionState.SameDictor:
-                        System.Windows.MessageBox.Show("Verification sucessful");
-                        break;
-                        case SolutionState.NoClearSolution:
-                        System.Windows.MessageBox.Show("Verification not sucessful");
-                        break;
-                }
             }
         }
 
